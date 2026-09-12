@@ -59,7 +59,7 @@
     background:var(--yellow);font-size:.95rem}
   .step:nth-child(2) b{background:var(--cyan);color:#fff}
   .step:nth-child(3) b{background:var(--mint)}
-  .cta-row{display:flex;justify-content:center;margin:18px 0 4px}
+  .cta-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:18px 0 4px}
   .cta{display:inline-flex;align-items:center;gap:8px;background:var(--mint);color:var(--ink);text-decoration:none;
     border:3px solid var(--ink);border-radius:14px;padding:11px 22px;font-size:1rem;box-shadow:4px 4px 0 var(--ink);
     transition:transform .08s,box-shadow .08s}
@@ -288,6 +288,35 @@
   .m-ctrl button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   @media (max-aspect-ratio:1/1){.m-grid{grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)}}
 
+  /* その場で卓を立てる：即時登録モーダル */
+  .cta.bolt{background:var(--red);color:#fff}
+  .qr-overlay{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;
+    padding:5vh 16px 40px;overflow-y:auto;background:rgba(29,34,66,.55)}
+  .qr-overlay.show{display:flex}
+  .qr-modal{background:#fff;border:4px solid var(--ink);border-radius:22px;box-shadow:8px 8px 0 var(--ink);
+    max-width:480px;width:100%;padding:22px 22px 18px}
+  .qr-modal h2{margin:0 0 6px;font-size:1.2rem}
+  .qr-lead{margin:0 0 16px;font-size:.82rem;font-weight:700;color:var(--muted);line-height:1.6}
+  .qr-field{display:block;font-weight:700;font-size:.86rem;margin:0 0 12px}
+  .qr-field .req{color:var(--red);margin-left:2px}
+  .qr-field input,.qr-field textarea{display:block;width:100%;margin-top:6px;font:inherit;font-weight:700;font-size:.95rem;
+    color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:10px;padding:9px 11px;resize:vertical}
+  .qr-field input:focus-visible,.qr-field textarea:focus-visible{outline:0;box-shadow:0 0 0 4px var(--cyan)}
+  .qr-when{display:flex;flex-wrap:wrap;gap:0 14px}
+  .qr-when .qr-half{flex:1 1 140px}
+  .qr-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .qr-chip{font:inherit;font-weight:700;font-size:.84rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
+    border-radius:999px;padding:7px 14px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+  .qr-chip[aria-pressed="true"]{background:var(--yellow)}
+  .qr-chip:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .qr-err{margin:0 0 10px;font-size:.84rem;font-weight:700;color:var(--red)}
+  .qr-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+  .qr-actions .btn{font-size:.95rem;padding:10px 20px}
+  .rc.local{box-shadow:6px 6px 0 var(--mint)}
+  .rc.local .rc-top{position:relative}
+  .rc.local .rc-top::after{content:"送信中…反映まで少し待ってね";position:absolute;left:0;right:0;bottom:-22px;
+    text-align:center;font-size:.68rem;font-weight:700;color:#1f9d57}
+
   @media (max-width:640px){
     .steps{grid-template-columns:1fr}
     .stats{grid-template-columns:repeat(2,1fr)}
@@ -370,7 +399,10 @@
       <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
       <div class="step"><b>3</b><div>集まったらフォームを開き直して<strong>「締め切った」にチェック</strong>→ここから消えます</div></div>
     </div>
-    <div class="cta-row"><a class="cta" id="ctaRecruit" href="#">📣 卓を募集する <small id="ctaRecruitNote">準備中</small></a></div>
+    <div class="cta-row">
+      <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
+      <a class="cta" id="ctaRecruit" href="#">📣 事前にフォームで募集する <small id="ctaRecruitNote">準備中</small></a>
+    </div>
     <div class="filters" role="group" aria-label="日程で絞り込み">
       <span>日程でしぼる</span>
       <button class="fchip" type="button" data-f="dated" aria-pressed="false">📅 日付が決まってる</button>
@@ -387,6 +419,72 @@
 
   <p class="status" id="status"></p>
 </div>
+
+<div class="qr-overlay" id="qrOverlay" hidden>
+  <div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrHeading">
+    <form id="qrForm">
+      <h2 id="qrHeading" class="pop">⚡ その場で卓を立てる</h2>
+      <p class="qr-lead">フォームを開かずに、そのまま登録できます。送信するとすぐボードとモニターに出ます。</p>
+
+      <label class="qr-field">お名前<span class="req">*</span>
+        <input id="qrName" required autocomplete="nickname" placeholder="名札と同じ表記で">
+      </label>
+      <label class="qr-field">XのID（任意）
+        <input id="qrXid" placeholder="@なしでOK">
+      </label>
+      <label class="qr-field">シナリオ名<span class="req">*</span>
+        <input id="qrTitle" required placeholder="例：立方館">
+      </label>
+
+      <div class="qr-field">形式<span class="req">*</span>
+        <div class="qr-chips" id="qrFormat" role="radiogroup" aria-label="形式">
+          <button type="button" class="qr-chip" data-v="オフライン">🏪 オフライン</button>
+          <button type="button" class="qr-chip" data-v="パッケージ">📦 パッケージ</button>
+          <button type="button" class="qr-chip" data-v="オンライン">💻 オンライン</button>
+        </div>
+      </div>
+
+      <div class="qr-field">日程
+        <div class="qr-chips" id="qrMode" role="radiogroup" aria-label="日程の決め方">
+          <button type="button" class="qr-chip" data-v="date">📅 日付が決まってる</button>
+          <button type="button" class="qr-chip" data-v="rough">🤷 まだ・ざっくり</button>
+        </div>
+      </div>
+      <div class="qr-when" id="qrWhenDate" hidden>
+        <label class="qr-field qr-half">日付<input id="qrDate" type="date"></label>
+        <label class="qr-field qr-half">開始時刻<input id="qrStart" type="time"></label>
+      </div>
+      <div class="qr-when" id="qrWhenRough" hidden>
+        <label class="qr-field">時期<input id="qrMonths" placeholder="例：10月〜12月"></label>
+        <div class="qr-field">曜日
+          <div class="qr-chips" id="qrDays">
+            <button type="button" class="qr-chip" data-v="平日">平日</button>
+            <button type="button" class="qr-chip" data-v="土日祝">土日祝</button>
+            <button type="button" class="qr-chip" data-v="どちらでも">どちらでも</button>
+          </div>
+        </div>
+        <div class="qr-field">時間帯
+          <div class="qr-chips" id="qrTime">
+            <button type="button" class="qr-chip" data-v="日中">☀ 日中</button>
+            <button type="button" class="qr-chip" data-v="夜">🌙 夜</button>
+            <button type="button" class="qr-chip" data-v="どちらでも">どちらでも</button>
+          </div>
+        </div>
+      </div>
+
+      <label class="qr-field">会場（任意）<input id="qrVenue" placeholder="店舗名など"></label>
+      <label class="qr-field">募集人数（任意）<input id="qrNeed" type="number" min="1" placeholder="あと何人"></label>
+      <label class="qr-field">ひとこと（任意）<textarea id="qrNote" rows="2"></textarea></label>
+
+      <p class="qr-err" id="qrErr" hidden></p>
+      <div class="qr-actions">
+        <button type="button" class="btn ghost" id="qrCancel">やめる</button>
+        <button type="submit" class="btn" id="qrSend">送信する</button>
+      </div>
+    </form>
+  </div>
+</div>
+<iframe name="qrSink" id="qrSink" hidden title="送信用（非表示）"></iframe>
 
 <div class="monitor" id="monitor" hidden aria-label="モニター表示">
   <div class="m-head">
@@ -417,6 +515,7 @@ var CONFIG = {
   infoTab: "シナリオ情報",   // 人数・時間・別名
   settingsTab: "設定",      // 登録フォームのURLなど（項目｜値）
   iconTab: "アイコン",       // XのID｜画像URL
+  quickTab: "即時卓募集",    // 「⚡その場で卓を立てる」の送信先タブ
   slideMs: 10000,
   refreshMs: 30000
 };
@@ -746,7 +845,7 @@ function renderRecruits(){
     var info=STATE.byKey&&STATE.byKey[r.key]?infoFor(STATE.byKey[r.key]):null;
     var meta=info&&info.min?'<span>👥 '+playersLabel(info)+'</span>':'';
     if(info&&info.minutes) meta+='<span>⏱ '+info.minutes+'分</span>';
-    return '<article class="rc'+(mine?' mine':'')+'" id="'+r.id+'">'
+    return '<article class="rc'+(mine?' mine':'')+(r.local?' local':'')+'" id="'+r.id+'">'
       +'<div class="rc-top" style="background:'+bg+';color:'+fg+'">'+avatar(r)
       +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集してる人')+'</small><b>'+esc(r.name)+'</b></div>'
       +(r.need?'<div class="rc-need">'+r.need+'<small>人募集</small></div>':'')+'</div>'
@@ -963,10 +1062,26 @@ function parseIcons(rows){
 function parseSettings(rows){
   var out={}; rows.slice(1).forEach(function(r){ if((r[0]||"").trim()) out[r[0].trim()]=(r[1]||"").trim(); }); return out;
 }
+// 「即時卓募集」タブ：⚡その場で卓を立てる、の送信先。1行1募集、締め切り機能はまだ無い
+function parseQuickRecruits(rows){
+  var h=rows[0]||[], col=colFinder(h);
+  var c={ name:col("名前"), xid:col("XのID"), title:col("シナリオ名"), format:col("形式"), date:col("日付"), start:col("開始"),
+          months:col("時期"), days:col("曜日"), time:col("時間帯"), venue:col("会場"), need:col("人数"), note:col("ひとこと") };
+  if(c.name<0 || c.title<0) return [];
+  var get=function(r,k){ return c[k]>=0 ? (r[c[k]]||"").trim() : ""; };
+  return rows.slice(1).filter(function(r){ return get(r,"name") && get(r,"title"); }).map(function(r,i){
+    var fmt=get(r,"format").normalize("NFKC");
+    return { id:"q"+hash(get(r,"name")+"|"+get(r,"title")+"|"+i).toString(36), name:get(r,"name"), xid:get(r,"xid"), title:get(r,"title"),
+      format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
+      months:get(r,"months"), days:get(r,"days"), time:get(r,"time"),
+      need:parseInt(get(r,"need").normalize("NFKC"),10)||0, note:get(r,"note"), done:false,
+      date:get(r,"date"), start:get(r,"start"), venue:get(r,"venue") };
+  });
+}
 async function fetchAll(){
-  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false), fetchTab(CONFIG.iconTab,false)]);
+  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false), fetchTab(CONFIG.iconTab,false), fetchTab(CONFIG.quickTab,false)]);
   var a=parseAnswers(r[0]);
-  return { people:a.people, recruits:a.recruits, info:parseInfo(r[1]), settings:parseSettings(r[2]), icons:parseIcons(r[3]), at:Date.now() };
+  return { people:a.people, recruits:a.recruits.concat(parseQuickRecruits(r[4])), info:parseInfo(r[1]), settings:parseSettings(r[2]), icons:parseIcons(r[3]), at:Date.now() };
 }
 function demoData(){
   var t0=today0();
@@ -994,8 +1109,12 @@ function applyData(d){
   STATE.icons=d.icons||{};
   setLink("cta","ctaNote", s["登録フォーム"]);
   setLink("ctaRecruit","ctaRecruitNote", s["登録フォーム"]);
+  try{ STATE.quick=JSON.parse(s["その場で卓を立てるフォーム送信先"]||""); }catch(e){ STATE.quick=null; }
+  document.getElementById("openQuick").hidden=!STATE.quick;
   (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m); });
-  setRecruits((d.recruits||[]).map(function(r){ return Object.assign({}, r); }));
+  var pending=(STATE.pendingLocal||[]).filter(function(p){ return !(d.recruits||[]).some(function(r){ return r.name===p.name && r.title===p.title; }); });
+  STATE.pendingLocal=pending;
+  setRecruits((d.recruits||[]).concat(pending).map(function(r){ return Object.assign({}, r); }));
   build(d.people||[]); render(); renderRecruits();
   if(!document.getElementById("monitor").hidden) buildSlides();
   if(STATE.pendingMonitor){ STATE.pendingMonitor=false; openMonitor(); }
@@ -1034,6 +1153,92 @@ document.querySelectorAll(".seg button").forEach(function(b){ b.addEventListener
   STATE.sort=b.dataset.sort;
   document.querySelectorAll(".seg button").forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
   render(); }); });
+
+/* ===== ⚡その場で卓を立てる ===== */
+var QR = { format:"", mode:"date", days:"", time:"" };
+function qrChipGroup(id, onPick){
+  document.querySelectorAll("#"+id+" .qr-chip").forEach(function(b){
+    b.addEventListener("click",function(){
+      document.querySelectorAll("#"+id+" .qr-chip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+      b.setAttribute("aria-pressed","true");
+      onPick(b.dataset.v);
+    });
+  });
+}
+qrChipGroup("qrFormat", function(v){ QR.format=v; });
+qrChipGroup("qrDays", function(v){ QR.days=v; });
+qrChipGroup("qrTime", function(v){ QR.time=v; });
+qrChipGroup("qrMode", function(v){
+  QR.mode=v;
+  document.getElementById("qrWhenDate").hidden = v!=="date";
+  document.getElementById("qrWhenRough").hidden = v!=="rough";
+});
+
+function openQuick(){
+  if(!STATE.quick){ return; }
+  document.getElementById("qrForm").reset();
+  QR = { format:"", mode:"date", days:"", time:"" };
+  document.querySelectorAll(".qr-chip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  document.querySelector('#qrMode .qr-chip[data-v="date"]').setAttribute("aria-pressed","true");
+  document.getElementById("qrWhenDate").hidden=false;
+  document.getElementById("qrWhenRough").hidden=true;
+  document.getElementById("qrErr").hidden=true;
+  if(STATE.me) document.getElementById("qrName").value=STATE.me;
+  document.getElementById("qrOverlay").classList.add("show");
+  document.getElementById("qrName").focus();
+}
+function closeQuick(){ document.getElementById("qrOverlay").classList.remove("show"); }
+document.getElementById("openQuick").addEventListener("click", openQuick);
+document.getElementById("qrCancel").addEventListener("click", closeQuick);
+document.getElementById("qrOverlay").addEventListener("click", function(e){ if(e.target.id==="qrOverlay") closeQuick(); });
+document.addEventListener("keydown", function(e){
+  if(e.key==="Escape" && document.getElementById("qrOverlay").classList.contains("show")) closeQuick();
+});
+
+function qrAdd(form, name, value){
+  if(value==null || value==="") return;
+  var i=document.createElement("input"); i.type="hidden"; i.name=name; i.value=value; form.appendChild(i);
+}
+function qrSubmitToForm(fields){
+  var q=STATE.quick; if(!q) return false;
+  var form=document.createElement("form");
+  form.action=q.action; form.method="POST"; form.target="qrSink"; form.style.display="none";
+  qrAdd(form, q.name, fields.name); qrAdd(form, q.xid, fields.xid);
+  qrAdd(form, q.title, fields.title); qrAdd(form, q.format, fields.format);
+  if(fields.date){ var d=fields.date.split("-"); qrAdd(form, q.date.y, d[0]); qrAdd(form, q.date.m, String(+d[1])); qrAdd(form, q.date.d, String(+d[2])); }
+  if(fields.start){ var t=fields.start.split(":"); qrAdd(form, q.start.h, String(+t[0])); qrAdd(form, q.start.mi, String(+t[1])); }
+  qrAdd(form, q.months, fields.months); qrAdd(form, q.days, fields.days); qrAdd(form, q.time, fields.time);
+  qrAdd(form, q.venue, fields.venue); qrAdd(form, q.need, fields.need); qrAdd(form, q.note, fields.note);
+  document.body.appendChild(form); form.submit();
+  setTimeout(function(){ form.remove(); }, 4000);
+  return true;
+}
+
+document.getElementById("qrForm").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  var name=document.getElementById("qrName").value.trim();
+  var title=document.getElementById("qrTitle").value.trim();
+  var err=document.getElementById("qrErr");
+  if(!name || !title || !QR.format){
+    err.textContent="お名前・シナリオ名・形式は必須です。"; err.hidden=false; return;
+  }
+  var fields = {
+    name:name, xid:document.getElementById("qrXid").value.trim(), title:title, format:QR.format,
+    venue:document.getElementById("qrVenue").value.trim(), need:document.getElementById("qrNeed").value.trim(),
+    note:document.getElementById("qrNote").value.trim()
+  };
+  if(QR.mode==="date") fields.date=document.getElementById("qrDate").value, fields.start=document.getElementById("qrStart").value;
+  else fields.months=document.getElementById("qrMonths").value.trim(), fields.days=QR.days, fields.time=QR.time;
+
+  qrSubmitToForm(fields);
+  if(!STATE.me){ STATE.me=name; saveMe(name); }
+  var local=Object.assign({ local:true }, fields);
+  STATE.pendingLocal=(STATE.pendingLocal||[]).concat([local]);
+  setRecruits((STATE.recruits||[]).concat([local]));
+  renderRecruits(); renderMe();
+  closeQuick();
+  setTimeout(load, 4000);
+});
 
 load();
 if(CONFIG.sheetId) setInterval(load, CONFIG.refreshMs);
