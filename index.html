@@ -1184,10 +1184,10 @@ function openQuick(){
   document.getElementById("qrWhenRough").hidden=true;
   document.getElementById("qrErr").hidden=true;
   if(STATE.me) document.getElementById("qrName").value=STATE.me;
-  document.getElementById("qrOverlay").classList.add("show");
+  var ov=document.getElementById("qrOverlay"); ov.hidden=false; ov.classList.add("show");
   document.getElementById("qrName").focus();
 }
-function closeQuick(){ document.getElementById("qrOverlay").classList.remove("show"); }
+function closeQuick(){ var ov=document.getElementById("qrOverlay"); ov.classList.remove("show"); ov.hidden=true; }
 document.getElementById("openQuick").addEventListener("click", openQuick);
 document.getElementById("qrCancel").addEventListener("click", closeQuick);
 document.getElementById("qrOverlay").addEventListener("click", function(e){ if(e.target.id==="qrOverlay") closeQuick(); });
