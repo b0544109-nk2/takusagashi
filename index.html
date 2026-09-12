@@ -96,6 +96,7 @@
   .my-item b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:0 7px;font-size:.74rem;white-space:nowrap}
   .my-item.done{background:#e4f7ea;cursor:default}
   .my-item.free{background:#ffe3ef;cursor:default}
+  .my-item.rec{background:#dff4ff}
   .my-item:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .me-none{font-size:.86rem;font-weight:700;color:var(--muted);line-height:1.6;margin:0}
 
@@ -301,17 +302,19 @@
 <div class="wrap">
   <header>
     <div class="kicker">MADAMIS CRUISE ⚓ 2026</div>
-    <h1><span class="main">卓さがしボード</span><span class="sub">あそびたいシナリオ</span></h1>
+    <h1><span class="main">卓さがしボード</span><span class="sub">卓メンバー募集中</span></h1>
     <p class="demo" id="demo" hidden></p>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="表示の切り替え">
-    <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="true" aria-controls="viewWant">🙋 遊びたい</button>
-    <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="false" aria-controls="viewRecruit">📣 卓募集<b id="recCount">0</b></button>
+    <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="true" aria-controls="viewRecruit">📣 卓募集<b id="recCount">0</b></button>
+    <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="false" aria-controls="viewWant">🙋 遊びたい</button>
     <button class="tab mon" type="button" id="openMonitor">📺 モニター表示</button>
   </nav>
 
-  <div id="viewWant" role="tabpanel" aria-labelledby="tabWant">
+  <section class="me-bar" id="meBar" aria-label="あなたの募集・希望"></section>
+
+  <div id="viewWant" role="tabpanel" aria-labelledby="tabWant" hidden>
   <div class="steps">
     <div class="step"><b>1</b><div>フォームに<strong>遊びたいシナリオを3つまで</strong>書く</div></div>
     <div class="step"><b>2</b><div>同じシナリオに並んでる人に<strong>声をかけて卓を組む</strong></div></div>
@@ -326,7 +329,6 @@
     <div class="stat"><b id="sDone">–</b><span>卓決定 🎉</span></div>
   </div>
 
-  <section class="me-bar" id="meBar" aria-label="あなたの希望"></section>
 
   <div class="tools">
     <label class="search"><span aria-hidden="true">🔍</span>
@@ -362,9 +364,9 @@
   <p class="done-line" id="doneLine" hidden></p>
   </div>
 
-  <div id="viewRecruit" role="tabpanel" aria-labelledby="tabRecruit" hidden>
+  <div id="viewRecruit" role="tabpanel" aria-labelledby="tabRecruit">
     <div class="steps">
-      <div class="step"><b>1</b><div>同じフォームの「卓募集もしますか？」で<strong>「する」</strong>を選んで、シナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
+      <div class="step"><b>1</b><div>フォームの「卓募集をしますか？」で<strong>「する」</strong>を選んで、シナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
       <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
       <div class="step"><b>3</b><div>集まったらフォームを開き直して<strong>「締め切った」にチェック</strong>→ここから消えます</div></div>
     </div>
@@ -627,7 +629,7 @@ function renderMe(){
   var bar=document.getElementById("meBar");
   if(!STATE.me || STATE.editingMe){
     bar.innerHTML='<form class="me-form" id="meForm">'
-      +'<label for="meName">👋 あなたの名前を入れておくと、自分の希望がすぐ見つかります</label>'
+      +'<label for="meName">👋 あなたの名前を入れておくと、自分の募集や希望がすぐ見つかります</label>'
       +'<input id="meName" autocomplete="nickname" placeholder="フォームに書いたのと同じ名前" value="'+esc(STATE.me)+'">'
       +'<button class="btn" type="submit">保存</button>'
       +(STATE.me?'<button class="btn ghost" type="button" id="meCancel">やめる</button>':'')
@@ -636,18 +638,22 @@ function renderMe(){
     return;
   }
   var mine=STATE.entries.filter(function(e){ return isMe(e.name); });
-  var names={}; mine.forEach(function(e){ names[e.name]=1; });
+  var myRecs=(STATE.recruits||[]).filter(function(r){ return isMe(r.name); });
+  var names={}; mine.concat(myRecs).forEach(function(e){ names[e.name]=1; });
   var shown=Object.keys(names).filter(function(n){ return n!==STATE.me; });
-  var items=mine.map(function(e){
+  var items=myRecs.map(function(r){
+    var w=wantersOf(r).length;
+    return '<button type="button" class="my-item rec" data-rec="'+r.id+'">📣 '+esc(displayTitle(r))+' <b>'+(w?'遊びたい人 '+w+'人':'募集中')+'</b></button>';
+  }).join("")+mine.map(function(e){
     if(e.free!=null) return '<span class="my-item free">🎲 おまかせ：'+esc(e.free)+'</span>';
     var g=STATE.byKey[e.key]; if(!g) return "";
     if(e.done) return '<span class="my-item done">🎉 '+esc(g.title)+' <b>卓決定</b></span>';
     var others=g.people.filter(function(p){ return !isMe(p); }).length;
     return '<button type="button" class="my-item" data-jump="'+cardId(g)+'">'+esc(g.title)+' <b>'+(others?'ほか'+others+'人':'まだ自分だけ')+'</b></button>';
   }).join("");
-  bar.innerHTML='<div class="me-top"><span class="me-hello">👋 '+esc(STATE.me)+' さんの希望</span>'
+  bar.innerHTML='<div class="me-top"><span class="me-hello">👋 '+esc(STATE.me)+' さんの募集・希望</span>'
     +'<button class="btn ghost" type="button" id="meEdit">名前を変える</button></div>'
-    +(shown.length?'<p class="me-sub">ボード上では「'+shown.map(esc).join("」「")+'」として表示されています</p>':'<p class="me-sub">タップするとそのシナリオのカードに飛びます</p>')
+    +(shown.length?'<p class="me-sub">ボード上では「'+shown.map(esc).join("」「")+'」として表示されています</p>':'<p class="me-sub">タップするとそのカードに飛びます</p>')
     +(items?'<div class="my-list">'+items+'</div>'
       :'<p class="me-none">ボードに「'+esc(STATE.me)+'」さんの名前が見つかりません。フォームに書いた名前と同じか確認してみてください。</p>');
 }
@@ -825,7 +831,7 @@ function closeMonitor(){
   clearTimeout(MON.timer); clearInterval(MON.clock);
   document.getElementById("monitor").hidden=true; document.body.style.overflow="";
   if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function(){});
-  if(location.hash==="#monitor") setView(STATE.view||"want");
+  if(location.hash==="#monitor") setView(STATE.view||"recruit");
 }
 document.getElementById("openMonitor").addEventListener("click",openMonitor);
 document.getElementById("mClose").addEventListener("click",closeMonitor);
@@ -855,6 +861,7 @@ document.getElementById("viewWant").addEventListener("click",function(e){
 });
 
 function jumpTo(id){
+  setView("want");
   if(STATE.q || STATE.onlyMe){ STATE.q=""; qEl.value=""; STATE.onlyMe=false; render(); }
   var el=document.getElementById(id); if(!el) return;
   var still=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -872,7 +879,13 @@ document.getElementById("meBar").addEventListener("click",function(ev){
   if(t.id==="meEdit"){ STATE.editingMe=true; renderMe(); var i=document.getElementById("meName"); if(i){ i.focus(); i.select(); } }
   else if(t.id==="meCancel"){ STATE.editingMe=false; renderMe(); }
   else if(t.dataset.jump){ jumpTo(t.dataset.jump); }
+  else if(t.dataset.rec){ jumpToRecruit(t.dataset.rec); }
 });
+function jumpToRecruit(id){
+  STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  renderRecruits(); setView("recruit");
+  var el=document.getElementById(id); if(el) flashEl(el);
+}
 document.getElementById("only").addEventListener("click",function(){ STATE.onlyMe=!STATE.onlyMe; render(); });
 
 /* ===== データ読み込み ===== */
@@ -1011,7 +1024,8 @@ async function load(){
   }
 }
 
-(function(){ var h=(location.hash||"").slice(1); if(h==="recruit") setView("recruit"); else if(h==="monitor") STATE.pendingMonitor=true; })();
+STATE.view="recruit";
+(function(){ var h=(location.hash||"").slice(1); if(h==="want") setView("want"); else if(h==="monitor") STATE.pendingMonitor=true; })();
 
 var qEl=document.getElementById("q"), tmr=null;
 qEl.addEventListener("input",function(){ clearTimeout(tmr); tmr=setTimeout(function(){ STATE.q=qEl.value.trim(); render(); },120); });
