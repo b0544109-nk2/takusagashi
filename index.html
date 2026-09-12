@@ -314,7 +314,7 @@
   <div class="steps">
     <div class="step"><b>1</b><div>フォームに<strong>遊びたいシナリオを3つまで</strong>書く</div></div>
     <div class="step"><b>2</b><div>同じシナリオに並んでる人に<strong>声をかけて卓を組む</strong></div></div>
-    <div class="step"><b>3</b><div>卓が決まったらフォームで<strong>「決まった」にチェック</strong>→ここから消えます</div></div>
+    <div class="step"><b>3</b><div>卓が決まったら同じフォームを開き直して<strong>「決まった」にチェック</strong>→ここから消えます</div></div>
   </div>
   <div class="cta-row"><a class="cta" id="cta" href="#">✍️ フォームで登録・更新する <small id="ctaNote">準備中</small></a></div>
 
@@ -363,9 +363,9 @@
 
   <div id="viewRecruit" role="tabpanel" aria-labelledby="tabRecruit" hidden>
     <div class="steps">
-      <div class="step"><b>1</b><div>卓募集フォームに<strong>名前・アイコン・シナリオ・日程</strong>を書く（日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
+      <div class="step"><b>1</b><div>同じフォームの「卓募集もしますか？」で<strong>「する」</strong>を選んで、シナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
       <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
-      <div class="step"><b>3</b><div>集まったらフォームで<strong>「締め切った」にチェック</strong>→ここから消えます</div></div>
+      <div class="step"><b>3</b><div>集まったらフォームを開き直して<strong>「締め切った」にチェック</strong>→ここから消えます</div></div>
     </div>
     <div class="cta-row"><a class="cta" id="ctaRecruit" href="#">📣 卓を募集する <small id="ctaRecruitNote">準備中</small></a></div>
     <div class="filters" role="group" aria-label="日程で絞り込み">
@@ -410,12 +410,9 @@
 // スプレッドシートIDはコードに書かず、URLの ?id=... で渡す（なければデモ表示）
 var CONFIG = {
   sheetId: new URLSearchParams(location.search).get("id") || "",
-  wantTab: "遊びたい",      // 遊びたいフォームの回答タブ
-  recruitTab: "卓募集",     // 卓募集フォームの回答タブ
+  answerTab: "回答",        // 登録フォームの回答（遊びたい①〜③＋卓募集①〜③が1人1行）
   infoTab: "シナリオ情報",   // 人数・時間・別名
-  settingsTab: "設定",      // フォームのURLなど（項目｜値）
-  formUrl: "",
-  recruitFormUrl: "",
+  settingsTab: "設定",      // 登録フォームのURLなど（項目｜値）
   slideMs: 10000,
   refreshMs: 30000
 };
@@ -890,16 +887,38 @@ async function fetchTab(tab, required){
   }
   return parseCSV(await res.text());
 }
-// 「遊びたい」タブ：お名前｜シナリオ①｜①の決定チェック｜②…｜③…
-function parseWant(rows){
-  var h=rows[0]||[], iName=colFinder(h)("名前");
-  if(iName<0) return [];
-  var slots=["①","②","③"].map(function(m){ return {
-    t:h.findIndex(function(x){return x.indexOf(m)>=0 && x.indexOf("決")<0;}),
-    d:h.findIndex(function(x){return x.indexOf(m)>=0 && x.indexOf("決")>=0;}) }; });
-  return rows.slice(1).filter(function(r){return (r[iName]||"").trim();}).map(function(r){
-    return { name:r[iName].trim(), slots:slots.map(function(s){ return { text:s.t>=0?(r[s.t]||""):"", done:s.d>=0 && !!(r[s.d]||"").trim() }; }) };
+// 「回答」タブ：1人1行。お名前｜アイコン｜遊びたいシナリオ①〜③（＋決まったチェック）｜募集①〜③の各項目
+var SLOTS=["①","②","③"];
+var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", end:"終了", months:"時期", days:"曜日",
+  time:"時間帯", venue:"会場", fee:"料金", need:"人数", note:"ひとこと", done:"締め切" };
+function parseAnswers(rows){
+  var h=rows[0]||[], col=colFinder(h), iName=col("名前"), iIcon=col("アイコン");
+  if(iName<0) return { people:[], recruits:[] };
+  var find=function(test){ return h.findIndex(test); };
+  var want=SLOTS.map(function(k){ return {
+    t:find(function(x){ return x.indexOf("遊びたいシナリオ"+k)>=0; }),
+    d:find(function(x){ return x.indexOf(k)===0 && x.indexOf("決まった")>=0; }) }; });
+  var rec=SLOTS.map(function(k){ var m={};
+    Object.keys(RECRUIT_COLS).forEach(function(f){ m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); });
+    return m; });
+  var people=[], recruits=[];
+  rows.slice(1).forEach(function(r){
+    var name=(r[iName]||"").trim(); if(!name) return;
+    people.push({ name:name, slots:want.map(function(s){ return { text:s.t>=0?(r[s.t]||""):"", done:s.d>=0 && !!(r[s.d]||"").trim() }; }) });
+    var icon=iIcon>=0?(r[iIcon]||"").trim():"";
+    if(/^なし/.test(icon)) icon="";
+    rec.forEach(function(m,i){
+      var get=function(f){ return m[f]>=0 ? (r[m[f]]||"").trim() : ""; };
+      if(!get("title")) return;
+      var fmt=get("format").normalize("NFKC");
+      recruits.push({ id:"r"+hash(name+"|"+i).toString(36), name:name, icon:icon, title:get("title"),
+        format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
+        months:get("months"), days:get("days").replace(/,\s*/g,"・"), time:get("time").replace(/,\s*/g,"・"),
+        need:parseInt(get("need").normalize("NFKC"),10)||0, note:get("note"), done:!!get("done"),
+        date:get("date"), start:get("start"), end:get("end"), venue:get("venue"), fee:get("fee") });
+    });
   });
+  return { people:people, recruits:recruits };
 }
 // 「シナリオ情報」タブ：タイトル｜人数｜時間(分)｜別名（／区切り）
 function parseInfo(rows){
@@ -910,31 +929,14 @@ function parseInfo(rows){
              a:iA>=0 ? (r[iA]||"").split(/[／、]/).map(function(s){return s.trim();}).filter(Boolean) : [] };
   });
 }
-// 「卓募集」タブ：名前｜アイコン｜シナリオ｜形式｜日程の決め方｜日付｜開始｜終了｜時期｜曜日｜時間帯｜会場｜料金｜人数｜ひとこと｜締め切り
-function parseRecruits(rows){
-  var h=rows[0]||[], col=colFinder(h);
-  var c={ name:col("名前"), icon:col("アイコン"), title:col("シナリオ","タイトル"), format:col("形式"), months:col("時期"), days:col("曜日"),
-          time:col("時間帯"), need:col("人数"), note:col("ひとこと","コメント"), done:col("締め切"),
-          date:col("日付","日にち"), start:col("開始"), end:col("終了時"), venue:col("会場","場所"), fee:col("料金","参加費") };
-  if(c.name<0 || c.title<0 || c.format<0) return [];
-  var get=function(r,k){ return c[k]>=0 ? (r[c[k]]||"").trim() : ""; };
-  return rows.slice(1).filter(function(r){ return get(r,"name") && get(r,"title"); }).map(function(r){
-    var fmt=get(r,"format").normalize("NFKC"), icon=get(r,"icon");
-    return { name:get(r,"name"), icon:/^なし/.test(icon)?"":icon, title:get(r,"title"),
-             format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
-             months:get(r,"months"),
-             days:get(r,"days").replace(/,\s*/g,"・"), time:get(r,"time").replace(/,\s*/g,"・"),
-             need:parseInt(get(r,"need").normalize("NFKC"),10)||0, note:get(r,"note"), done:!!get(r,"done"),
-             date:get(r,"date"), start:get(r,"start"), end:get(r,"end"), venue:get(r,"venue"), fee:get(r,"fee") };
-  });
-}
 // 「設定」タブ：項目｜値
 function parseSettings(rows){
   var out={}; rows.slice(1).forEach(function(r){ if((r[0]||"").trim()) out[r[0].trim()]=(r[1]||"").trim(); }); return out;
 }
 async function fetchAll(){
-  var r=await Promise.all([fetchTab(CONFIG.wantTab,true), fetchTab(CONFIG.recruitTab,false), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false)]);
-  return { people:parseWant(r[0]), recruits:parseRecruits(r[1]), info:parseInfo(r[2]), settings:parseSettings(r[3]), at:Date.now() };
+  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false)]);
+  var a=parseAnswers(r[0]);
+  return { people:a.people, recruits:a.recruits, info:parseInfo(r[1]), settings:parseSettings(r[2]), at:Date.now() };
 }
 function demoData(){
   var t0=today0();
@@ -959,8 +961,8 @@ function setLink(id, noteId, url){
 }
 function applyData(d){
   var s=d.settings||{};
-  setLink("cta","ctaNote", s["遊びたいフォーム"]);
-  setLink("ctaRecruit","ctaRecruitNote", s["卓募集フォーム"]);
+  setLink("cta","ctaNote", s["登録フォーム"]);
+  setLink("ctaRecruit","ctaRecruitNote", s["登録フォーム"]);
   (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m); });
   setRecruits((d.recruits||[]).map(function(r){ return Object.assign({}, r); }));
   build(d.people||[]); render(); renderRecruits();
