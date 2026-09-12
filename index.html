@@ -215,7 +215,8 @@
   .rc-top{display:flex;gap:12px;align-items:center;padding:12px 14px;border-bottom:3px solid var(--ink);border-radius:14px 14px 0 0}
   .ava{flex:none;width:52px;height:52px;border-radius:50%;border:3px solid var(--ink);background:#fff;display:grid;place-items:center;
     font-size:1.7rem;line-height:1;box-shadow:2px 2px 0 var(--ink);color:var(--ink)}
-  .ava.letter{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:1.3rem}
+  .ava.letter{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:1.3rem;position:relative;overflow:hidden}
+  .ava img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
   .rc-who{min-width:0}
   .rc-who small{display:block;font-size:.7rem;font-weight:700;opacity:.85}
   .rc-who b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1.05rem;overflow-wrap:anywhere}
@@ -413,18 +414,19 @@ var CONFIG = {
   answerTab: "回答",        // 登録フォームの回答（遊びたい①〜③＋卓募集①〜③が1人1行）
   infoTab: "シナリオ情報",   // 人数・時間・別名
   settingsTab: "設定",      // 登録フォームのURLなど（項目｜値）
+  iconTab: "アイコン",       // XのID｜画像URL
   slideMs: 10000,
   refreshMs: 30000
 };
 
 // 卓募集のサンプル（架空の募集者）。date があれば日付指定、なければ「時期・曜日・時間帯」のざっくり指定
 var DEMO_RECRUITS = [
-  {name:"あじさし", icon:"🐧", title:"供花に命を", date:"2026/09/23", start:"17:00", end:"22:30", format:"オンライン", need:0, note:"前作「命に供花を」プレイ済み推奨です。"},
-  {name:"すなどり", icon:"🎣", title:"スターゲイザーら夢を謳う", date:"2026/10/07", start:"19:00", end:"23:00", format:"オフライン", venue:"水道橋アナーキー", fee:"5,500円", need:6, note:"新作を貸し切ります。どなたも大歓迎！"},
+  {name:"あじさし", icon:"🐧", title:"供花に命を", date:"2026/09/23", start:"17:00", format:"オンライン", need:0, note:"前作「命に供花を」プレイ済み推奨です。"},
+  {name:"すなどり", icon:"🎣", title:"スターゲイザーら夢を謳う", date:"2026/10/07", start:"19:00", format:"オフライン", venue:"水道橋アナーキー", need:6, note:"新作を貸し切ります。どなたも大歓迎！"},
   {name:"うみねこ", icon:"🐈", title:"立方館", months:"10月〜11月", days:"土日祝", time:"日中", format:"オフライン", venue:"都内の店舗", need:3, note:"初見の方歓迎です！"},
   {name:"しおかぜ", icon:"🌊", title:"アイザック・エバンスの探究", months:"11月〜1月", days:"土日祝", time:"日中", format:"オフライン", need:6, note:"長いので朝から通しでやりたいです"},
   {name:"ほたて", icon:"🦪", title:"されど魔王は殺される", months:"10月〜12月", days:"平日", time:"夜", format:"オンライン", need:4, note:""},
-  {name:"くじら", icon:"🐋", title:"機巧人形の心臓", date:"+3", start:"13:00", end:"17:30", format:"オフライン", venue:"新宿の店舗", fee:"4,800円", need:2, note:"あと2人で立ちます！"},
+  {name:"くじら", icon:"🐋", title:"機巧人形の心臓", date:"+3", start:"13:00", format:"オフライン", venue:"新宿の店舗", need:2, note:"あと2人で立ちます！"},
   {name:"かもめ", icon:"🕊️", title:"悪魔は月時雨の下で", months:"10月", days:"土日祝", time:"夜", format:"パッケージ", need:3, note:""},
   {name:"いかり", icon:"⚓", title:"クドリャフカの籤引", months:"11月〜12月", days:"平日", time:"夜", format:"オンライン", need:4, note:"仕事終わりの19時スタート想定"},
   {name:"とびうお", icon:"🐟", title:"ミリオンダラー急行の殺人事件", months:"1月〜3月", days:"土日祝", time:"日中", format:"オフライン", need:5, note:"店舗公演の貸切枠を狙ってます"},
@@ -685,11 +687,10 @@ function setRecruits(list){
     r.key=groupKey(r.title); r.id=r.id||("r"+hash(r.name+"|"+r.title+"|"+i).toString(36));
     r.d=parseDate(r.date);
     if(r.d){
-      r.start=parseTime(r.start); r.end=parseTime(r.end);
+      r.start=parseTime(r.start);
       var off=r.d.getDay()===0||r.d.getDay()===6||!!HOLIDAYS[ymd(r.d)];
       r.days=off?"土日祝":"平日";
-      var sh=r.start?parseInt(r.start,10):null, eh=r.end?parseInt(r.end,10):null;
-      r.time = sh==null ? "" : (sh<17 ? (eh!=null&&eh>=19?"日中・夜":"日中") : "夜");
+      r.time = r.start ? (parseInt(r.start,10)<17 ? "日中" : "夜") : "";
       r.left=Math.round((r.d-t0)/86400000);
     }
     return r;
@@ -697,17 +698,25 @@ function setRecruits(list){
   out.sort(function(a,b){ if(a.d&&b.d) return a.d-b.d; if(a.d) return -1; if(b.d) return 1; return 0; });
   STATE.recruits=out;
 }
+// XのIDの表記ゆれ（@付き・URL・大文字）をそろえる
+function normX(s){
+  s=String(s||"").normalize("NFKC").trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i,"").replace(/^@/,"").split(/[\/?#\s]/)[0];
+  return /^[A-Za-z0-9_]{1,15}$/.test(s) ? s.toLowerCase() : "";
+}
+function iconUrl(r){ var k=normX(r.xid); return k && STATE.icons ? (STATE.icons[k]||"") : ""; }
 function avatar(r){
-  var bg=PALETTE[hash(r.name)%PALETTE.length];
-  return r.icon ? '<span class="ava" aria-hidden="true">'+esc(r.icon)+'</span>'
-    : '<span class="ava letter" aria-hidden="true" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(Array.from(r.name)[0]||"?")+'</span>';
+  var bg=PALETTE[hash(r.name)%PALETTE.length], url=iconUrl(r);
+  if(!url && r.icon) return '<span class="ava" aria-hidden="true">'+esc(r.icon)+'</span>';
+  // 画像が読めないとき（URL切れ・電波なし）は img を消して下の文字アイコンを見せる
+  return '<span class="ava letter" aria-hidden="true" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(Array.from(r.name)[0]||"?")
+    +(url?'<img src="'+esc(url)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</span>';
 }
 var FMT_ICON = {"オフライン":"🏪","パッケージ":"📦","オンライン":"💻"};
 function whenChips(r){
   var out="";
   if(r.format) out+='<span class="fmt">'+(FMT_ICON[r.format]||"")+' '+esc(r.format)+'</span>';
   if(r.d){
-    out+='<span class="date">📅 '+dateLabel(r.d)+(r.start?' '+esc(r.start)+(r.end?'〜'+esc(r.end):'〜'):'')+'</span>';
+    out+='<span class="date">📅 '+dateLabel(r.d)+(r.start?' '+esc(r.start)+'〜':'')+'</span>';
     if(r.left<=7) out+='<span class="soon">'+(r.left===0?'今日！':r.left===1?'明日！':'あと'+r.left+'日')+'</span>';
   } else {
     if(r.months) out+='<span>📅 '+esc(r.months)+'</span>';
@@ -715,7 +724,6 @@ function whenChips(r){
     if(r.time) out+='<span class="t">'+(/夜/.test(r.time)&&!/日中/.test(r.time)?'🌙':/日中/.test(r.time)&&!/夜/.test(r.time)?'☀':'🕐')+' '+esc(r.time)+'</span>';
   }
   if(r.venue) out+='<span class="v">'+(/オンライン|online|discord|ディスコ/i.test(r.venue)?'💻 ':'📍 ')+esc(r.venue)+'</span>';
-  if(r.fee) out+='<span class="v">💴 '+esc(r.fee)+'</span>';
   return out;
 }
 function displayTitle(r){ var g=STATE.byKey&&STATE.byKey[r.key]; return g?g.title:(ALIAS[norm(r.title)]||r.title); }
@@ -889,10 +897,10 @@ async function fetchTab(tab, required){
 }
 // 「回答」タブ：1人1行。お名前｜アイコン｜遊びたいシナリオ①〜③（＋決まったチェック）｜募集①〜③の各項目
 var SLOTS=["①","②","③"];
-var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", end:"終了", months:"時期", days:"曜日",
-  time:"時間帯", venue:"会場", fee:"料金", need:"人数", note:"ひとこと", done:"締め切" };
+var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", months:"時期", days:"曜日",
+  time:"時間帯", venue:"会場", need:"人数", note:"ひとこと", done:"締め切" };
 function parseAnswers(rows){
-  var h=rows[0]||[], col=colFinder(h), iName=col("名前"), iIcon=col("アイコン");
+  var h=rows[0]||[], col=colFinder(h), iName=col("名前"), iX=col("XのID");
   if(iName<0) return { people:[], recruits:[] };
   var find=function(test){ return h.findIndex(test); };
   var want=SLOTS.map(function(k){ return {
@@ -905,17 +913,16 @@ function parseAnswers(rows){
   rows.slice(1).forEach(function(r){
     var name=(r[iName]||"").trim(); if(!name) return;
     people.push({ name:name, slots:want.map(function(s){ return { text:s.t>=0?(r[s.t]||""):"", done:s.d>=0 && !!(r[s.d]||"").trim() }; }) });
-    var icon=iIcon>=0?(r[iIcon]||"").trim():"";
-    if(/^なし/.test(icon)) icon="";
+    var xid=iX>=0?(r[iX]||"").trim():"";
     rec.forEach(function(m,i){
       var get=function(f){ return m[f]>=0 ? (r[m[f]]||"").trim() : ""; };
       if(!get("title")) return;
       var fmt=get("format").normalize("NFKC");
-      recruits.push({ id:"r"+hash(name+"|"+i).toString(36), name:name, icon:icon, title:get("title"),
+      recruits.push({ id:"r"+hash(name+"|"+i).toString(36), name:name, xid:xid, title:get("title"),
         format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
         months:get("months"), days:get("days").replace(/,\s*/g,"・"), time:get("time").replace(/,\s*/g,"・"),
         need:parseInt(get("need").normalize("NFKC"),10)||0, note:get("note"), done:!!get("done"),
-        date:get("date"), start:get("start"), end:get("end"), venue:get("venue"), fee:get("fee") });
+        date:get("date"), start:get("start"), venue:get("venue") });
     });
   });
   return { people:people, recruits:recruits };
@@ -929,14 +936,24 @@ function parseInfo(rows){
              a:iA>=0 ? (r[iA]||"").split(/[／、]/).map(function(s){return s.trim();}).filter(Boolean) : [] };
   });
 }
+// 「アイコン」タブ：XのID｜画像URL（httpsの画像だけ使う）
+function parseIcons(rows){
+  var h=rows[0]||[], col=colFinder(h), iX=col("XのID","ID"), iU=col("URL","画像"), out={};
+  if(iX<0 || iU<0) return out;
+  rows.slice(1).forEach(function(r){
+    var k=normX(r[iX]), u=(r[iU]||"").trim();
+    if(k && /^https:\/\/[^\s"'<>]+$/.test(u)) out[k]=u;
+  });
+  return out;
+}
 // 「設定」タブ：項目｜値
 function parseSettings(rows){
   var out={}; rows.slice(1).forEach(function(r){ if((r[0]||"").trim()) out[r[0].trim()]=(r[1]||"").trim(); }); return out;
 }
 async function fetchAll(){
-  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false)]);
+  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false), fetchTab(CONFIG.iconTab,false)]);
   var a=parseAnswers(r[0]);
-  return { people:a.people, recruits:a.recruits, info:parseInfo(r[1]), settings:parseSettings(r[2]), at:Date.now() };
+  return { people:a.people, recruits:a.recruits, info:parseInfo(r[1]), settings:parseSettings(r[2]), icons:parseIcons(r[3]), at:Date.now() };
 }
 function demoData(){
   var t0=today0();
@@ -961,6 +978,7 @@ function setLink(id, noteId, url){
 }
 function applyData(d){
   var s=d.settings||{};
+  STATE.icons=d.icons||{};
   setLink("cta","ctaNote", s["登録フォーム"]);
   setLink("ctaRecruit","ctaRecruitNote", s["登録フォーム"]);
   (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m); });
