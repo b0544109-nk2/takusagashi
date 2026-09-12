@@ -1,0 +1,1006 @@
+<title>卓さがしボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1d2242; --paper:#fff4cf; --card:#ffffff; --muted:#6b5f3a; --line:#efe1a8;
+    --pink:#ff6fae; --cyan:#33c4ff; --yellow:#ffd23f; --mint:#4bd08a; --red:#ff5b5b; --sea:#2a8fd6;
+    --hl:#fff1a8;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{margin:0}
+  body{
+    color:var(--ink);min-height:100vh;background-color:var(--paper);
+    background-image:
+      radial-gradient(rgba(255,111,174,.15) 2.5px, transparent 2.6px),
+      radial-gradient(rgba(51,196,255,.16) 2.5px, transparent 2.6px);
+    background-size:34px 34px,34px 34px;background-position:0 0,17px 17px;
+    font-family:"Kosugi Maru","Hiragino Maru Gothic ProN","Yu Gothic UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;font-synthesis:none;
+  }
+  .pop,h1 .main,h1 .sub,.sec-h,.tk h3,.tk-stub b,.stat b,.stamp,.step b,.seg button,.cta{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400}
+
+  /* 船のへりっぽいスカラップ */
+  .deck{height:18px;background:radial-gradient(circle at 12px 0, var(--sea) 11px, transparent 12px) 0 0/24px 18px repeat-x;position:relative;z-index:1}
+
+  .deco{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  .deco span{position:absolute;font-size:42px;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.12));animation:bob 6s ease-in-out infinite}
+  .deco span:nth-child(1){left:3%;top:14%;rotate:-12deg}
+  .deco span:nth-child(2){left:90%;top:10%;font-size:50px;animation-delay:-1s;rotate:10deg}
+  .deco span:nth-child(3){left:91%;top:46%;animation-delay:-2s}
+  .deco span:nth-child(4){left:4%;top:50%;font-size:38px;animation-delay:-3s;rotate:8deg}
+  .deco span:nth-child(5){left:89%;top:80%;font-size:46px;animation-delay:-1.5s;rotate:-8deg}
+  .deco span:nth-child(6){left:3%;top:84%;animation-delay:-2.5s}
+  @keyframes bob{0%,100%{translate:0 0}50%{translate:0 -12px}}
+  @media (max-width:1100px){.deco{display:none}}
+
+  .wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:18px 16px 80px}
+
+  header{text-align:center;margin:10px 0 6px}
+  .kicker{display:inline-block;background:var(--cyan);color:#fff;border:3px solid var(--ink);border-radius:999px;
+    padding:5px 16px;font-weight:700;font-size:.78rem;letter-spacing:.08em;box-shadow:3px 3px 0 var(--ink);rotate:-2deg;margin-bottom:16px}
+  h1{margin:0;line-height:1.15;display:flex;flex-direction:column;align-items:center;gap:14px}
+  h1 .main{display:inline-block;background:var(--pink);color:#fff;border:4px solid var(--ink);border-radius:18px;
+    padding:10px 22px;font-size:clamp(1.6rem,6.4vw,2.5rem);box-shadow:6px 6px 0 var(--ink);rotate:-1.5deg;
+    text-shadow:2px 2px 0 rgba(0,0,0,.18);text-wrap:balance}
+  h1 .sub{display:inline-block;background:var(--yellow);border:3px solid var(--ink);border-radius:12px;
+    padding:4px 16px;font-size:1rem;letter-spacing:.2em;box-shadow:4px 4px 0 var(--ink);rotate:1.5deg}
+
+  .demo{margin:18px auto 0;max-width:640px;background:#fff;border:2.5px dashed var(--ink);border-radius:14px;
+    padding:9px 14px;font-size:.84rem;font-weight:700;color:var(--muted);text-align:center;line-height:1.6}
+
+  /* 使い方 */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:26px 0 8px}
+  .step{background:#fff;border:3px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--ink);
+    padding:12px 14px;display:flex;gap:10px;align-items:flex-start;font-size:.86rem;font-weight:700;line-height:1.55}
+  .step b{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:2.5px solid var(--ink);
+    background:var(--yellow);font-size:.95rem}
+  .step:nth-child(2) b{background:var(--cyan);color:#fff}
+  .step:nth-child(3) b{background:var(--mint)}
+  .cta-row{display:flex;justify-content:center;margin:18px 0 4px}
+  .cta{display:inline-flex;align-items:center;gap:8px;background:var(--mint);color:var(--ink);text-decoration:none;
+    border:3px solid var(--ink);border-radius:14px;padding:11px 22px;font-size:1rem;box-shadow:4px 4px 0 var(--ink);
+    transition:transform .08s,box-shadow .08s}
+  .cta:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  .cta small{font-family:"Kosugi Maru",sans-serif;font-size:.72rem;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:1px 8px}
+
+  /* 数字 */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0 0}
+  .stat{background:#fff;border:3px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--ink);padding:10px 8px 8px;text-align:center}
+  .stat b{display:block;font-size:1.7rem;line-height:1.1;font-variant-numeric:tabular-nums}
+  .stat span{font-size:.74rem;font-weight:700;color:var(--muted);letter-spacing:.04em}
+  .stat:nth-child(1) b{color:var(--sea)}.stat:nth-child(2) b{color:var(--pink)}
+  .stat:nth-child(3) b{color:#e08a00}.stat:nth-child(4) b{color:#1f9d57}
+
+  /* わたしバー */
+  .me-bar{margin:26px 0 0;background:#fff;border:3.5px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--red);padding:14px 16px 15px}
+  .me-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .me-form label{flex-basis:100%;font-weight:700;font-size:.9rem}
+  .me-form input{flex:1 1 200px;min-width:0;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-weight:700;font-size:1rem;color:var(--ink);background:#fff}
+  .me-form input:focus-visible{outline:0;box-shadow:0 0 0 4px var(--cyan)}
+  .me-form small{flex-basis:100%;font-size:.76rem;font-weight:700;color:var(--muted)}
+  .btn{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:.9rem;color:var(--ink);background:var(--yellow);
+    border:3px solid var(--ink);border-radius:12px;padding:9px 16px;box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+  .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .btn.ghost{background:#fff;font-size:.78rem;padding:5px 11px;box-shadow:2px 2px 0 var(--ink)}
+  .btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .me-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .me-hello{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:1.08rem}
+  .me-top .btn{margin-left:auto}
+  .me-sub{margin:6px 0 10px;font-size:.78rem;font-weight:700;color:var(--muted)}
+  .my-list{display:flex;flex-wrap:wrap;gap:8px}
+  .my-item{display:inline-flex;align-items:center;gap:6px;font:inherit;font-weight:700;font-size:.86rem;color:var(--ink);background:var(--hl);
+    border:2.5px solid var(--ink);border-radius:12px;padding:6px 11px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;text-align:left}
+  .my-item b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:0 7px;font-size:.74rem;white-space:nowrap}
+  .my-item.done{background:#e4f7ea;cursor:default}
+  .my-item.free{background:#ffe3ef;cursor:default}
+  .my-item:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .me-none{font-size:.86rem;font-weight:700;color:var(--muted);line-height:1.6;margin:0}
+
+  /* 検索・並び替え */
+  .tools{position:sticky;top:0;z-index:5;margin:26px -16px 0;padding:12px 16px;
+    background:linear-gradient(var(--paper) 78%, rgba(255,244,207,0));display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .search{flex:1 1 280px;display:flex;align-items:center;gap:8px;background:#fff;border:3px solid var(--ink);border-radius:14px;
+    box-shadow:3px 3px 0 var(--ink);padding:0 12px}
+  .search input{flex:1;border:0;outline:0;background:transparent;font:inherit;font-weight:700;font-size:1rem;padding:11px 0;color:var(--ink);min-width:0}
+  .search:focus-within{box-shadow:3px 3px 0 var(--ink),0 0 0 4px var(--cyan)}
+  .clear{border:0;background:var(--line);border-radius:999px;font:inherit;font-weight:700;font-size:.75rem;padding:3px 9px;cursor:pointer;color:var(--ink)}
+  .seg{display:flex;border:3px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:3px 3px 0 var(--ink);background:#fff}
+  .seg button{border:0;background:#fff;color:var(--ink);font-size:.86rem;padding:10px 14px;cursor:pointer}
+  .seg button+button{border-left:3px solid var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--yellow)}
+  .seg button:focus-visible,.cta:focus-visible,.clear:focus-visible,.only:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .only{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:.86rem;color:var(--ink);background:#fff;
+    border:3px solid var(--ink);border-radius:14px;padding:10px 14px;box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+  .only[aria-pressed="true"]{background:var(--red);color:#fff}
+  .hits{flex-basis:100%;font-size:.8rem;font-weight:700;color:var(--muted);min-height:1em}
+
+  /* セクション見出し */
+  .sec{margin-top:34px}
+  .sec-h{display:inline-flex;align-items:center;gap:8px;background:var(--yellow);border:3px solid var(--ink);border-radius:12px;
+    padding:6px 14px;font-size:1.02rem;box-shadow:3px 3px 0 var(--ink);rotate:-1deg;margin:0 0 6px}
+  .sec-note{margin:6px 0 16px;font-size:.82rem;font-weight:700;color:var(--muted)}
+  .sec.solo .sec-h{background:var(--cyan);color:#fff}
+  .sec.free .sec-h{background:var(--pink);color:#fff}
+
+  /* 乗船券カード */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:22px;align-items:start}
+  .tk{position:relative;background:var(--card);border:3.5px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);
+    transition:rotate .15s,translate .15s}
+  .grid > .tk:nth-child(odd){rotate:-.6deg}
+  .grid > .tk:nth-child(even){rotate:.6deg}
+  .grid > .tk:hover{rotate:0deg;translate:0 -2px}
+  .tk-head{display:flex;align-items:stretch;border-bottom:3px solid var(--ink);border-radius:14px 14px 0 0;background:var(--cyan)}
+  .tk.t2 .tk-head{background:var(--yellow)}
+  .tk.t3 .tk-head{background:var(--pink)}
+  .tk-title{flex:1;min-width:0;padding:10px 12px 11px 14px}
+  .tk-label{display:inline-block;font-size:.64rem;font-weight:700;letter-spacing:.14em;background:#fff;border:2px solid var(--ink);
+    border-radius:999px;padding:1px 8px;margin-bottom:6px}
+  .tk h3{margin:0;font-size:1.12rem;line-height:1.35;overflow-wrap:anywhere;text-wrap:balance}
+  .tk.t3 h3,.tk.t1 h3{color:#fff;text-shadow:1.5px 1.5px 0 rgba(0,0,0,.22)}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .meta span{font-size:.72rem;font-weight:700;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:2px 9px;white-space:nowrap;color:var(--ink)}
+  .tk-stub{flex:none;width:74px;border-left:3px dashed var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.55);border-top-right-radius:14px;padding:6px 0}
+  .tk-stub b{font-size:1.85rem;line-height:1;font-variant-numeric:tabular-nums}
+  .tk-stub span{font-size:.7rem;font-weight:700}
+  .tk-body{padding:12px 14px 12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;padding:5px 11px;border:2.5px solid var(--ink);border-radius:999px;box-shadow:2px 2px 0 var(--ink);
+    font-weight:700;font-size:.86rem;line-height:1.2;max-width:100%;overflow-wrap:anywhere}
+  .chip.hit{outline:3px dashed var(--red);outline-offset:3px;animation:wiggle .9s ease-in-out infinite}
+  .chip.self{outline:3.5px solid var(--red);outline-offset:2px}
+  .chip.self::before{content:"★";margin-right:4px;color:var(--red);text-shadow:none}
+  .tk.mine{box-shadow:6px 6px 0 var(--red)}
+  .tk.mine .tk-label{background:var(--red);color:#fff;border-color:var(--ink)}
+  .tk.flash{animation:flash 1.1s ease-out}
+  @keyframes flash{0%{scale:1.04;box-shadow:0 0 0 8px var(--yellow),6px 6px 0 var(--red)}100%{scale:1}}
+  @keyframes wiggle{0%,100%{rotate:-3deg}50%{rotate:3deg}}
+  .tk-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px}
+  .tk-foot:empty{display:none}
+  .yure{margin:0;font-size:.72rem;color:var(--muted);font-weight:700;line-height:1.5}
+  .yure em{font-style:normal;background:var(--line);border-radius:6px;padding:0 5px;margin-right:4px}
+  .stamp{flex:none;margin-left:auto;border:2.5px double var(--red);color:var(--red);border-radius:10px;padding:3px 8px;font-size:.72rem;
+    rotate:-8deg;background:rgba(255,91,91,.07);white-space:nowrap}
+  .hot{display:inline-block;margin-left:6px;font-size:.62rem;font-weight:700;background:var(--ink);color:var(--yellow);border-radius:999px;padding:1px 7px;vertical-align:2px;letter-spacing:.06em}
+
+  /* ひとり募集 */
+  .grid.small{grid-template-columns:repeat(auto-fill,minmax(min(100%,215px),1fr));gap:14px}
+  .grid.small .tk{border-width:3px;box-shadow:4px 4px 0 var(--ink);border-radius:14px}
+  .grid.small .tk-head{background:#fff;border-bottom:2.5px dashed var(--ink);border-radius:11px 11px 0 0}
+  .grid.small .tk h3{font-size:.94rem;color:var(--ink);text-shadow:none}
+  .grid.small .tk-title{padding:9px 12px}
+  .grid.small .tk-body{padding:9px 12px 11px}
+  .grid.small .tk-stub{display:none}
+  .grid.small .tk.mine{box-shadow:4px 4px 0 var(--red)}
+  .grid.small .tk-label{font-size:.6rem;margin-bottom:5px}
+  .grid.small .meta{margin-top:6px}
+  .grid.small .meta span{font-size:.68rem;padding:1px 7px}
+
+  /* なんでもOK */
+  .free-list{background:#fff;border:3.5px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);padding:6px 16px}
+  .free-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:2px dashed var(--line);flex-wrap:wrap}
+  .free-row:last-child{border-bottom:0}
+  .free-row q{font-size:.88rem;font-weight:700;color:var(--muted);quotes:"「" "」"}
+
+  .done-line{margin-top:30px;font-size:.84rem;font-weight:700;color:var(--muted);text-align:center;line-height:1.8}
+  .done-line b{color:#1f9d57}
+  .empty{padding:22px;text-align:center;font-weight:700;color:var(--muted);background:#fff;border:3px dashed var(--ink);border-radius:16px}
+  .status{text-align:center;color:var(--muted);font-size:.74rem;margin-top:26px;font-weight:700}
+
+  /* タブ */
+  .tabs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:24px 0 0}
+  .tab{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:.95rem;color:var(--ink);background:#fff;
+    border:3px solid var(--ink);border-radius:14px;padding:10px 16px;box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--ink);color:var(--yellow);box-shadow:3px 3px 0 var(--pink)}
+  .tab.mon{background:var(--cyan);color:#fff}
+  .tab:focus-visible,.fchip:focus-visible,.rec-badge:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .tab b{font-weight:400;background:var(--yellow);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:0 7px;font-size:.72rem;margin-left:6px}
+  .tab[aria-selected="true"] b{background:var(--pink);color:#fff}
+
+  /* 卓募集 */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:26px 0 18px}
+  .filters span{font-size:.8rem;font-weight:700;color:var(--muted);margin-right:2px}
+  .fchip{font:inherit;font-weight:700;font-size:.84rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:999px;
+    padding:6px 13px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
+  .fchip[aria-pressed="true"]{background:var(--ink);color:var(--yellow)}
+  .rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:22px;align-items:start}
+  .rc{background:#fff;border:3.5px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink)}
+  .rc-grid > .rc:nth-child(odd){rotate:-.5deg}
+  .rc-grid > .rc:nth-child(even){rotate:.5deg}
+  .rc.mine{box-shadow:6px 6px 0 var(--red)}
+  .rc.flash{animation:flash 1.1s ease-out}
+  .rc-top{display:flex;gap:12px;align-items:center;padding:12px 14px;border-bottom:3px solid var(--ink);border-radius:14px 14px 0 0}
+  .ava{flex:none;width:52px;height:52px;border-radius:50%;border:3px solid var(--ink);background:#fff;display:grid;place-items:center;
+    font-size:1.7rem;line-height:1;box-shadow:2px 2px 0 var(--ink);color:var(--ink)}
+  .ava.letter{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:1.3rem}
+  .rc-who{min-width:0}
+  .rc-who small{display:block;font-size:.7rem;font-weight:700;opacity:.85}
+  .rc-who b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1.05rem;overflow-wrap:anywhere}
+  .rc-need{margin-left:auto;flex:none;text-align:center;background:#fff;color:var(--ink);border:2.5px solid var(--ink);border-radius:12px;padding:4px 10px;
+    font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:1.3rem;line-height:1.05}
+  .rc-need small{display:block;font-family:"Kosugi Maru",sans-serif;font-size:.62rem;font-weight:700}
+  .rc-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
+  .rc h3{margin:0;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1.2rem;line-height:1.35;overflow-wrap:anywhere;text-wrap:balance}
+  .when{display:flex;flex-wrap:wrap;gap:6px}
+  .when span{font-size:.78rem;font-weight:700;border:2px solid var(--ink);border-radius:999px;padding:3px 10px;background:var(--hl);white-space:nowrap}
+  .when span.d{background:#dff4ff}
+  .when span.t{background:#ffe3ef}
+  .when span.date{background:var(--yellow)}
+  .when span.soon{background:var(--red);color:#fff}
+  .when span.v{background:#fff}
+  .when span.fmt{background:var(--ink);color:#fff}
+  .rc-note{margin:0;font-size:.86rem;font-weight:700;color:var(--muted);line-height:1.6}
+  .wanters{border-top:2px dashed var(--line);padding-top:10px}
+  .wanters p{margin:0 0 8px;font-size:.78rem;font-weight:700}
+  .wanters .chip{font-size:.78rem;padding:3px 9px}
+  .rec-badge{display:inline-block;margin-top:8px;font:inherit;font-size:.74rem;font-weight:700;background:var(--ink);color:#fff;
+    border:2px solid var(--ink);border-radius:999px;padding:2px 10px;cursor:pointer}
+
+  /* モニター（スライドショー） */
+  .monitor{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:2vmin;padding:2.4vmin 2.8vmin;color:var(--ink);
+    background-color:var(--paper);
+    background-image:radial-gradient(rgba(255,111,174,.15) 3px, transparent 3.1px),radial-gradient(rgba(51,196,255,.16) 3px, transparent 3.1px);
+    background-size:44px 44px,44px 44px;background-position:0 0,22px 22px}
+  .m-head{display:flex;align-items:center;gap:2vmin;flex-wrap:wrap}
+  .m-title{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1.1rem,3.6vmin,3.2rem);background:var(--pink);color:#fff;
+    border:.45vmin solid var(--ink);border-radius:1.6vmin;padding:.7vmin 2.2vmin;box-shadow:.7vmin .7vmin 0 var(--ink);rotate:-1deg;
+    text-shadow:.25vmin .25vmin 0 rgba(0,0,0,.2)}
+  .m-sub{font-weight:700;font-size:clamp(.8rem,2vmin,1.6rem);color:var(--muted)}
+  .m-clock{margin-left:auto;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1rem,3.2vmin,2.8rem);background:#fff;
+    border:.4vmin solid var(--ink);border-radius:1.4vmin;padding:.3vmin 1.6vmin;box-shadow:.5vmin .5vmin 0 var(--ink);font-variant-numeric:tabular-nums}
+  .m-grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2.6vmin}
+  .m-grid.anim{animation:mIn .55s ease-out}
+  @keyframes mIn{from{opacity:.2;translate:0 2vmin}to{opacity:1;translate:0 0}}
+  .mc{min-height:0;display:flex;flex-direction:column;overflow:hidden;background:#fff;border:.5vmin solid var(--ink);border-radius:2.4vmin;box-shadow:.9vmin .9vmin 0 var(--ink)}
+  .mc-top{display:flex;align-items:center;gap:1.8vmin;padding:1.4vmin 2.2vmin;border-bottom:.45vmin solid var(--ink)}
+  .mc .ava{width:8.5vmin;height:8.5vmin;font-size:5vmin;border-width:.45vmin;box-shadow:.4vmin .4vmin 0 var(--ink)}
+  .mc .ava.letter{font-size:3.8vmin}
+  .mc-name{min-width:0;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1rem,3vmin,2.6rem);line-height:1.15;overflow-wrap:anywhere}
+  .mc-name small{display:block;font-family:"Kosugi Maru",sans-serif;font-weight:700;font-size:clamp(.65rem,1.6vmin,1.3rem)}
+  .mc-need{margin-left:auto;flex:none;background:#fff;color:var(--ink);border:.4vmin solid var(--ink);border-radius:1.4vmin;padding:.6vmin 1.6vmin;
+    text-align:center;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1rem,3.8vmin,3.4rem);line-height:1}
+  .mc-need small{display:block;font-family:"Kosugi Maru",sans-serif;font-weight:700;font-size:clamp(.6rem,1.5vmin,1.2rem)}
+  .mc-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:1.5vmin;padding:1.6vmin 2.4vmin}
+  .mc h3{margin:0;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:clamp(1.2rem,4.6vmin,4rem);line-height:1.22;
+    overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .mc .when{gap:1vmin}
+  .mc .when span{font-size:clamp(.8rem,2.3vmin,2rem);border-width:.35vmin;padding:.4vmin 1.5vmin}
+  .mc-foot{font-weight:700;font-size:clamp(.75rem,2vmin,1.7rem);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mc-foot b{color:var(--red)}
+  .mc .chips{gap:.9vmin}
+  .mc .chip{font-size:clamp(.7rem,1.9vmin,1.6rem);padding:.4vmin 1.3vmin;border-width:.3vmin}
+  .m-empty{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;text-align:center;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1.2rem,4vmin,3rem)}
+  .m-bottom{display:flex;align-items:center;gap:2vmin;flex-wrap:wrap}
+  .m-hint{font-weight:700;font-size:clamp(.75rem,2vmin,1.6rem)}
+  .m-page{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(.85rem,2.4vmin,2rem);font-variant-numeric:tabular-nums}
+  .m-prog{flex:1 1 20vmin;height:1.5vmin;border:.35vmin solid var(--ink);border-radius:999px;background:#fff;overflow:hidden}
+  .m-prog i{display:block;height:100%;width:0;background:var(--yellow)}
+  .m-prog i.run{animation:prog linear forwards}
+  @keyframes prog{from{width:0}to{width:100%}}
+  .m-ctrl{display:flex;gap:1vmin}
+  .m-ctrl button{font:inherit;font-weight:700;font-size:clamp(.8rem,1.9vmin,1.4rem);color:var(--ink);background:#fff;border:.35vmin solid var(--ink);
+    border-radius:1vmin;padding:.4vmin 1.3vmin;box-shadow:.35vmin .35vmin 0 var(--ink);cursor:pointer}
+  .m-ctrl button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  @media (max-aspect-ratio:1/1){.m-grid{grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)}}
+
+  @media (max-width:640px){
+    .steps{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .seg{flex:1}.seg button{flex:1;padding:10px 6px}
+  }
+  @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash{animation:none}.tk{transition:none}}
+</style>
+
+<div class="deck" aria-hidden="true"></div>
+<div class="deco" aria-hidden="true"><span>🚢</span><span>🔍</span><span>⚓</span><span>🗝️</span><span>🎭</span><span>🛟</span></div>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">MADAMIS CRUISE ⚓ 2026</div>
+    <h1><span class="main">卓さがしボード</span><span class="sub">あそびたいシナリオ</span></h1>
+    <p class="demo" id="demo" hidden></p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="表示の切り替え">
+    <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="true" aria-controls="viewWant">🙋 遊びたい</button>
+    <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="false" aria-controls="viewRecruit">📣 卓募集<b id="recCount">0</b></button>
+    <button class="tab mon" type="button" id="openMonitor">📺 モニター表示</button>
+  </nav>
+
+  <div id="viewWant" role="tabpanel" aria-labelledby="tabWant">
+  <div class="steps">
+    <div class="step"><b>1</b><div>フォームに<strong>遊びたいシナリオを3つまで</strong>書く</div></div>
+    <div class="step"><b>2</b><div>同じシナリオに並んでる人に<strong>声をかけて卓を組む</strong></div></div>
+    <div class="step"><b>3</b><div>卓が決まったらフォームで<strong>「決まった」にチェック</strong>→ここから消えます</div></div>
+  </div>
+  <div class="cta-row"><a class="cta" id="cta" href="#">✍️ フォームで登録・更新する <small id="ctaNote">準備中</small></a></div>
+
+  <div class="stats">
+    <div class="stat"><b id="sPeople">–</b><span>登録した人</span></div>
+    <div class="stat"><b id="sTitles">–</b><span>シナリオ数</span></div>
+    <div class="stat"><b id="sActive">–</b><span>募集中の希望</span></div>
+    <div class="stat"><b id="sDone">–</b><span>卓決定 🎉</span></div>
+  </div>
+
+  <section class="me-bar" id="meBar" aria-label="あなたの希望"></section>
+
+  <div class="tools">
+    <label class="search"><span aria-hidden="true">🔍</span>
+      <input id="q" type="search" placeholder="シナリオ名 or 自分の名前でさがす" autocomplete="off" aria-label="シナリオ名か名前で検索">
+      <button class="clear" id="clear" type="button" hidden>クリア</button>
+    </label>
+    <div class="seg" role="group" aria-label="並び替え">
+      <button type="button" data-sort="count" aria-pressed="true">人数順</button>
+      <button type="button" data-sort="name" aria-pressed="false">あいうえお順</button>
+    </div>
+    <button class="only" id="only" type="button" aria-pressed="false" hidden>★ 自分のだけ</button>
+    <div class="hits" id="hits" aria-live="polite"></div>
+  </div>
+
+  <section class="sec multi">
+    <h2 class="sec-h">🔥 仲間が集まってる</h2>
+    <p class="sec-note">同じシナリオを希望している人が2人以上。声かけのチャンス！</p>
+    <div class="grid" id="multi"></div>
+  </section>
+
+  <section class="sec solo">
+    <h2 class="sec-h">🙋 あと1人から！</h2>
+    <p class="sec-note">いまは1人だけ。気になったら名前の人に話しかけてみてください。</p>
+    <div class="grid small" id="solo"></div>
+  </section>
+
+  <section class="sec free">
+    <h2 class="sec-h">🎲 なんでもOK・おすすめ募集</h2>
+    <p class="sec-note">特定のシナリオではなく「おまかせ」の人たち。誘うとよろこびます。</p>
+    <div id="free"></div>
+  </section>
+
+  <p class="done-line" id="doneLine" hidden></p>
+  </div>
+
+  <div id="viewRecruit" role="tabpanel" aria-labelledby="tabRecruit" hidden>
+    <div class="steps">
+      <div class="step"><b>1</b><div>卓募集フォームに<strong>名前・アイコン・シナリオ・日程</strong>を書く（日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
+      <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
+      <div class="step"><b>3</b><div>集まったらフォームで<strong>「締め切った」にチェック</strong>→ここから消えます</div></div>
+    </div>
+    <div class="cta-row"><a class="cta" id="ctaRecruit" href="#">📣 卓を募集する <small id="ctaRecruitNote">準備中</small></a></div>
+    <div class="filters" role="group" aria-label="日程で絞り込み">
+      <span>日程でしぼる</span>
+      <button class="fchip" type="button" data-f="dated" aria-pressed="false">📅 日付が決まってる</button>
+      <button class="fchip" type="button" data-f="オフライン" aria-pressed="false">🏪 オフライン</button>
+      <button class="fchip" type="button" data-f="パッケージ" aria-pressed="false">📦 パッケージ</button>
+      <button class="fchip" type="button" data-f="オンライン" aria-pressed="false">💻 オンライン</button>
+      <button class="fchip" type="button" data-f="平日" aria-pressed="false">平日</button>
+      <button class="fchip" type="button" data-f="土日祝" aria-pressed="false">土日祝</button>
+      <button class="fchip" type="button" data-f="日中" aria-pressed="false">☀ 日中</button>
+      <button class="fchip" type="button" data-f="夜" aria-pressed="false">🌙 夜</button>
+    </div>
+    <div class="rc-grid" id="recruits"></div>
+  </div>
+
+  <p class="status" id="status"></p>
+</div>
+
+<div class="monitor" id="monitor" hidden aria-label="モニター表示">
+  <div class="m-head">
+    <div class="m-title">📣 卓メンバー募集中！</div>
+    <div class="m-sub">マダミスクルーズ 卓さがしボード</div>
+    <div class="m-clock" id="mClock">--:--</div>
+  </div>
+  <div class="m-grid" id="mGrid"></div>
+  <div class="m-bottom">
+    <div class="m-hint">気になる卓は、名前の人に声をかけよう！</div>
+    <div class="m-prog"><i id="mProg"></i></div>
+    <div class="m-page" id="mPage"></div>
+    <div class="m-ctrl">
+      <button type="button" id="mPrev" aria-label="前へ">◀</button>
+      <button type="button" id="mPause" aria-label="一時停止">⏸</button>
+      <button type="button" id="mNext" aria-label="次へ">▶</button>
+      <button type="button" id="mFull" aria-label="全画面">⛶</button>
+      <button type="button" id="mClose" aria-label="モニター表示を閉じる">✕</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// スプレッドシートIDはコードに書かず、URLの ?id=... で渡す（なければデモ表示）
+var CONFIG = {
+  sheetId: new URLSearchParams(location.search).get("id") || "",
+  wantTab: "遊びたい",      // 遊びたいフォームの回答タブ
+  recruitTab: "卓募集",     // 卓募集フォームの回答タブ
+  infoTab: "シナリオ情報",   // 人数・時間・別名
+  settingsTab: "設定",      // フォームのURLなど（項目｜値）
+  formUrl: "",
+  recruitFormUrl: "",
+  slideMs: 10000,
+  refreshMs: 30000
+};
+
+// 卓募集のサンプル（架空の募集者）。date があれば日付指定、なければ「時期・曜日・時間帯」のざっくり指定
+var DEMO_RECRUITS = [
+  {name:"あじさし", icon:"🐧", title:"供花に命を", date:"2026/09/23", start:"17:00", end:"22:30", format:"オンライン", need:0, note:"前作「命に供花を」プレイ済み推奨です。"},
+  {name:"すなどり", icon:"🎣", title:"スターゲイザーら夢を謳う", date:"2026/10/07", start:"19:00", end:"23:00", format:"オフライン", venue:"水道橋アナーキー", fee:"5,500円", need:6, note:"新作を貸し切ります。どなたも大歓迎！"},
+  {name:"うみねこ", icon:"🐈", title:"立方館", months:"10月〜11月", days:"土日祝", time:"日中", format:"オフライン", venue:"都内の店舗", need:3, note:"初見の方歓迎です！"},
+  {name:"しおかぜ", icon:"🌊", title:"アイザック・エバンスの探究", months:"11月〜1月", days:"土日祝", time:"日中", format:"オフライン", need:6, note:"長いので朝から通しでやりたいです"},
+  {name:"ほたて", icon:"🦪", title:"されど魔王は殺される", months:"10月〜12月", days:"平日", time:"夜", format:"オンライン", need:4, note:""},
+  {name:"くじら", icon:"🐋", title:"機巧人形の心臓", date:"+3", start:"13:00", end:"17:30", format:"オフライン", venue:"新宿の店舗", fee:"4,800円", need:2, note:"あと2人で立ちます！"},
+  {name:"かもめ", icon:"🕊️", title:"悪魔は月時雨の下で", months:"10月", days:"土日祝", time:"夜", format:"パッケージ", need:3, note:""},
+  {name:"いかり", icon:"⚓", title:"クドリャフカの籤引", months:"11月〜12月", days:"平日", time:"夜", format:"オンライン", need:4, note:"仕事終わりの19時スタート想定"},
+  {name:"とびうお", icon:"🐟", title:"ミリオンダラー急行の殺人事件", months:"1月〜3月", days:"土日祝", time:"日中", format:"オフライン", need:5, note:"店舗公演の貸切枠を狙ってます"},
+  {name:"ブイ", icon:"", title:"テセウスの方舟", months:"10月〜12月", days:"どちらでも", time:"どちらでも", format:"パッケージ", need:3, note:"日程は合わせます"},
+  {name:"マスト", icon:"⛵", title:"告別詩", months:"11月", days:"土日祝", time:"夜", format:"オフライン", need:4, note:""},
+  {name:"なみま", icon:"🐬", title:"BOOROOM", months:"2月〜3月", days:"土日祝", time:"日中", format:"オフライン", need:12, note:"大人数！クルーズの勢いで集めたい"},
+  {name:"さんご", icon:"🪸", title:"ウルイの血族", months:"10月", days:"平日", time:"夜", format:"オフライン", need:0, note:"", done:true}
+];
+
+// 遊びたいのサンプル（架空の人たち）：名前｜シナリオ①｜②｜③
+var DEMO = [
+  ["うみねこ","立方館","アイザック・エバンスの探究",""], ["しおかぜ","立方館","告別詩","機巧人形の心臓"],
+  ["ほたて","されど魔王は殺される","立方館",""], ["くじら","機巧人形の心臓","悪魔は月時雨の下で","透き通る青の証明"],
+  ["かもめ","アイザックエバンスの探求","クドリャフカの籤引",""], ["いかり","立方館","ミリオンダラー急行の殺人事件",""],
+  ["とびうお","透きとおる青の証明","されど魔王は殺される","なんでも！"], ["ブイ","テセウスの方舟","",""],
+  ["マスト","告別詩","パンドラの箱の再開",""], ["なみま","BOOROOM","立方館",""],
+  ["さんご","クドリャフカの籤引","機巧人形の心臓",""], ["あじさし","供花に命を","アイザック・エバンスの探究",""],
+  ["すなどり","悪魔は月時雨の下で","エンドロールは流れない",""], ["ひとで","おすすめ教えてください","",""],
+  ["らっこ","パンドラの箱の再会","立方館","告別詩"], ["いるか","されど魔王は殺される","赤の導線",""],
+  ["ペンギン","アイザック・エバンスの研究","BOOROOM",""], ["あざらし","機巧人形の心臓","",""],
+  ["ちどり","ミリオンダラー急行の殺人事件","探偵禁止領域",""], ["はまぐり","透き通る青の証明","Lost/Remembrance",""],
+  ["しじみ","クドリャフカの籤引","悪魔は月時雨の下で",""], ["マンボウ","Invisible -亡霊列車","立方館",""],
+  ["シャチ","invisible -亡霊列車-","されど魔王は殺される",""], ["わかめ","エンドロールは流れない","",""]
+];
+
+// 表記ゆれ辞書：正式名 ← 集まってきた書き方
+var ALIAS_SRC = {
+  "アイザック・エバンスの探究": ["アイザックエバンスの探求","アイザック・エバンスの探求","アイザック・エバンスの研究"],
+  "Invisible -亡霊列車-": ["Invisible -亡霊列車","invisible","Inbisible"],
+  "鍵のかかったその先に": ["鍵のかかっかその先に"],
+  "憎似苦思惟恣意": ["憎似苦思惟恣意（にくにくしいしい）"],
+  "招待の正体〜I delete〜": ["招待の正体"],
+  "このミステリーは王道すぎる": ["このミステリーが王道すぎる！"],
+  "曙光のエテルナ": ["ペアマーダーミステリー 「曙光のエテルナ」"],
+  "ENIGMA CODE 廃棄ミライの犠牲者たち": ["ENIGMA CODE"],
+  "コーヒーカップが割れたとき": ["コーピーカップが割れたとき"],
+  "Over Kill": ["OverKill"],
+  "ツイン号沈没事故に関する考察": ["ツイン号沈没事件に関する考察"],
+  "探偵禁止領域": ["探偵禁止領域(GMあり)"],
+  "Lost/Remembrance": ["ロストリメンブランス","Rost/Remembrance"],
+  "告別詩": ["告別詩〜和井演出版〜"],
+  "天使は花明かりの下で": ["天使は花明りの下で"],
+  "透きとおる青の証明": ["透き通る青の証明"],
+  "パンドラの箱の再開": ["パンドラの箱の再会"],
+  "ある悪魔の儀式について": ["ある悪魔の儀式"],
+  "悪魔は月時雨の下で": ["悪魔は月時雨の中で"],
+  "立方館": ["立法館"],
+  "ヴァンピ！": ["ヴァンピ"],
+  "棺呪 -ヒツギノロイ-": ["棺呪"],
+  "ヌルーガ": ["NURUGA-ヌルーガ-"],
+  "何度だって青い狸にドラ焼きを渡した": ["青い狸のどら焼きのやつ"]
+};
+// シナリオ情報：人数｜時間(分)。本番はシートの「シナリオ情報」タブから読む
+var INFO_SRC = {
+  "アイザック・エバンスの探究":"8|600", "ミリオンダラー急行の殺人事件":"8|270", "パンドラの箱の再開":"6|270",
+  "探偵禁止領域":"6|240", "エンドロールは流れない":"4|270", "透きとおる青の証明":"4|150", "赤の導線":"6|240",
+  "悪魔は月時雨の下で":"5|300", "告別詩":"6|300", "5DIVE":"6|210", "餌の愚-クレードル-":"5|180", "愛する故に":"6|240",
+  "ヴァンピ！":"8|270", "星空のマリス":"7|300", "棺呪 -ヒツギノロイ-":"5|120", "アルテミスの断罪":"7|150",
+  "流星のモビーディック":"8|270", "BOOROOM":"20|270", "Lost/Remembrance":"6|270", "あるマーダーミステリーについて":"5|180",
+  "マーダーミステリー・オブ・ザ・デッド0":"7〜8|180", "何度だって青い月に火を灯した":"6〜7|180", "蟻集":"7|270"
+};
+var VAGUE = /(なんでも|何でも|全部|全般|おすすめ|教えて|わからない|どれか|の何か|系$|やつ|推理もの|今後発表)/;
+var SKIP = /^(なし|特になし|ない|-|ー|—|―)$/;
+var PALETTE = ["#ff6fae","#33c4ff","#ffd23f","#4bd08a","#ff9f1c","#9b7bff","#ff5b5b","#4b7bff","#7fe3d4","#ffb3d1"];
+
+function norm(s){ return String(s||"").normalize("NFKC").toLowerCase().replace(/[\s・:：!！?？\-‐－―ー〜~()（）「」『』【】.、。,]/g,""); }
+var ALIAS = {}, INFO = {};
+function addAlias(c, variants){ ALIAS[norm(c)] = c; (variants||[]).forEach(function(v){ if(v) ALIAS[norm(v)] = c; }); }
+function addInfo(title, players, minutes, temp){
+  var p=String(players||"").normalize("NFKC").match(/(\d+)(?:\D+(\d+))?/), m=parseInt(String(minutes||"").normalize("NFKC"),10);
+  if(!p && !m) return;
+  INFO[norm(title)] = { min:p?+p[1]:null, max:p?+(p[2]||p[1]):null, minutes:isNaN(m)?null:m, temp:!!temp };
+}
+Object.keys(ALIAS_SRC).forEach(function(c){ addAlias(c, ALIAS_SRC[c]); });
+Object.keys(INFO_SRC).forEach(function(t){ var v=INFO_SRC[t].split("|"); addInfo(t, v[0], v[1]); });
+function infoFor(g){
+  var i=INFO[g.key]||INFO[norm(g.title)];
+  if(i || CONFIG.sheetId) return i||null;
+  var h=hash(g.key);   // デモ用の仮の値
+  return { min:[4,5,5,6,6,6,7,8][h%8], max:null, minutes:[90,120,150,180,180,210,240][(h>>>3)%7], temp:true };
+}
+function playersLabel(i){ return i.max&&i.max!==i.min ? i.min+"〜"+i.max+"人" : i.min+"人"; }
+
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function hash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function textOn(hex){ var r=parseInt(hex.substr(1,2),16),g=parseInt(hex.substr(3,2),16),b=parseInt(hex.substr(5,2),16); return (0.299*r+0.587*g+0.114*b)/255>0.62?"#1d2242":"#ffffff"; }
+
+var ME_KEY = "takusagashi.myName";
+function loadMe(){ try{ return localStorage.getItem(ME_KEY)||""; }catch(e){ return ""; } }
+function saveMe(v){ try{ if(v) localStorage.setItem(ME_KEY,v); else localStorage.removeItem(ME_KEY); }catch(e){} }
+
+var STATE = { groups:[], free:[], doneTitles:[], entries:[], stats:{}, sort:"count", q:"", me:loadMe(), onlyMe:false, editingMe:false };
+
+function isMe(name){
+  var m=norm(STATE.me); if(!m) return false;
+  var n=norm(name); return n===m || (m.length>=2 && n.indexOf(m)>=0);
+}
+
+function build(people){
+  var groups={}, free=[], entries=[], nPeople=0, active=0, decided=0;
+  people.forEach(function(p){
+    var any=false, seen={};
+    p.slots.forEach(function(s){
+      var raw=(s.text||"").trim();
+      if(!raw || SKIP.test(raw)) return;
+      any=true;
+      var key=norm(raw), canon=ALIAS[key];
+      if(!canon && VAGUE.test(raw.normalize("NFKC"))){
+        if(s.done){ decided++; } else { active++; free.push({name:p.name,text:raw}); }
+        entries.push({name:p.name,free:raw,done:!!s.done});
+        return;
+      }
+      var gk=canon?norm(canon):key;
+      if(seen[gk]) return; seen[gk]=1;
+      entries.push({name:p.name,key:gk,done:!!s.done});
+      var g=groups[gk]||(groups[gk]={key:gk,title:canon||"",fixed:!!canon,people:[],done:0,variants:{}});
+      g.variants[raw]=(g.variants[raw]||0)+1;
+      if(s.done){ g.done++; decided++; } else { g.people.push(p.name); active++; }
+    });
+    if(any) nPeople++;
+  });
+  var list=Object.keys(groups).map(function(k){
+    var g=groups[k];
+    if(!g.fixed){ g.title=Object.keys(g.variants).sort(function(a,b){return g.variants[b]-g.variants[a];})[0]; }
+    g.others=Object.keys(g.variants).filter(function(v){return v!==g.title;});
+    return g;
+  });
+  STATE.groups=list.filter(function(g){return g.people.length>0;});
+  STATE.doneTitles=list.filter(function(g){return g.people.length===0&&g.done>0;}).map(function(g){return g.title;});
+  STATE.free=free;
+  STATE.byKey={}; list.forEach(function(g){ STATE.byKey[g.key]=g; });
+  STATE.entries=entries;
+  STATE.stats={people:nPeople,titles:list.length,active:active,decided:decided};
+}
+
+function chip(name, q){
+  var bg=PALETTE[hash(name)%PALETTE.length], hit=q && norm(name).indexOf(q)>=0;
+  return '<span class="chip'+(hit?' hit':'')+(isMe(name)?' self':'')+'" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(name)+'</span>';
+}
+function cardId(g){ return "g"+hash(g.key).toString(36); }
+function ticket(g, q, small){
+  var n=g.people.length, tier=n>=5?"t3":(n>=3?"t2":"t1"), mine=g.people.some(isMe);
+  var foot="";
+  if(g.others.length) foot+='<p class="yure"><em>表記ゆれ '+g.others.length+'件まとめ</em>'+g.others.map(esc).join(" ／ ")+'</p>';
+  if(g.done) foot+='<span class="stamp">卓決定 '+g.done+'人</span>';
+  var info=infoFor(g), meta="";
+  if(info){
+    if(info.min) meta+='<span>👥 '+playersLabel(info)+'</span>';
+    if(info.minutes) meta+='<span>⏱ '+info.minutes+'分</span>';
+  }
+  return '<article class="tk '+(small?'':tier)+(mine?' mine':'')+'" id="'+cardId(g)+'">'
+    +'<div class="tk-head"><div class="tk-title">'+(mine?'<span class="tk-label">★ あなたも希望中</span>':'')
+    +'<h3>'+esc(g.title)+(n>=5&&!small?'<span class="hot">HOT</span>':'')+'</h3>'
+    +(meta?'<div class="meta">'+meta+'</div>':'')
+    +(function(){ var rs=recruitsFor(g.key); return rs.length?'<button type="button" class="rec-badge" data-rec="'+rs[0].id+'">📣 この卓の募集 '+rs.length+'件</button>':''; })()
+    +'</div>'
+    +'<div class="tk-stub" aria-label="希望 '+n+'人"><b>'+n+'</b><span>人が希望</span></div></div>'
+    +'<div class="tk-body"><div class="chips">'+g.people.map(function(p){return chip(p,q);}).join("")+'</div>'
+    +'<div class="tk-foot">'+foot+'</div></div></article>';
+}
+
+function render(){
+  var q=norm(STATE.q), sort=STATE.sort;
+  var match=function(g){ if(!q) return true; if(norm(g.title).indexOf(q)>=0) return true; return g.people.some(function(p){return norm(p).indexOf(q)>=0;}); };
+  var mineOnly = STATE.onlyMe && STATE.me;
+  var gs=STATE.groups.filter(function(g){ return match(g) && (!mineOnly || g.people.some(isMe)); });
+  gs.sort(sort==="count"
+    ? function(a,b){ return b.people.length-a.people.length || a.title.localeCompare(b.title,"ja"); }
+    : function(a,b){ return a.title.localeCompare(b.title,"ja"); });
+  var multi=gs.filter(function(g){return g.people.length>=2;}), solo=gs.filter(function(g){return g.people.length===1;});
+  var free=STATE.free.filter(function(f){ return (!q || norm(f.name).indexOf(q)>=0 || norm(f.text).indexOf(q)>=0) && (!mineOnly || isMe(f.name)); });
+
+  document.getElementById("multi").innerHTML = multi.length ? multi.map(function(g){return ticket(g,q,false);}).join("") : '<div class="empty">該当なし</div>';
+  document.getElementById("solo").innerHTML  = solo.length ? solo.map(function(g){return ticket(g,q,true);}).join("") : '<div class="empty">該当なし</div>';
+  document.getElementById("free").innerHTML  = free.length
+    ? '<div class="free-list">'+free.map(function(f){return '<div class="free-row">'+chip(f.name,q)+'<q>'+esc(f.text)+'</q></div>';}).join("")+'</div>'
+    : '<div class="empty">該当なし</div>';
+
+  var s=STATE.stats;
+  document.getElementById("sPeople").textContent=s.people;
+  document.getElementById("sTitles").textContent=s.titles;
+  document.getElementById("sActive").textContent=s.active;
+  document.getElementById("sDone").textContent=s.decided;
+  document.getElementById("hits").textContent = q ? ("「"+STATE.q+"」で "+(multi.length+solo.length)+"シナリオ・おまかせ "+free.length+"件") : "";
+  document.getElementById("clear").hidden = !q;
+
+  var dl=document.getElementById("doneLine");
+  if(STATE.doneTitles.length){ dl.hidden=false; dl.innerHTML='🎉 全員の卓が決まったシナリオ：<b>'+STATE.doneTitles.map(esc).join("、")+'</b>'; }
+  else dl.hidden=true;
+
+  var only=document.getElementById("only");
+  only.hidden=!STATE.me; only.setAttribute("aria-pressed", String(!!mineOnly));
+  renderMe();
+  if(STATE.recruits) renderRecruits();
+}
+
+function renderMe(){
+  var bar=document.getElementById("meBar");
+  if(!STATE.me || STATE.editingMe){
+    bar.innerHTML='<form class="me-form" id="meForm">'
+      +'<label for="meName">👋 あなたの名前を入れておくと、自分の希望がすぐ見つかります</label>'
+      +'<input id="meName" autocomplete="nickname" placeholder="フォームに書いたのと同じ名前" value="'+esc(STATE.me)+'">'
+      +'<button class="btn" type="submit">保存</button>'
+      +(STATE.me?'<button class="btn ghost" type="button" id="meCancel">やめる</button>':'')
+      +'<small>名前はこの端末のブラウザにだけ保存されます（どこにも送信しません）。'+(CONFIG.sheetId?'':'デモでは「うみねこ」などで試せます。')+'</small>'
+      +'</form>';
+    return;
+  }
+  var mine=STATE.entries.filter(function(e){ return isMe(e.name); });
+  var names={}; mine.forEach(function(e){ names[e.name]=1; });
+  var shown=Object.keys(names).filter(function(n){ return n!==STATE.me; });
+  var items=mine.map(function(e){
+    if(e.free!=null) return '<span class="my-item free">🎲 おまかせ：'+esc(e.free)+'</span>';
+    var g=STATE.byKey[e.key]; if(!g) return "";
+    if(e.done) return '<span class="my-item done">🎉 '+esc(g.title)+' <b>卓決定</b></span>';
+    var others=g.people.filter(function(p){ return !isMe(p); }).length;
+    return '<button type="button" class="my-item" data-jump="'+cardId(g)+'">'+esc(g.title)+' <b>'+(others?'ほか'+others+'人':'まだ自分だけ')+'</b></button>';
+  }).join("");
+  bar.innerHTML='<div class="me-top"><span class="me-hello">👋 '+esc(STATE.me)+' さんの希望</span>'
+    +'<button class="btn ghost" type="button" id="meEdit">名前を変える</button></div>'
+    +(shown.length?'<p class="me-sub">ボード上では「'+shown.map(esc).join("」「")+'」として表示されています</p>':'<p class="me-sub">タップするとそのシナリオのカードに飛びます</p>')
+    +(items?'<div class="my-list">'+items+'</div>'
+      :'<p class="me-none">ボードに「'+esc(STATE.me)+'」さんの名前が見つかりません。フォームに書いた名前と同じか確認してみてください。</p>');
+}
+
+/* ===== 卓募集 ===== */
+function groupKey(title){ var k=norm(title), c=ALIAS[k]; return c?norm(c):k; }
+function recruitsFor(gk){ return (STATE.recruits||[]).filter(function(r){ return r.key===gk; }); }
+// 祝日（2026年9月〜2027年5月）
+var HOLIDAYS = {"2026-09-21":"敬老の日","2026-09-22":"国民の休日","2026-09-23":"秋分の日","2026-10-12":"スポーツの日",
+  "2026-11-03":"文化の日","2026-11-23":"勤労感謝の日","2027-01-01":"元日","2027-01-11":"成人の日","2027-02-11":"建国記念の日",
+  "2027-02-23":"天皇誕生日","2027-03-21":"春分の日","2027-03-22":"振替休日","2027-04-29":"昭和の日","2027-05-03":"憲法記念日",
+  "2027-05-04":"みどりの日","2027-05-05":"こどもの日"};
+var WD = ["日","月","火","水","木","金","土"];
+function ymd(d){ return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2); }
+function today0(){ var t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
+function parseDate(s){
+  s=String(s||"").normalize("NFKC").trim(); if(!s) return null;
+  var m=s.match(/^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return new Date(+m[3],+m[1]-1,+m[2]);
+  m=s.match(/^(\d{1,2})[\/月](\d{1,2})/);
+  if(m){ var t=today0(), d=new Date(t.getFullYear(),+m[1]-1,+m[2]); if(d<t) d.setFullYear(d.getFullYear()+1); return d; }
+  return null;
+}
+function parseTime(s){
+  var m=String(s||"").normalize("NFKC").match(/(\d{1,2})(?::(\d{2}))?/);
+  return m ? (+m[1])+":"+(m[2]||"00") : "";
+}
+function dateLabel(d){
+  var h=HOLIDAYS[ymd(d)];
+  return (d.getMonth()+1)+"/"+d.getDate()+"("+WD[d.getDay()]+(h?(h==="振替休日"||h==="国民の休日"?"・休":"・祝"):"")+")";
+}
+function setRecruits(list){
+  var t0=today0();
+  var out=list.filter(function(r){ return r.title && !r.done; }).map(function(r,i){
+    r.key=groupKey(r.title); r.id=r.id||("r"+hash(r.name+"|"+r.title+"|"+i).toString(36));
+    r.d=parseDate(r.date);
+    if(r.d){
+      r.start=parseTime(r.start); r.end=parseTime(r.end);
+      var off=r.d.getDay()===0||r.d.getDay()===6||!!HOLIDAYS[ymd(r.d)];
+      r.days=off?"土日祝":"平日";
+      var sh=r.start?parseInt(r.start,10):null, eh=r.end?parseInt(r.end,10):null;
+      r.time = sh==null ? "" : (sh<17 ? (eh!=null&&eh>=19?"日中・夜":"日中") : "夜");
+      r.left=Math.round((r.d-t0)/86400000);
+    }
+    return r;
+  }).filter(function(r){ return !r.d || r.left>=0; });   // 日付を過ぎた募集は自動で消す
+  out.sort(function(a,b){ if(a.d&&b.d) return a.d-b.d; if(a.d) return -1; if(b.d) return 1; return 0; });
+  STATE.recruits=out;
+}
+function avatar(r){
+  var bg=PALETTE[hash(r.name)%PALETTE.length];
+  return r.icon ? '<span class="ava" aria-hidden="true">'+esc(r.icon)+'</span>'
+    : '<span class="ava letter" aria-hidden="true" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(Array.from(r.name)[0]||"?")+'</span>';
+}
+var FMT_ICON = {"オフライン":"🏪","パッケージ":"📦","オンライン":"💻"};
+function whenChips(r){
+  var out="";
+  if(r.format) out+='<span class="fmt">'+(FMT_ICON[r.format]||"")+' '+esc(r.format)+'</span>';
+  if(r.d){
+    out+='<span class="date">📅 '+dateLabel(r.d)+(r.start?' '+esc(r.start)+(r.end?'〜'+esc(r.end):'〜'):'')+'</span>';
+    if(r.left<=7) out+='<span class="soon">'+(r.left===0?'今日！':r.left===1?'明日！':'あと'+r.left+'日')+'</span>';
+  } else {
+    if(r.months) out+='<span>📅 '+esc(r.months)+'</span>';
+    if(r.days) out+='<span class="d">🗓 '+esc(r.days)+'</span>';
+    if(r.time) out+='<span class="t">'+(/夜/.test(r.time)&&!/日中/.test(r.time)?'🌙':/日中/.test(r.time)&&!/夜/.test(r.time)?'☀':'🕐')+' '+esc(r.time)+'</span>';
+  }
+  if(r.venue) out+='<span class="v">'+(/オンライン|online|discord|ディスコ/i.test(r.venue)?'💻 ':'📍 ')+esc(r.venue)+'</span>';
+  if(r.fee) out+='<span class="v">💴 '+esc(r.fee)+'</span>';
+  return out;
+}
+function displayTitle(r){ var g=STATE.byKey&&STATE.byKey[r.key]; return g?g.title:(ALIAS[norm(r.title)]||r.title); }
+function wantersOf(r){ var g=STATE.byKey&&STATE.byKey[r.key]; return g?g.people.filter(function(p){ return norm(p)!==norm(r.name); }):[]; }
+function passFilter(r){
+  var f=STATE.rFilter||{}, any=function(v,s){ return !v || v.indexOf(s)>=0 || v.indexOf("どちらでも")>=0; };
+  return (!f.dated||!!r.d) && (!f["オフライン"]||r.format==="オフライン") && (!f["パッケージ"]||r.format==="パッケージ") && (!f["オンライン"]||r.format==="オンライン") && (!f["平日"]||any(r.days,"平日")) && (!f["土日祝"]||any(r.days,"土日祝")) && (!f["日中"]||any(r.time,"日中")) && (!f["夜"]||any(r.time,"夜"));
+}
+function renderRecruits(){
+  var list=(STATE.recruits||[]).filter(passFilter);
+  document.getElementById("recCount").textContent=(STATE.recruits||[]).length;
+  document.getElementById("recruits").innerHTML = list.length ? list.map(function(r){
+    var bg=PALETTE[hash(r.key)%PALETTE.length], fg=textOn(bg), w=wantersOf(r), mine=isMe(r.name);
+    var info=STATE.byKey&&STATE.byKey[r.key]?infoFor(STATE.byKey[r.key]):null;
+    var meta=info&&info.min?'<span>👥 '+playersLabel(info)+'</span>':'';
+    if(info&&info.minutes) meta+='<span>⏱ '+info.minutes+'分</span>';
+    return '<article class="rc'+(mine?' mine':'')+'" id="'+r.id+'">'
+      +'<div class="rc-top" style="background:'+bg+';color:'+fg+'">'+avatar(r)
+      +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集してる人')+'</small><b>'+esc(r.name)+'</b></div>'
+      +(r.need?'<div class="rc-need">'+r.need+'<small>人募集</small></div>':'')+'</div>'
+      +'<div class="rc-body"><h3>'+esc(displayTitle(r))+'</h3>'
+      +(meta?'<div class="meta" style="margin-top:0">'+meta+'</div>':'')
+      +'<div class="when">'+whenChips(r)+'</div>'
+      +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
+      +'<div class="wanters">'+(w.length
+        ? '<p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div>'
+        : '<p>🙋 ボードにはまだ遊びたい人がいません</p>')+'</div>'
+      +'</div></article>';
+  }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
+}
+
+/* ===== 表示切り替え ===== */
+function setView(v){
+  STATE.view=v;
+  document.getElementById("viewWant").hidden = v!=="want";
+  document.getElementById("viewRecruit").hidden = v!=="recruit";
+  document.getElementById("tabWant").setAttribute("aria-selected", String(v==="want"));
+  document.getElementById("tabRecruit").setAttribute("aria-selected", String(v==="recruit"));
+  try{ history.replaceState(null,"","#"+v); }catch(e){}
+}
+function flashEl(el){
+  var still=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({behavior:still?"auto":"smooth", block:"center"});
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+}
+
+/* ===== モニター（スライドショー） ===== */
+var MON = { slides:[], idx:0, timer:null, paused:false, clock:null };
+function buildSlides(){
+  var rs=STATE.recruits||[], slides=[];
+  for(var i=0;i<rs.length;i+=4) slides.push({type:"rec", items:rs.slice(i,i+4)});
+  var hot=STATE.groups.filter(function(g){return g.people.length>=2;})
+    .sort(function(a,b){return b.people.length-a.people.length;}).slice(0,4);
+  var out=[];
+  slides.forEach(function(s,i){ out.push(s); if(i%2===1 && hot.length) out.push({type:"hot", items:hot}); });
+  if(hot.length && (!out.length || out[out.length-1].type!=="hot")) out.push({type:"hot", items:hot});
+  MON.slides=out;
+}
+function monCard(r){
+  var bg=PALETTE[hash(r.key)%PALETTE.length], w=wantersOf(r);
+  return '<article class="mc"><div class="mc-top" style="background:'+bg+';color:'+textOn(bg)+'">'+avatar(r)
+    +'<div class="mc-name"><small>募集してる人</small>'+esc(r.name)+'</div>'
+    +(r.need?'<div class="mc-need">あと'+r.need+'<small>人募集</small></div>':'')+'</div>'
+    +'<div class="mc-body"><h3>'+esc(displayTitle(r))+'</h3><div class="when">'+whenChips(r)+'</div>'
+    +'<div class="mc-foot">'+(w.length?'🙋 このシナリオを遊びたい人が <b>'+w.length+'人</b> ボードにいます':(r.note?esc(r.note):'&nbsp;'))+'</div>'
+    +'</div></article>';
+}
+function monHot(g){
+  var info=infoFor(g), n=g.people.length;
+  return '<article class="mc"><div class="mc-top" style="background:var(--yellow)"><span class="ava" aria-hidden="true">🔥</span>'
+    +'<div class="mc-name"><small>遊びたい人が多いシナリオ</small>'+n+'人が希望</div>'
+    +(info&&info.min?'<div class="mc-need">'+playersLabel(info)+'<small>'+(info.minutes?info.minutes+'分':'')+'</small></div>':'')+'</div>'
+    +'<div class="mc-body"><h3>'+esc(g.title)+'</h3>'
+    +'<div class="chips">'+g.people.slice(0,8).map(function(p){return chip(p,"");}).join("")+(n>8?'<span class="chip" style="background:#fff">ほか'+(n-8)+'人</span>':'')+'</div>'
+    +'</div></article>';
+}
+function showSlide(){
+  var grid=document.getElementById("mGrid"), total=MON.slides.length;
+  if(!total){ grid.innerHTML='<div class="m-empty">まだ募集はありません<br>スマホの「卓さがしボード」から募集してみよう！</div>'; document.getElementById("mPage").textContent=""; return; }
+  MON.idx=(MON.idx%total+total)%total;
+  var s=MON.slides[MON.idx];
+  grid.innerHTML=s.items.map(s.type==="hot"?monHot:monCard).join("");
+  grid.classList.remove("anim"); void grid.offsetWidth; grid.classList.add("anim");
+  document.querySelector(".m-title").textContent = s.type==="hot" ? "🔥 いま遊びたい人が多いシナリオ" : "📣 卓メンバー募集中！";
+  document.getElementById("mPage").textContent=(MON.idx+1)+" / "+total;
+  var p=document.getElementById("mProg"); p.classList.remove("run"); void p.offsetWidth;
+  p.style.animationDuration=CONFIG.slideMs+"ms"; if(!MON.paused) p.classList.add("run");
+  clearTimeout(MON.timer);
+  if(!MON.paused) MON.timer=setTimeout(function(){ MON.idx++; showSlide(); }, CONFIG.slideMs);
+}
+function tickClock(){ var d=new Date(); document.getElementById("mClock").textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+function openMonitor(){
+  buildSlides(); MON.idx=0; MON.paused=false; document.getElementById("mPause").textContent="⏸";
+  document.getElementById("monitor").hidden=false; document.body.style.overflow="hidden";
+  tickClock(); clearInterval(MON.clock); MON.clock=setInterval(tickClock, 10000);
+  showSlide(); document.getElementById("mNext").focus();
+}
+function closeMonitor(){
+  clearTimeout(MON.timer); clearInterval(MON.clock);
+  document.getElementById("monitor").hidden=true; document.body.style.overflow="";
+  if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function(){});
+  if(location.hash==="#monitor") setView(STATE.view||"want");
+}
+document.getElementById("openMonitor").addEventListener("click",openMonitor);
+document.getElementById("mClose").addEventListener("click",closeMonitor);
+document.getElementById("mNext").addEventListener("click",function(){ MON.idx++; showSlide(); });
+document.getElementById("mPrev").addEventListener("click",function(){ MON.idx--; showSlide(); });
+document.getElementById("mPause").addEventListener("click",function(){ MON.paused=!MON.paused; this.textContent=MON.paused?"▶︎ 再生":"⏸"; showSlide(); });
+document.getElementById("mFull").addEventListener("click",function(){
+  var m=document.getElementById("monitor");
+  try{ if(document.fullscreenElement) document.exitFullscreen(); else if(m.requestFullscreen) m.requestFullscreen().catch(function(){}); }catch(e){}
+});
+document.addEventListener("keydown",function(e){
+  if(document.getElementById("monitor").hidden) return;
+  if(e.key==="ArrowRight"){ MON.idx++; showSlide(); }
+  else if(e.key==="ArrowLeft"){ MON.idx--; showSlide(); }
+  else if(e.key==="Escape" && !document.fullscreenElement){ closeMonitor(); }
+});
+
+document.querySelectorAll(".tab[data-view]").forEach(function(t){ t.addEventListener("click",function(){ setView(t.dataset.view); }); });
+document.querySelectorAll(".fchip").forEach(function(b){ b.addEventListener("click",function(){
+  STATE.rFilter=STATE.rFilter||{}; STATE.rFilter[b.dataset.f]=!STATE.rFilter[b.dataset.f];
+  b.setAttribute("aria-pressed", String(!!STATE.rFilter[b.dataset.f])); renderRecruits(); }); });
+document.getElementById("viewWant").addEventListener("click",function(e){
+  var b=e.target.closest(".rec-badge"); if(!b) return;
+  STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  renderRecruits(); setView("recruit");
+  var el=document.getElementById(b.dataset.rec); if(el) flashEl(el);
+});
+
+function jumpTo(id){
+  if(STATE.q || STATE.onlyMe){ STATE.q=""; qEl.value=""; STATE.onlyMe=false; render(); }
+  var el=document.getElementById(id); if(!el) return;
+  var still=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({behavior:still?"auto":"smooth", block:"center"});
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+}
+
+document.getElementById("meBar").addEventListener("submit",function(ev){
+  ev.preventDefault();
+  var v=document.getElementById("meName").value.trim();
+  STATE.me=v; STATE.editingMe=false; saveMe(v); render();
+});
+document.getElementById("meBar").addEventListener("click",function(ev){
+  var t=ev.target.closest("button"); if(!t) return;
+  if(t.id==="meEdit"){ STATE.editingMe=true; renderMe(); var i=document.getElementById("meName"); if(i){ i.focus(); i.select(); } }
+  else if(t.id==="meCancel"){ STATE.editingMe=false; renderMe(); }
+  else if(t.dataset.jump){ jumpTo(t.dataset.jump); }
+});
+document.getElementById("only").addEventListener("click",function(){ STATE.onlyMe=!STATE.onlyMe; render(); });
+
+/* ===== データ読み込み ===== */
+function parseCSV(text){
+  var rows=[],row=[],cur="",q=false;
+  for(var i=0;i<text.length;i++){ var c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true; else if(c===','){row.push(cur);cur="";}
+    else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur="";} else if(c!=='\r') cur+=c; }
+  if(cur!==""||row.length){row.push(cur);rows.push(row);} return rows;
+}
+function colFinder(h){ return function(){ var ws=arguments; return h.findIndex(function(x){ for(var i=0;i<ws.length;i++) if(x.indexOf(ws[i])>=0) return true; return false; }); }; }
+async function fetchTab(tab, required){
+  var res;
+  try{ res=await fetch("https://docs.google.com/spreadsheets/d/"+encodeURIComponent(CONFIG.sheetId)+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(tab)+"&_="+Date.now()); }
+  catch(e){ throw new Error("offline"); }
+  if(!res.ok){
+    if(required) throw new Error("「"+tab+"」タブを読めませんでした（HTTP "+res.status+"）。スプレッドシートの共有設定が「リンクを知っている全員：閲覧者」になっているか確認してください。");
+    return [];
+  }
+  return parseCSV(await res.text());
+}
+// 「遊びたい」タブ：お名前｜シナリオ①｜①の決定チェック｜②…｜③…
+function parseWant(rows){
+  var h=rows[0]||[], iName=colFinder(h)("名前");
+  if(iName<0) return [];
+  var slots=["①","②","③"].map(function(m){ return {
+    t:h.findIndex(function(x){return x.indexOf(m)>=0 && x.indexOf("決")<0;}),
+    d:h.findIndex(function(x){return x.indexOf(m)>=0 && x.indexOf("決")>=0;}) }; });
+  return rows.slice(1).filter(function(r){return (r[iName]||"").trim();}).map(function(r){
+    return { name:r[iName].trim(), slots:slots.map(function(s){ return { text:s.t>=0?(r[s.t]||""):"", done:s.d>=0 && !!(r[s.d]||"").trim() }; }) };
+  });
+}
+// 「シナリオ情報」タブ：タイトル｜人数｜時間(分)｜別名（／区切り）
+function parseInfo(rows){
+  var h=rows[0]||[], col=colFinder(h), iT=col("タイトル"), iP=col("人数"), iM=col("時間"), iA=col("別名");
+  if(iT<0) return [];
+  return rows.slice(1).filter(function(r){ return (r[iT]||"").trim(); }).map(function(r){
+    return { t:r[iT].trim(), p:iP>=0?r[iP]:"", m:iM>=0?r[iM]:"",
+             a:iA>=0 ? (r[iA]||"").split(/[／、]/).map(function(s){return s.trim();}).filter(Boolean) : [] };
+  });
+}
+// 「卓募集」タブ：名前｜アイコン｜シナリオ｜形式｜日程の決め方｜日付｜開始｜終了｜時期｜曜日｜時間帯｜会場｜料金｜人数｜ひとこと｜締め切り
+function parseRecruits(rows){
+  var h=rows[0]||[], col=colFinder(h);
+  var c={ name:col("名前"), icon:col("アイコン"), title:col("シナリオ","タイトル"), format:col("形式"), months:col("時期"), days:col("曜日"),
+          time:col("時間帯"), need:col("人数"), note:col("ひとこと","コメント"), done:col("締め切"),
+          date:col("日付","日にち"), start:col("開始"), end:col("終了時"), venue:col("会場","場所"), fee:col("料金","参加費") };
+  if(c.name<0 || c.title<0 || c.format<0) return [];
+  var get=function(r,k){ return c[k]>=0 ? (r[c[k]]||"").trim() : ""; };
+  return rows.slice(1).filter(function(r){ return get(r,"name") && get(r,"title"); }).map(function(r){
+    var fmt=get(r,"format").normalize("NFKC"), icon=get(r,"icon");
+    return { name:get(r,"name"), icon:/^なし/.test(icon)?"":icon, title:get(r,"title"),
+             format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
+             months:get(r,"months"),
+             days:get(r,"days").replace(/,\s*/g,"・"), time:get(r,"time").replace(/,\s*/g,"・"),
+             need:parseInt(get(r,"need").normalize("NFKC"),10)||0, note:get(r,"note"), done:!!get(r,"done"),
+             date:get(r,"date"), start:get(r,"start"), end:get(r,"end"), venue:get(r,"venue"), fee:get(r,"fee") };
+  });
+}
+// 「設定」タブ：項目｜値
+function parseSettings(rows){
+  var out={}; rows.slice(1).forEach(function(r){ if((r[0]||"").trim()) out[r[0].trim()]=(r[1]||"").trim(); }); return out;
+}
+async function fetchAll(){
+  var r=await Promise.all([fetchTab(CONFIG.wantTab,true), fetchTab(CONFIG.recruitTab,false), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false)]);
+  return { people:parseWant(r[0]), recruits:parseRecruits(r[1]), info:parseInfo(r[2]), settings:parseSettings(r[3]), at:Date.now() };
+}
+function demoData(){
+  var t0=today0();
+  return {
+    // 卓決定フラグは動作イメージとして一部にだけ付ける（決定的な疑似ランダム）
+    people: DEMO.map(function(r){ return { name:r[0], slots:[r[1],r[2],r[3]].map(function(t,i){ return { text:t||"", done:!!t && hash(r[0]+"|"+i)%100<13 }; }) }; }),
+    recruits: DEMO_RECRUITS.map(function(r){ var x=Object.assign({}, r);
+      if(/^\+\d+$/.test(x.date||"")){ var d=new Date(t0); d.setDate(d.getDate()+parseInt(x.date,10)); x.date=ymd(d); } return x; }),
+    info:[], settings:{}, at:Date.now()
+  };
+}
+
+// 船の上で電波が切れても直前の一覧を出せるよう、最後に読めたデータを端末に残す
+var CACHE_KEY="takusagashi.cache."+CONFIG.sheetId;
+function saveCache(d){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(d)); }catch(e){} }
+function readCache(){ try{ return JSON.parse(localStorage.getItem(CACHE_KEY)||"null"); }catch(e){ return null; } }
+
+function setLink(id, noteId, url){
+  if(!/^https:\/\/(docs\.google\.com\/forms|forms\.gle)\//.test(url||"")) return;
+  var a=document.getElementById(id); a.href=url; a.target="_blank"; a.rel="noopener";
+  document.getElementById(noteId).hidden=true;
+}
+function applyData(d){
+  var s=d.settings||{};
+  setLink("cta","ctaNote", s["遊びたいフォーム"]);
+  setLink("ctaRecruit","ctaRecruitNote", s["卓募集フォーム"]);
+  (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m); });
+  setRecruits((d.recruits||[]).map(function(r){ return Object.assign({}, r); }));
+  build(d.people||[]); render(); renderRecruits();
+  if(!document.getElementById("monitor").hidden) buildSlides();
+  if(STATE.pendingMonitor){ STATE.pendingMonitor=false; openMonitor(); }
+  STATE.loadedOnce=true;
+}
+function hhmm(t){ return new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"}); }
+function notice(msg){ var n=document.getElementById("demo"); n.hidden=!msg; n.textContent=msg||""; }
+async function load(){
+  var st=document.getElementById("status");
+  if(!CONFIG.sheetId){
+    applyData(demoData()); st.textContent="デモ表示";
+    notice("デモ表示です（名前はすべて架空です）。「卓決定」は動作イメージのため一部にランダムで付けています。");
+    return;
+  }
+  try{
+    var d=await fetchAll(); saveCache(d); applyData(d); notice("");
+    st.textContent="最終更新 "+hhmm(d.at)+"（"+CONFIG.refreshMs/1000+"秒ごとに自動更新）";
+  }catch(e){
+    var c=readCache();
+    if(e.message==="offline" && c){
+      if(!STATE.loadedOnce) applyData(c);
+      notice("📡 電波が不安定なため、"+hhmm(c.at)+" 時点の一覧を表示しています。つながったら自動で更新します。");
+    } else {
+      notice(e.message==="offline" ? "📡 通信できませんでした。電波のいい場所で開き直してください。" : "⚠ "+e.message);
+    }
+  }
+}
+
+(function(){ var h=(location.hash||"").slice(1); if(h==="recruit") setView("recruit"); else if(h==="monitor") STATE.pendingMonitor=true; })();
+
+var qEl=document.getElementById("q"), tmr=null;
+qEl.addEventListener("input",function(){ clearTimeout(tmr); tmr=setTimeout(function(){ STATE.q=qEl.value.trim(); render(); },120); });
+document.getElementById("clear").addEventListener("click",function(){ qEl.value=""; STATE.q=""; render(); qEl.focus(); });
+document.querySelectorAll(".seg button").forEach(function(b){ b.addEventListener("click",function(){
+  STATE.sort=b.dataset.sort;
+  document.querySelectorAll(".seg button").forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
+  render(); }); });
+
+load();
+if(CONFIG.sheetId) setInterval(load, CONFIG.refreshMs);
+</script>
