@@ -1033,7 +1033,7 @@ function renderRecruits(){
       +gaiyou(info)
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
-      +(w.length ? '<div class="wanters"><p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>' : '')
+      +(w.length ? '<div class="wanters"><p>🙋（参考）このシナリオを遊びたい人 '+w.length+'人</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>' : '')
       +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
         +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 人が集まった（成立）</button>'
         +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 募集人数変更</button></div></div>' : '')
@@ -1079,7 +1079,7 @@ function buildEstablished(){
   STATE.established=items;
 }
 function estWhen(it){
-  if(it.fromForm) return "フォームで締め切り";
+  if(it.fromForm) return "登録ページで成立";
   if(!it.ts) return "成立";
   var d=new Date(it.ts), same=d.toDateString()===new Date().toDateString();
   return (same?"":(d.getMonth()+1)+"/"+d.getDate()+" ")+hhmm(it.ts)+" に成立";
