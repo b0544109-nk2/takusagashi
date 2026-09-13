@@ -113,7 +113,20 @@
   .want-row input{display:block;width:100%;font:inherit;font-weight:700;font-size:1rem;color:var(--ink);background:#fff;
     border:2.5px solid var(--ink);border-radius:12px;padding:10px 12px}
   .want-row input:focus-visible{outline:0;box-shadow:0 0 0 4px var(--cyan)}
-  .done-tag{display:inline-block;margin-top:6px;font-size:.74rem;font-weight:700;background:#e4f7ea;border:2px solid var(--ink);border-radius:999px;padding:1px 9px}
+  .want-line{display:flex;gap:8px;align-items:stretch}
+  .want-line input{flex:1;min-width:0}
+  .plan-btn{flex:none;font:inherit;font-weight:700;font-size:.8rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:12px;
+    padding:6px 10px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;white-space:nowrap}
+  .plan-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+  .plan-btn[aria-pressed="true"]{background:#c9f2d8}
+  .plan-btn:disabled{opacity:.6;cursor:default}
+  .plan-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .want-row.done input{background:#eefaf2;color:#3d6b4f}
+  .plan-note{display:block;margin-top:6px;font-size:.76rem;font-weight:700;color:#1f8a4c;line-height:1.5}
+  .sum li.want-li{display:flex;align-items:center;gap:10px}
+  .sum li.want-li span{flex:1;min-width:0}
+  .sum li.want-li.done{background:#eefaf2}
+  .sum-help{margin:8px 0 0;font-size:.76rem;font-weight:700;color:var(--muted);line-height:1.55}
 
   /* だれの登録か */
   .who{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -202,7 +215,7 @@
 
     <section class="card" aria-labelledby="hWant">
       <h2 class="sec-h cyan" id="hWant">🙋 遊びたいシナリオ（3つまで・任意）</h2>
-      <p class="sec-note">だれかが卓を立てたら入りたいシナリオ。同じシナリオを選んだ人どうしがボードに並びます。</p>
+      <p class="sec-note">だれかが卓を立てたら入りたいシナリオ。同じシナリオを選んだ人どうしがボードに並びます。予定が立ったら「📅 予定立った！」を押すと、ボードの一覧から外れます。</p>
       <div id="wantList"></div>
     </section>
 
@@ -526,18 +539,37 @@ function recCard(r, i){
     +'<label class="field">ひとこと<span class="opt">（任意）</span><textarea rows="2" data-f="note">'+esc(r.note)+'</textarea></label>'
     +'</div>';
 }
+// 「予定立った！」：押すと、そのシナリオはボードの「遊びたい」一覧から外れる（登録するときに一緒に送る）
+function planLabel(on){ return on ? "🎉 予定立った" : "📅 予定立った！"; }
 function wantRow(w, i){
-  var id="w"+i;
-  return '<div class="want-row" data-orig-t="'+esc(w.origT||"")+'" data-done="'+(w.done?1:0)+'"><span class="num" aria-hidden="true">'+SLOTS[i]+'</span>'
-    +'<div class="sg"><input class="sg-in" id="'+id+'" data-f="want" data-kind="want" value="'+esc(w.t)+'" placeholder="打つと候補が出ます" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="遊びたいシナリオ'+SLOTS[i]+'">'
+  var id="w"+i, on=!!(w.done && w.t);
+  return '<div class="want-row'+(on?' done':'')+'" data-done-t="'+esc(on?w.t:"")+'"><span class="num" aria-hidden="true">'+SLOTS[i]+'</span>'
+    +'<div class="sg"><div class="want-line"><input class="sg-in" id="'+id+'" data-f="want" data-kind="want" value="'+esc(w.t)+'" placeholder="打つと候補が出ます" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="遊びたいシナリオ'+SLOTS[i]+'">'
+    +'<button type="button" class="plan-btn" data-plan="1" aria-pressed="'+on+'" aria-label="遊びたいシナリオ'+SLOTS[i]+'の予定が立った">'+planLabel(on)+'</button></div>'
     +'<ul class="sg-list" role="listbox" hidden></ul><span class="sg-state"></span>'
-    +(w.done && w.origT?'<span class="done-tag">🎉 卓決定ずみ</span>':'')+'</div></div>';
+    +'<span class="plan-note"'+(on?'':' hidden')+'>予定が立ったので、登録するとボードの「遊びたい」一覧から外れます（もう一度押すと戻せます）</span></div></div>';
 }
+function setPlan(row, on){
+  var b=row.querySelector(".plan-btn"), t=row.querySelector("input").value.trim();
+  if(on && !t) return;
+  b.setAttribute("aria-pressed", String(on)); b.textContent=planLabel(on);
+  row.classList.toggle("done", on); row.dataset.doneT = on ? t : "";
+  row.querySelector(".plan-note").hidden=!on;
+}
+document.addEventListener("click", function(e){
+  var b=e.target.closest(".plan-btn[data-plan]"); if(!b) return;
+  setPlan(b.closest(".want-row"), b.getAttribute("aria-pressed")!=="true");
+});
+// 予定を立てたあとで別のシナリオに書きかえたら、「予定立った」は外す
+document.addEventListener("input", function(e){
+  var row=e.target.closest && e.target.closest(".want-row"); if(!row || row.dataset.doneT==null || !row.dataset.doneT) return;
+  if(norm(e.target.value)!==norm(row.dataset.doneT)) setPlan(row, false);
+});
 function renderEdit(reg){
   var rl=document.getElementById("recList");
   rl.innerHTML = reg.recruits.length ? reg.recruits.map(recCard).join("") : '<p class="empty-rec">卓募集はまだありません（なくても登録できます）</p>';
   document.getElementById("addRec").hidden = reg.recruits.length>=3;
-  var ws=reg.wants.slice(0,3); while(ws.length<3) ws.push({ t:"", done:false, origT:"" });
+  var ws=reg.wants.slice(0,3); while(ws.length<3) ws.push({ t:"", done:false });
   document.getElementById("wantList").innerHTML=ws.map(wantRow).join("");
   document.querySelectorAll(".sg-in").forEach(sgState);
 }
@@ -554,8 +586,8 @@ function collect(){
     return r;
   });
   var wants=[].map.call(document.querySelectorAll("#wantList .want-row"), function(el){
-    var t=el.querySelector("input").value.trim(), orig=el.dataset.origT||"";
-    return { t:t, origT:orig, done:el.dataset.done==="1" && !!t && norm(t)===norm(orig) };
+    var t=el.querySelector("input").value.trim();
+    return { t:t, done:!!t && el.querySelector(".plan-btn").getAttribute("aria-pressed")==="true" };
   });
   return { name:S.reg.name, xid:document.getElementById("eXid").value.trim(), recruits:recs, wants:wants };
 }
@@ -720,9 +752,26 @@ function compare(v, got){
     }
   });
   if(got.recruits.length>v.recruits.length) bad.push("消したはずの卓募集");
-  v.wants.forEach(function(w,i){ var g=got.wants[i]; if(!g || norm(g.t)!==norm(w.t)) bad.push("遊びたいシナリオ"+SLOTS[i]); });
+  v.wants.forEach(function(w,i){
+    var g=got.wants[i];
+    if(!g || norm(g.t)!==norm(w.t)) bad.push("遊びたいシナリオ"+SLOTS[i]);
+    else if(!!g.done!==!!w.done) bad.push("遊びたいシナリオ"+SLOTS[i]+"の「予定立った」");
+  });
   return bad;
 }
+// 送って、スプレッドシートに載ったのを確かめる。戻り値は食い違った項目の一覧（うまくいけば空）。失敗したら例外
+async function submitReg(v){
+  if(!CONFIG.sheetId){ await sleep(900); return []; }   // デモは送信しない
+  var before=rowsFor(await fetchAnswers(), v.name).length;
+  postRegistration(v);
+  var t0=Date.now();
+  while(Date.now()-t0 < CONFIG.verifyMs){
+    await sleep(2500);
+    try{ var rows=await fetchAnswers(), mine=rowsFor(rows, v.name); if(mine.length>before) return compare(v, rowToReg(rows, mine[mine.length-1])); }catch(e){}
+  }
+  throw new Error("送信したものの、スプレッドシートへの反映を確認できませんでした。電波のいい場所で、もう一度押してください。（2回送っても、新しいほうが有効になるだけなので大丈夫です）");
+}
+function sendErrText(e){ return e.message==="offline" ? "📡 通信できませんでした。電波のいい場所でもう一度押してください。" : "⚠ "+e.message; }
 document.getElementById("send").addEventListener("click", async function(){
   var v=collect(), err=document.getElementById("sendErr"), btn=this, sending=document.getElementById("sending");
   err.hidden=true;
@@ -731,27 +780,9 @@ document.getElementById("send").addEventListener("click", async function(){
   if(!v.recruits.length && !v.wants.length && !confirm("卓募集も遊びたいシナリオも空のまま登録しますか？\n（前に登録した内容は消えます）")) return;
   if(CONFIG.sheetId && !S.post){ err.textContent="まだ登録の受付準備中です。少し待ってから開き直してください。"; err.hidden=false; return; }
   btn.disabled=true; sending.hidden=false;
-  var finish=function(){ btn.disabled=false; sending.hidden=true; };
-  if(!CONFIG.sheetId){ await sleep(900); finish(); showDone(v, []); return; }   // デモは送信しない
-  try{
-    var before=rowsFor(await fetchAnswers(), v.name).length;
-    postRegistration(v);
-    var t0=Date.now(), got=null;
-    while(Date.now()-t0 < CONFIG.verifyMs){
-      await sleep(2500);
-      try{ var rows=await fetchAnswers(), mine=rowsFor(rows, v.name); if(mine.length>before){ got=rowToReg(rows, mine[mine.length-1]); break; } }catch(e){}
-    }
-    finish();
-    if(!got){
-      err.textContent="送信したものの、スプレッドシートへの反映を確認できませんでした。電波のいい場所で、もう一度「登録する」を押してください。（2回送っても、新しいほうが有効になるだけなので大丈夫です）";
-      err.hidden=false; return;
-    }
-    showDone(v, compare(v, got));
-  }catch(e){
-    finish();
-    err.textContent = e.message==="offline" ? "📡 通信できませんでした。電波のいい場所でもう一度押してください。" : "⚠ "+e.message;
-    err.hidden=false;
-  }
+  try{ var bad=await submitReg(v); showDone(v, bad); }
+  catch(e){ err.textContent=sendErrText(e); err.hidden=false; }
+  btn.disabled=false; sending.hidden=true;
 });
 
 /* ===== 3. できた ===== */
@@ -760,23 +791,52 @@ function recLine(r){
     : [r.months, r.days.join("・"), r.time.join("・")].filter(Boolean).join("　");
   return '<li>'+esc(e?e.t:r.title)+'<small>'+esc([r.format, when, r.venue, r.need?"あと"+r.need+"人":""].filter(Boolean).join("　"))+'</small></li>';
 }
-function showDone(v, bad){
+function doneWantsHtml(wants){
+  if(!wants.length) return '<p class="none">なし</p>';
+  return '<ul>'+wants.map(function(w,i){
+    var e=lookup(w.t);
+    return '<li class="want-li'+(w.done?' done':'')+'"><span>'+esc(e?e.t:w.t)+(w.done?'<small>予定が立ったので、ボードの一覧からは外れています</small>':'')+'</span>'
+      +'<button type="button" class="plan-btn" data-plan-now="'+i+'" aria-pressed="'+!!w.done+'">'+(w.done?'↩ 戻す':planLabel(false))+'</button></li>';
+  }).join("")+'</ul>';
+}
+function showDone(v, bad, msg){
   S.reg={ name:v.name, xid:v.xid, ts:"", recruits:v.recruits.map(function(r){ return Object.assign({}, r, { origTitle:r.title }); }),
-          wants:v.wants.map(function(w){ return Object.assign({}, w, { origT:w.t }); }) };
+          wants:v.wants.map(function(w){ return Object.assign({}, w); }) };
   saveSession({ name:v.name, xid:v.xid }); saveMe(v.name);
-  document.getElementById("doneSub").textContent=v.name+" さんの登録を受け付けました。内容はいつでもこのページから直せます。";
+  document.getElementById("doneSub").textContent= msg || (v.name+" さんの登録を受け付けました。内容はいつでもこのページから直せます。");
   document.getElementById("doneWarn").innerHTML = bad.length
     ? '<div class="warn-box">⚠ 一部の項目がうまく保存されていないかもしれません：'+esc(bad.join("、"))+'。お手数ですが、もう一度「内容を直す」→「登録する」を押すか、幹事に知らせてください。</div>' : "";
   document.getElementById("doneSum").innerHTML=
     '<div class="sum"><h3>📣 卓募集</h3>'+(v.recruits.length?'<ul>'+v.recruits.map(recLine).join("")+'</ul>':'<p class="none">なし</p>')+'</div>'
-    +'<div class="sum"><h3>🙋 遊びたいシナリオ</h3>'+(v.wants.length?'<ul>'+v.wants.map(function(w){ var e=lookup(w.t); return '<li>'+esc(e?e.t:w.t)+'</li>'; }).join("")+'</ul>':'<p class="none">なし</p>')+'</div>';
+    +'<div class="sum"><h3>🙋 遊びたいシナリオ</h3>'+doneWantsHtml(v.wants)
+    +(v.wants.length?'<p class="sum-help">予定が立ったら「予定立った！」を押すと、そのまま送信してボードの一覧から外れます。</p>':'')+'</div>';
   // ボードのURLは当日まで幹事だけが知っている運用なので、設定タブで「ボード公開｜する」にしたときだけリンクを出す
-  var open=/^(する|公開|はい|on|true|yes|○|〇)$/i.test(String(S.settings["ボード公開"]||"").trim());
-  document.getElementById("doneNext").innerHTML = "当日は「卓さがしボード」に、みんなの卓募集と遊びたいシナリオが並びます。人が集まったら、ボードの「🌸 成立」ボタンをワンタップで押せます。"
-    +(open && CONFIG.sheetId ? '<br><a class="link" href="./?id='+encodeURIComponent(CONFIG.sheetId)+'">📋 卓さがしボードを見る →</a>' : "");
+  var open=/^(する|公開|はい|on|true|yes|○|〇)$/i.test(String(S.settings["ボード公開"]||"").trim()) && CONFIG.sheetId;
+  var next=document.getElementById("doneNext");
+  next.innerHTML = open ? '<a class="link" href="./?id='+encodeURIComponent(CONFIG.sheetId)+'">📋 卓さがしボードを見る →</a>' : "";
+  next.hidden=!open;
   showStep("done");
-  window.scrollTo({ top:0, behavior:"smooth" });
+  if(!msg) window.scrollTo({ top:0, behavior:"smooth" });
 }
+// 登録後の画面から「予定立った！」をワンタップで送る（登録内容はそのままで、そのシナリオだけ予定立ったにして送り直す）
+document.getElementById("doneSum").addEventListener("click", async function(e){
+  var b=e.target.closest("[data-plan-now]"); if(!b || b.disabled) return;
+  var i=+b.dataset.planNow, w=S.reg.wants[i]; if(!w) return;
+  var on=!w.done, name=(lookup(w.t)||{t:w.t}).t;
+  if(!on && !confirm("「"+name+"」の「予定立った」を取り消して、ボードの一覧に戻しますか？")) return;
+  var v={ name:S.reg.name, xid:S.reg.xid||"", recruits:S.reg.recruits.map(function(r){ return Object.assign({}, r); }),
+          wants:S.reg.wants.map(function(x,j){ return Object.assign({}, x, j===i ? { done:on } : {}); }) };
+  document.querySelectorAll("[data-plan-now], #editAgain").forEach(function(x){ x.disabled=true; });
+  b.textContent="送信中…";
+  try{
+    var bad=await submitReg(v);
+    showDone(v, bad, on ? "🎉 「"+name+"」を予定立ったにしました。ボードの「遊びたい」一覧から外れます。" : "「"+name+"」をボードの「遊びたい」一覧に戻しました。");
+  }catch(err){
+    showDone(S.reg, [], " ");
+    document.getElementById("doneWarn").innerHTML='<div class="warn-box">'+esc(sendErrText(err))+'</div>';
+  }
+  document.querySelectorAll("[data-plan-now], #editAgain").forEach(function(x){ x.disabled=false; });
+});
 document.getElementById("editAgain").addEventListener("click", function(){
   document.getElementById("whoName").textContent=S.reg.name;
   document.getElementById("eXid").value=S.reg.xid||"";
