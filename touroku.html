@@ -362,10 +362,22 @@ function answerCols(h){
     rec:SLOTS.map(function(k){ var m={}; Object.keys(RECRUIT_COLS).forEach(function(f){
       m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); }); return m; }) };
 }
+// タイムスタンプ→数値。フォームの回答は「前の回答のすぐ下」に割り込むので、行の順番ではなく時刻で新しさを決める
+function tsValue(s){
+  s=String(s||"").normalize("NFKC").trim();
+  var m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/), y, mo, d;
+  if(m){ y=+m[1]; mo=+m[2]; d=+m[3]; }
+  else { m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/); if(!m) return 0; y=+m[3]; mo=+m[1]; d=+m[2]; }
+  var h=+(m[4]||0); if(/PM/i.test(s) && h<12) h+=12; else if(/AM/i.test(s) && h===12) h=0;
+  return new Date(y, mo-1, d, h, +(m[5]||0), +(m[6]||0)).getTime();
+}
+// その名前の行を古い順に（最後の要素が最新）
 function rowsFor(rows, name){
   var c=answerCols(rows[0]||[]), n=norm(name);
-  if(c.name<0) return [];
-  return rows.slice(1).filter(function(r){ return norm(r[c.name])===n && n; });
+  if(c.name<0 || !n) return [];
+  return rows.slice(1).map(function(r,i){ return { r:r, i:i, t:tsValue(r[0]) }; })
+    .filter(function(x){ return norm(x.r[c.name])===n; })
+    .sort(function(a,b){ return a.t-b.t || a.i-b.i; }).map(function(x){ return x.r; });
 }
 function rowToReg(rows, r){
   var c=answerCols(rows[0]||[]), g=function(i){ return i>=0 ? (r[i]||"").trim() : ""; };

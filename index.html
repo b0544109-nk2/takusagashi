@@ -1267,6 +1267,15 @@ async function fetchTab(tab, required){
 var SLOTS=["①","②","③"];
 var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", months:"時期", days:"曜日",
   time:"時間帯", venue:"会場", need:"人数", note:"ひとこと", done:"締め切" };
+// タイムスタンプ（「9/13/2026 20:46:55」「2026/09/13 20:46:55」など）→数値。読めなければ0（いちばん古い扱い）
+function tsValue(s){
+  s=String(s||"").normalize("NFKC").trim();
+  var m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/), y, mo, d;
+  if(m){ y=+m[1]; mo=+m[2]; d=+m[3]; }
+  else { m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/); if(!m) return 0; y=+m[3]; mo=+m[1]; d=+m[2]; }
+  var h=+(m[4]||0); if(/PM/i.test(s) && h<12) h+=12; else if(/AM/i.test(s) && h===12) h=0;
+  return new Date(y, mo-1, d, h, +(m[5]||0), +(m[6]||0)).getTime();
+}
 function parseAnswers(rows){
   var h=rows[0]||[], col=colFinder(h), iName=col("名前"), iX=col("XのID");
   if(iName<0) return { people:[], recruits:[] };
@@ -1278,9 +1287,10 @@ function parseAnswers(rows){
     Object.keys(RECRUIT_COLS).forEach(function(f){ m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); });
     return m; });
   var people=[], recruits=[];
-  // Webの登録ページからは「送り直し」で行が増えていくので、同じ名前はいちばん下（最新）の行だけを使う
-  var body=rows.slice(1), last={};
-  body.forEach(function(r,i){ var k=norm(r[iName]); if(k) last[k]=i; });
+  // Webの登録ページからは「送り直し」で行が増えていくので、同じ名前はタイムスタンプがいちばん新しい行だけを使う
+  // （フォームの回答は「前の回答のすぐ下」に割り込むため、行の順番は新しさの目安にならない）
+  var body=rows.slice(1), last={}, lastT={};
+  body.forEach(function(r,i){ var k=norm(r[iName]), t=tsValue(r[0]); if(k && (last[k]==null || t>=lastT[k])){ last[k]=i; lastT[k]=t; } });
   body.forEach(function(r,i){
     var name=(r[iName]||"").trim(); if(!name || last[norm(name)]!==i) return;
     var xid=iX>=0?(r[iX]||"").trim():"";
