@@ -396,6 +396,14 @@
   .mc .rosette.in .rb{width:1.9vmin;height:3.8vmin;bottom:-2.2vmin}
   .mc .rosette.in .rb1{left:2.3vmin}.mc .rosette.in .rb2{right:2.3vmin}
 
+  /* 当日まで公開しないとき */
+  .booting #boardMain,.gated #boardMain,.gated #status{display:none}
+  .gate{margin:34px auto 0;max-width:560px;background:#fff;border:3.5px solid var(--ink);border-radius:22px;box-shadow:7px 7px 0 var(--pink);
+    padding:22px 22px 26px;text-align:center}
+  .gate h2{margin:12px 0 10px;font-size:1.3rem;line-height:1.5}
+  .gate p{font-size:.9rem;font-weight:700;color:var(--muted);line-height:1.75;margin:0 0 18px}
+  .gate .gate-ship{margin:0;font-size:3.2rem;line-height:1;animation:bob 6s ease-in-out infinite}
+
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   @media (max-width:640px){
     html{font-size:17px}   /* スマホは全体を少し大きく（remで指定した文字がまとめて大きくなる） */
@@ -408,7 +416,7 @@
   @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash{animation:none}.tk{transition:none}}
 </style>
 </head>
-<body>
+<body class="booting">
 
 <div class="deck" aria-hidden="true"></div>
 <div class="deco" aria-hidden="true"><span>🚢</span><span>🔍</span><span>⚓</span><span>🗝️</span><span>🎭</span><span>🛟</span></div>
@@ -420,6 +428,14 @@
     <p class="demo" id="demo" hidden></p>
   </header>
 
+  <section class="gate" id="gate" hidden>
+    <p class="gate-ship" aria-hidden="true">🚢</p>
+    <h2 class="pop">卓さがしボードは<br>クルーズ当日に公開します！</h2>
+    <p>いまは事前登録を受け付けています。登録した卓募集と遊びたいシナリオは、当日このボードと船のモニターに並びます。</p>
+    <a class="cta" id="gateReg" href="#" hidden>✍️ 事前登録ページへ</a>
+  </section>
+
+  <div id="boardMain">
   <nav class="tabs" role="tablist" aria-label="表示の切り替え">
     <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="true" aria-controls="viewRecruit">📣 卓募集<b id="recCount">0</b></button>
     <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="false" aria-controls="viewWant">🙋 遊びたい</button>
@@ -431,11 +447,11 @@
 
   <div id="viewWant" role="tabpanel" aria-labelledby="tabWant" hidden>
   <div class="steps">
-    <div class="step"><b>1</b><div>フォームに<strong>遊びたいシナリオを3つまで</strong>書く</div></div>
+    <div class="step"><b>1</b><div>登録ページで<strong>遊びたいシナリオを3つまで</strong>書く</div></div>
     <div class="step"><b>2</b><div>同じシナリオに並んでる人に<strong>声をかける</strong>。自分で卓を立てるならカードの<strong>「📣 この卓を募集する」</strong></div></div>
     <div class="step"><b>3</b><div>卓が決まったら、名前を入れた欄の<strong>「✓ 決まった」</strong>を押す→ここから消えます</div></div>
   </div>
-  <div class="cta-row"><a class="cta" id="cta" href="#">✍️ フォームで登録・更新する <small id="ctaNote">準備中</small></a></div>
+  <div class="cta-row"><a class="cta" id="cta" href="#">✍️ 登録ページで登録・更新する <small id="ctaNote">準備中</small></a></div>
 
   <div class="stats">
     <div class="stat"><b id="sPeople">–</b><span>登録した人</span></div>
@@ -481,13 +497,13 @@
 
   <div id="viewRecruit" role="tabpanel" aria-labelledby="tabRecruit">
     <div class="steps">
-      <div class="step"><b>1</b><div>フォームの「卓募集をしますか？」で<strong>「する」</strong>を選んで、シナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
+      <div class="step"><b>1</b><div>登録ページの<strong>「卓募集」</strong>にシナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
       <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
       <div class="step"><b>3</b><div>集まったら、カードの「募集している人用メニュー」の<strong>「🌸 人が集まった（成立）」</strong>を押す→🌸成立タブに移ります</div></div>
     </div>
     <div class="cta-row">
       <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
-      <a class="cta" id="ctaRecruit" href="#">✍️ フォームの内容を確認・編集する <small id="ctaRecruitNote">準備中</small></a>
+      <a class="cta" id="ctaRecruit" href="#">✍️ 登録した内容を確認・編集する <small id="ctaRecruitNote">準備中</small></a>
     </div>
     <div class="filters" role="group" aria-label="日程で絞り込み">
       <span>日程でしぼる</span>
@@ -507,6 +523,7 @@
     <p class="est-lead">人が集まって成立した卓募集です。🌸の花が「成立」のしるし。</p>
     <div class="rc-grid est-grid" id="estList"></div>
   </div>
+  </div>
 
   <p class="status" id="status"></p>
 </div>
@@ -515,7 +532,7 @@
   <div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrHeading">
     <form id="qrForm">
       <h2 id="qrHeading" class="pop">⚡ その場で卓を立てる</h2>
-      <p class="qr-lead">フォームを開かずに、そのまま登録できます。送信するとすぐボードとモニターに出ます。</p>
+      <p class="qr-lead">ここからすぐ登録できます。送信するとすぐボードとモニターに出ます。</p>
 
       <label class="qr-field">お名前<span class="req">*</span>
         <input id="qrName" required autocomplete="nickname" placeholder="名札と同じ表記で">
@@ -625,6 +642,7 @@
 // スプレッドシートIDはコードに書かず、URLの ?id=... で渡す（なければデモ表示）
 var CONFIG = {
   sheetId: new URLSearchParams(location.search).get("id") || "",
+  staff: new URLSearchParams(location.search).has("staff"),   // 幹事の確認用：公開前でもボードを見られる
   answerTab: "回答",        // 登録フォームの回答（遊びたい①〜③＋卓募集①〜③が1人1行）
   infoTab: "シナリオ情報",   // 人数・時間・別名
   settingsTab: "設定",      // 登録フォームのURLなど（項目｜値）
@@ -867,7 +885,7 @@ function renderMe(){
   if(!STATE.me || STATE.editingMe){
     bar.innerHTML='<form class="me-form" id="meForm">'
       +'<label for="meName">👋 あなたの名前を入れておくと、自分の募集や希望がすぐ見つかります</label>'
-      +'<input id="meName" autocomplete="nickname" placeholder="フォームに書いたのと同じ名前" value="'+esc(STATE.me)+'">'
+      +'<input id="meName" autocomplete="nickname" placeholder="登録したのと同じ名前" value="'+esc(STATE.me)+'">'
       +'<button class="btn" type="submit">保存</button>'
       +(STATE.me?'<button class="btn ghost" type="button" id="meCancel">やめる</button>':'')
       +'<small>名前はこの端末のブラウザにだけ保存されます（どこにも送信しません）。'+(CONFIG.sheetId?'':'デモでは「うみねこ」などで試せます。')+'</small>'
@@ -900,7 +918,7 @@ function renderMe(){
     +'<button class="btn ghost" type="button" id="meEdit">名前を変える</button></div>'
     +(shown.length?'<p class="me-sub">ボード上では「'+shown.map(esc).join("」「")+'」として表示されています</p>':'<p class="me-sub">タップするとそのカードに飛びます</p>')
     +(items?'<div class="my-list">'+items+'</div>'
-      :'<p class="me-none">ボードに「'+esc(STATE.me)+'」さんの名前が見つかりません。フォームに書いた名前と同じか確認してみてください。</p>');
+      :'<p class="me-none">ボードに「'+esc(STATE.me)+'」さんの名前が見つかりません。登録した名前と同じか確認してみてください。</p>');
 }
 
 /* ===== 卓募集 ===== */
@@ -966,7 +984,8 @@ function normX(s){
 // 募集にXのIDが無くても（Webで立てた募集など）、同じ名前の人がフォームで登録したIDを使う
 function iconUrl(r){
   var k=normX(r.xid) || (STATE.nameToXid ? STATE.nameToXid[norm(r.name)] : "");
-  return k && STATE.icons ? (STATE.icons[k]||"") : "";
+  // 画像のファイル名は「_」が抜けていることがあるので、「_」なしでも照合する
+  return k && STATE.icons ? (STATE.icons[k] || STATE.icons["~"+k.replace(/_/g,"")] || "") : "";
 }
 function avatar(r){
   var bg=PALETTE[hash(r.name)%PALETTE.length], url=iconUrl(r);
@@ -1256,8 +1275,11 @@ function parseAnswers(rows){
     Object.keys(RECRUIT_COLS).forEach(function(f){ m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); });
     return m; });
   var people=[], recruits=[];
-  rows.slice(1).forEach(function(r){
-    var name=(r[iName]||"").trim(); if(!name) return;
+  // Webの登録ページからは「送り直し」で行が増えていくので、同じ名前はいちばん下（最新）の行だけを使う
+  var body=rows.slice(1), last={};
+  body.forEach(function(r,i){ var k=norm(r[iName]); if(k) last[k]=i; });
+  body.forEach(function(r,i){
+    var name=(r[iName]||"").trim(); if(!name || last[norm(name)]!==i) return;
     var xid=iX>=0?(r[iX]||"").trim():"";
     people.push({ name:name, xid:xid, slots:want.map(function(s){ return { text:s.t>=0?(r[s.t]||""):"", done:s.d>=0 && !!(r[s.d]||"").trim() }; }) });
     rec.forEach(function(m,i){
@@ -1327,7 +1349,7 @@ function parseIcons(rows){
   if(iX<0 || iU<0) return out;
   rows.slice(1).forEach(function(r){
     var k=normX(r[iX]), u=(r[iU]||"").trim();
-    if(k && /^https:\/\/[^\s"'<>]+$/.test(u)) out[k]=u;
+    if(k && /^https:\/\/[^\s"'<>]+$/.test(u)){ out[k]=u; out["~"+k.replace(/_/g,"")]=u; }
   });
   return out;
 }
@@ -1384,14 +1406,33 @@ function setLink(id, noteId, url){
   var a=document.getElementById(id); a.href=url; a.target="_blank"; a.rel="noopener";
   document.getElementById(noteId).hidden=true;
 }
+// Webの登録ページ（touroku.html）の準備ができていればそちら、なければ従来どおりGoogleフォームへ
+function setRegLinks(s){
+  var reg = s["登録フォーム送信先"] && CONFIG.sheetId ? "touroku.html?id="+encodeURIComponent(CONFIG.sheetId) : "";
+  [["cta","ctaNote"],["ctaRecruit","ctaRecruitNote"]].forEach(function(p){
+    if(!reg){ setLink(p[0], p[1], s["登録フォーム"]); return; }
+    var a=document.getElementById(p[0]); a.href=reg; a.removeAttribute("target");
+    document.getElementById(p[1]).hidden=true;
+  });
+  var g=document.getElementById("gateReg");
+  if(reg){ g.href=reg; g.hidden=false; }
+  else if(/^https:\/\/(docs\.google\.com\/forms|forms\.gle)\//.test(s["登録フォーム"]||"")){ g.href=s["登録フォーム"]; g.target="_blank"; g.rel="noopener"; g.hidden=false; }
+}
+// 設定タブの「ボード公開」が「しない」の間は、当日公開のお知らせだけを出す（URLに &staff を付けた幹事は見られる）
+function boardClosed(s){ return /^(しない|まだ|非公開|off|false|no|×|✕)$/i.test(String(s["ボード公開"]||"").trim()); }
 function applyData(d){
   STATE.lastData=d;
   var s=d.settings||{};
+  setRegLinks(s);
+  var closed=boardClosed(s), gated=closed && !CONFIG.staff;
+  document.body.classList.remove("booting");
+  document.body.classList.toggle("gated", gated);
+  document.getElementById("gate").hidden=!gated;
+  STATE.staffNote = closed && CONFIG.staff ? "👀 幹事用の表示です。一般の人には、まだ「当日公開します」の画面が出ています（設定タブの「ボード公開」を「する」にすると公開）。" : "";
+  if(gated){ STATE.pendingMonitor=false; STATE.loadedOnce=true; return; }
   STATE.icons=d.icons||{};
   STATE.nameToXid={};
   (d.people||[]).concat(d.recruits||[]).forEach(function(p){ var k=normX(p.xid); if(k) STATE.nameToXid[norm(p.name)]=k; });
-  setLink("cta","ctaNote", s["登録フォーム"]);
-  setLink("ctaRecruit","ctaRecruitNote", s["登録フォーム"]);
   try{ STATE.quick=JSON.parse(s["その場で卓を立てるフォーム送信先"]||""); }catch(e){ STATE.quick=null; }
   try{ STATE.eventPost=JSON.parse(s["成立報告フォーム送信先"]||""); }catch(e){ STATE.eventPost=null; }
   document.getElementById("openQuick").hidden=!STATE.quick;
@@ -1425,7 +1466,7 @@ async function load(){
     return;
   }
   try{
-    var d=await fetchAll(); saveCache(d); applyData(d); notice("");
+    var d=await fetchAll(); saveCache(d); applyData(d); notice(STATE.staffNote||"");
     st.textContent="最終更新 "+hhmm(d.at)+"（"+CONFIG.refreshMs/1000+"秒ごとに自動更新）";
   }catch(e){
     var c=readCache();

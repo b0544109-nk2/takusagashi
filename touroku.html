@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>事前登録｜卓さがしボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1d2242; --paper:#fff4cf; --card:#ffffff; --muted:#6b5f3a; --line:#efe1a8;
+    --pink:#ff6fae; --cyan:#33c4ff; --yellow:#ffd23f; --mint:#4bd08a; --red:#ff5b5b; --sea:#2a8fd6;
+    --hl:#fff1a8;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{margin:0}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{
+    color:var(--ink);min-height:100vh;background-color:var(--paper);
+    background-image:
+      radial-gradient(rgba(255,111,174,.15) 2.5px, transparent 2.6px),
+      radial-gradient(rgba(51,196,255,.16) 2.5px, transparent 2.6px);
+    background-size:34px 34px,34px 34px;background-position:0 0,17px 17px;
+    font-family:"Kosugi Maru","Hiragino Maru Gothic ProN","Yu Gothic UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;font-synthesis:none;
+  }
+  .pop,h1 .main,h1 .sub,.sec-h,.btn,.cta,.rec-h b,.who b,.num,.done-h{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400}
+  .deck{height:18px;background:radial-gradient(circle at 12px 0, var(--sea) 11px, transparent 12px) 0 0/24px 18px repeat-x}
+  .wrap{max-width:720px;margin:0 auto;padding:18px 16px 90px}
+
+  header{text-align:center;margin:10px 0 6px}
+  .kicker{display:inline-block;background:var(--cyan);color:#fff;border:3px solid var(--ink);border-radius:999px;
+    padding:5px 16px;font-weight:700;font-size:.78rem;letter-spacing:.08em;box-shadow:3px 3px 0 var(--ink);rotate:-2deg;margin-bottom:16px}
+  h1{margin:0;line-height:1.15;display:flex;flex-direction:column;align-items:center;gap:14px}
+  h1 .main{display:inline-block;background:var(--pink);color:#fff;border:4px solid var(--ink);border-radius:18px;
+    padding:10px 22px;font-size:clamp(1.6rem,6.4vw,2.4rem);box-shadow:6px 6px 0 var(--ink);rotate:-1.5deg;
+    text-shadow:2px 2px 0 rgba(0,0,0,.18)}
+  h1 .sub{display:inline-block;background:var(--yellow);border:3px solid var(--ink);border-radius:12px;
+    padding:4px 16px;font-size:1rem;letter-spacing:.2em;box-shadow:4px 4px 0 var(--ink);rotate:1.5deg}
+  .lead{margin:22px auto 0;max-width:560px;text-align:center;font-size:.9rem;font-weight:700;line-height:1.75}
+  .notice{margin:18px auto 0;max-width:600px;background:#fff;border:2.5px dashed var(--ink);border-radius:14px;
+    padding:9px 14px;font-size:.84rem;font-weight:700;color:var(--muted);text-align:center;line-height:1.6}
+
+  .card{background:#fff;border:3.5px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--ink);padding:18px 18px 16px;margin-top:28px}
+  .card.me{box-shadow:6px 6px 0 var(--red)}
+  .sec-h{display:inline-flex;align-items:center;gap:8px;background:var(--yellow);border:3px solid var(--ink);border-radius:12px;
+    padding:6px 14px;font-size:1.02rem;box-shadow:3px 3px 0 var(--ink);rotate:-1deg;margin:0 0 8px}
+  .sec-h.pink{background:var(--pink);color:#fff}
+  .sec-h.cyan{background:var(--cyan);color:#fff}
+  .sec-note{margin:4px 0 16px;font-size:.84rem;font-weight:700;color:var(--muted);line-height:1.6}
+
+  .field{display:block;font-weight:700;font-size:.9rem;margin:0 0 14px}
+  .field .req{color:var(--red);margin-left:2px}
+  .field .opt{font-size:.74rem;color:var(--muted);margin-left:4px}
+  .field input,.field textarea{display:block;width:100%;margin-top:6px;font:inherit;font-weight:700;font-size:1rem;
+    color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:12px;padding:10px 12px;resize:vertical}
+  .field input:focus-visible,.field textarea:focus-visible{outline:0;box-shadow:0 0 0 4px var(--cyan)}
+  .help{display:block;margin-top:6px;font-size:.76rem;font-weight:700;color:var(--muted);line-height:1.55}
+  .half-row{display:flex;flex-wrap:wrap;gap:0 14px}
+  .half-row .field{flex:1 1 150px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}
+  .chip{font:inherit;font-weight:700;font-size:.86rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
+    border-radius:999px;padding:7px 14px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--yellow)}
+  .chip:focus-visible,.btn:focus-visible,.cta:focus-visible,.add:focus-visible,.link:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+  .btn{font-size:.9rem;color:var(--ink);background:var(--yellow);border:3px solid var(--ink);border-radius:12px;
+    padding:9px 16px;box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+  .btn:active,.cta:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .btn.ghost{background:#fff;font-size:.78rem;padding:5px 11px;box-shadow:2px 2px 0 var(--ink)}
+  .btn.del{background:#fff;font-size:.76rem;padding:4px 10px;box-shadow:2px 2px 0 var(--ink)}
+  .cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--mint);color:var(--ink);text-decoration:none;
+    border:3px solid var(--ink);border-radius:16px;padding:13px 26px;font-size:1.08rem;box-shadow:4px 4px 0 var(--ink);cursor:pointer}
+  .cta:disabled{opacity:.55;cursor:default;transform:none;box-shadow:4px 4px 0 var(--ink)}
+  .cta.sub{background:#fff;font-size:.92rem;padding:10px 18px}
+  .row-c{text-align:center;margin-top:18px}
+  .err{margin:6px 0 10px;font-size:.86rem;font-weight:700;color:#d8232a;line-height:1.6}
+
+  /* 卓募集カード */
+  .rec{border:3px solid var(--ink);border-radius:16px;padding:14px 14px 2px;margin:0 0 16px;background:#fffdf3}
+  .rec-h{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+  .rec-h b{background:var(--pink);color:#fff;border:2.5px solid var(--ink);border-radius:999px;padding:2px 12px;font-size:.92rem}
+  .rec-h .btn{margin-left:auto}
+  .rec-done{font-size:.76rem;font-weight:700;background:#e4f7ea;border:2px solid var(--ink);border-radius:999px;padding:1px 9px}
+  .add{display:block;width:100%;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:.95rem;color:var(--ink);background:#fff;
+    border:3px dashed var(--ink);border-radius:14px;padding:12px;cursor:pointer}
+  .add:hover{background:var(--hl)}
+  .empty-rec{margin:0 0 14px;font-size:.84rem;font-weight:700;color:var(--muted);text-align:center;border:2.5px dashed var(--line);border-radius:14px;padding:12px}
+
+  /* シナリオ名の候補 */
+  .sg{position:relative}
+  .sg-list{position:absolute;left:0;right:0;top:100%;z-index:20;margin:4px 0 0;padding:4px;list-style:none;background:#fff;
+    border:2.5px solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);max-height:min(320px,45vh);overflow-y:auto}
+  .sg-list li{padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.94rem;line-height:1.35}
+  .sg-list li[aria-selected="true"]{background:var(--hl)}
+  .sg-list li small{display:block;margin-top:2px;font-size:.72rem;color:var(--muted)}
+  .sg-list li mark{background:#ffe08a;color:inherit;border-radius:3px}
+  .sg-state{display:block;margin-top:6px;font-size:.78rem;font-weight:700;line-height:1.55;min-height:0}
+  .sg-state.ok{color:#1f8a4c}
+  .sg-state.warn{color:#b85000}
+  .sg-state.free{color:var(--muted)}
+  .sg-state a{color:#1a5fd6}
+
+  .want-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
+  .num{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;border:2.5px solid var(--ink);
+    background:var(--cyan);color:#fff;margin-top:5px;font-size:.95rem}
+  .want-row .sg{flex:1;min-width:0}
+  .want-row input{display:block;width:100%;font:inherit;font-weight:700;font-size:1rem;color:var(--ink);background:#fff;
+    border:2.5px solid var(--ink);border-radius:12px;padding:10px 12px}
+  .want-row input:focus-visible{outline:0;box-shadow:0 0 0 4px var(--cyan)}
+  .done-tag{display:inline-block;margin-top:6px;font-size:.74rem;font-weight:700;background:#e4f7ea;border:2px solid var(--ink);border-radius:999px;padding:1px 9px}
+
+  /* だれの登録か */
+  .who{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .who b{font-size:1.15rem;overflow-wrap:anywhere}
+  .ava{flex:none;position:relative;overflow:hidden;width:46px;height:46px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;
+    font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:1.15rem;box-shadow:2px 2px 0 var(--ink);background:var(--yellow)}
+  .ava img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
+  .who .btn{margin-left:auto}
+  .loaded{margin:12px 0 0;font-size:.84rem;font-weight:700;line-height:1.65;background:var(--hl);border:2px solid var(--ink);border-radius:12px;padding:8px 12px}
+  .loaded.new{background:#e8f7ff}
+  .who-x{margin:14px 0 0}
+
+  .sending{margin:14px 0 0;font-size:.9rem;font-weight:700;color:var(--muted);text-align:center;line-height:1.6}
+  .sending::before{content:"";display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:3px solid var(--ink);
+    border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{rotate:360deg}}
+
+  /* 登録できた */
+  .done-h{margin:0 0 6px;font-size:1.4rem;text-align:center}
+  .done-sub{margin:0 0 16px;text-align:center;font-size:.88rem;font-weight:700;color:var(--muted);line-height:1.7}
+  .sum{margin:0 0 14px}
+  .sum h3{margin:0 0 8px;font-size:.9rem}
+  .sum ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+  .sum li{font-weight:700;font-size:.9rem;background:#fffdf3;border:2px solid var(--ink);border-radius:12px;padding:7px 11px;line-height:1.5}
+  .sum li small{display:block;font-size:.74rem;color:var(--muted)}
+  .sum .none{font-size:.84rem;font-weight:700;color:var(--muted)}
+  .warn-box{margin:0 0 16px;background:#fff3e0;border:2.5px solid var(--ink);border-radius:12px;padding:9px 12px;font-size:.84rem;font-weight:700;line-height:1.6}
+  .next-box{margin-top:6px;border-top:2px dashed var(--line);padding-top:14px;font-size:.84rem;font-weight:700;line-height:1.7;color:var(--muted)}
+  .link{color:#1a5fd6;font-weight:700}
+
+  @media (max-width:640px){
+    html{font-size:17px}
+    .wrap{padding-left:12px;padding-right:12px}
+    .card{padding:16px 14px 14px}
+    .rec{padding:12px 11px 2px}
+  }
+  @media (prefers-reduced-motion:reduce){.sending::before{animation:none}}
+</style>
+</head>
+<body>
+<div class="deck" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div class="kicker">MADAMIS CRUISE ⚓ 2026</div>
+    <h1><span class="main">事前登録</span><span class="sub">卓さがしボード</span></h1>
+    <p class="lead">卓募集（3件まで）と、遊びたいシナリオ（3つまで）を登録するページです。<br>登録した内容は、当日の卓さがしボードと船のモニターに出ます。</p>
+    <p class="notice" id="notice" hidden></p>
+  </header>
+
+  <!-- 1. お名前 -->
+  <section class="card me" id="stepName" aria-labelledby="hName">
+    <h2 class="sec-h" id="hName">👤 まずはお名前</h2>
+    <form id="nameForm" novalidate>
+      <label class="field">お名前<span class="req">*</span>
+        <input id="fName" autocomplete="nickname" placeholder="名札と同じ表記で" required>
+      </label>
+      <label class="field">XのID<span class="opt">（任意）</span>
+        <input id="fXid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@のあとの英数字（例：madamis_cruise）">
+        <small class="help">入れると、卓募集のカードにXのアイコンが出ます。あとで別のスマホなどから内容を直すときの本人確認にも使います。</small>
+      </label>
+      <p class="err" id="nameErr" hidden></p>
+      <div class="row-c"><button type="submit" class="cta" id="goNext">つぎへ →</button></div>
+    </form>
+  </section>
+
+  <!-- 2. 入力 -->
+  <div id="stepEdit" hidden>
+    <section class="card me" aria-label="登録する人">
+      <div class="who"><span class="ava" id="whoAva" aria-hidden="true"></span><b id="whoName"></b><span>さん</span>
+        <button type="button" class="btn ghost" id="changeWho">別の人で登録する</button></div>
+      <p class="loaded" id="loadedNote"></p>
+      <label class="field who-x">XのID<span class="opt">（任意）</span>
+        <input id="eXid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@のあとの英数字">
+      </label>
+    </section>
+
+    <section class="card" aria-labelledby="hRec">
+      <h2 class="sec-h pink" id="hRec">📣 卓募集（3件まで・任意）</h2>
+      <p class="sec-note">自分で卓を立てて、メンバーを集めたいシナリオ。日付が決まっていなくても「10月〜12月の土日」みたいなざっくりでOKです。当日その場で立てることもできます。</p>
+      <div id="recList"></div>
+      <button type="button" class="add" id="addRec">＋ 卓募集を追加する</button>
+    </section>
+
+    <section class="card" aria-labelledby="hWant">
+      <h2 class="sec-h cyan" id="hWant">🙋 遊びたいシナリオ（3つまで・任意）</h2>
+      <p class="sec-note">だれかが卓を立てたら入りたいシナリオ。同じシナリオを選んだ人どうしがボードに並びます。</p>
+      <div id="wantList"></div>
+    </section>
+
+    <p class="err" id="sendErr" hidden></p>
+    <div class="row-c"><button type="button" class="cta" id="send">✅ この内容で登録する</button></div>
+    <p class="sending" id="sending" hidden>送信しています…（反映を確かめるので数秒〜30秒ほどかかります）</p>
+  </div>
+
+  <!-- 3. できた -->
+  <section class="card" id="stepDone" hidden aria-live="polite">
+    <p class="done-h">🎉 登録できました！</p>
+    <p class="done-sub" id="doneSub"></p>
+    <div id="doneWarn"></div>
+    <div id="doneSum"></div>
+    <div class="row-c"><button type="button" class="cta sub" id="editAgain">✏️ 内容を直す</button></div>
+    <div class="next-box" id="doneNext"></div>
+  </section>
+</div>
+<iframe name="regSink" id="regSink" hidden title="送信用（非表示）"></iframe>
+
+<script>
+// スプレッドシートIDはコードに書かず、URLの ?id=... で渡す（なければ見た目の確認用のデモ）
+var CONFIG = {
+  sheetId: new URLSearchParams(location.search).get("id") || "",
+  answerTab: "回答", infoTab: "シナリオ情報", settingsTab: "設定",
+  verifyMs: 45000
+};
+var SLOTS = ["①","②","③"];
+var DEMO_TITLES = [["立方館","6","240"],["アイザック・エバンスの探究","8","600"],["告別詩","6","300"],["透きとおる青の証明","4","150"],
+  ["悪魔は月時雨の下で","5","300"],["BOOROOM","20","270"],["ミリオンダラー急行の殺人事件","8","270"],["パンドラの箱の再開","6","270"]];
+var S = { master:[], alias:{}, info:{}, settings:{}, icons:{}, post:null, reg:null, gids:null };
+
+function norm(s){ return String(s||"").normalize("NFKC").toLowerCase().replace(/[\s・:：!！?？\-‐－―ー〜~()（）「」『』【】.、。,]/g,""); }
+// 検索用：カタカナをひらがなにそろえる（「たんてい」でも「タンテイ」でも当たるように）
+function fold(s){ return norm(s).replace(/[ァ-ヶ]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); }); }
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function normX(s){
+  s=String(s||"").normalize("NFKC").trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i,"").replace(/^@/,"").split(/[\/?#\s]/)[0];
+  return /^[A-Za-z0-9_]{1,15}$/.test(s) ? s.toLowerCase() : "";
+}
+var VAGUE = /(なんでも|何でも|全部|全般|おすすめ|教えて|わからない|どれか|の何か|系$|やつ|推理もの|今後発表)/;
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function ymd(d){ return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2); }
+function parseDate(s){
+  s=String(s||"").normalize("NFKC").trim(); if(!s) return null;
+  var m=s.match(/^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return new Date(+m[3],+m[1]-1,+m[2]);
+  return null;
+}
+// タイムスタンプ（「2026/09/13 12:34:56」「9/13/2026 12:34:56」など）→「9/13 12:34」
+function tsLabel(s){
+  s=String(s||"").normalize("NFKC").trim();
+  var m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/), md, hm="";
+  if(m){ md=(+m[2])+"/"+(+m[3]); if(m[4]) hm=" "+m[4]+":"+m[5]; }
+  else { m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/); if(!m) return ""; md=(+m[1])+"/"+(+m[2]); if(m[4]) hm=" "+m[4]+":"+m[5]; }
+  return md+hm;
+}
+function parseTime(s){
+  var m=String(s||"").normalize("NFKC").match(/(\d{1,2}):(\d{2})/);
+  return m ? ("0"+m[1]).slice(-2)+":"+m[2] : "";
+}
+
+/* ===== 端末に覚えておく（セッション） ===== */
+var SESSION_KEY="takusagashi.reg."+CONFIG.sheetId, ME_KEY="takusagashi.myName";
+function loadSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||"null"); }catch(e){ return null; } }
+function saveSession(v){ try{ if(v) localStorage.setItem(SESSION_KEY, JSON.stringify(v)); else localStorage.removeItem(SESSION_KEY); }catch(e){} }
+function saveMe(v){ try{ localStorage.setItem(ME_KEY, v); }catch(e){} }
+
+/* ===== スプレッドシートを読む ===== */
+function parseCSV(text){
+  var rows=[],row=[],cur="",q=false;
+  for(var i=0;i<text.length;i++){ var c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true; else if(c===','){row.push(cur);cur="";}
+    else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur="";} else if(c!=='\r') cur+=c; }
+  if(cur!==""||row.length){row.push(cur);rows.push(row);} return rows;
+}
+function colFinder(h){ return function(){ var ws=arguments; return h.findIndex(function(x){ for(var i=0;i<ws.length;i++) if(x.indexOf(ws[i])>=0) return true; return false; }); }; }
+async function fetchTab(tab){
+  var res;
+  try{ res=await fetch("https://docs.google.com/spreadsheets/d/"+encodeURIComponent(CONFIG.sheetId)+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(tab)+"&_="+Date.now()); }
+  catch(e){ throw new Error("offline"); }
+  if(!res.ok) throw new Error("「"+tab+"」タブを読めませんでした（HTTP "+res.status+"）");
+  return parseCSV(await res.text());
+}
+// マスタはgvizだと人数の「8〜9」が空になるので、ボードと同じくCSVエクスポート（タブ番号gid）で読む
+async function tabGid(name){
+  var key="takusagashi.gids."+CONFIG.sheetId;
+  if(!S.gids){ try{ S.gids=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){} }
+  if(S.gids && S.gids[name]) return S.gids[name];
+  try{
+    var res=await fetch("https://docs.google.com/spreadsheets/d/"+encodeURIComponent(CONFIG.sheetId)+"/htmlview");
+    if(!res.ok) return null;
+    var html=await res.text(), map={}, re=/\{name: "((?:[^"\\]|\\.)*)", pageUrl: "[^"]*", gid: "(\d+)"/g, m;
+    while((m=re.exec(html))){ try{ map[JSON.parse('"'+m[1]+'"')]=m[2]; }catch(e){} }
+    S.gids=map;
+    try{ localStorage.setItem(key, JSON.stringify(map)); }catch(e){}
+    return map[name]||null;
+  }catch(e){ return null; }
+}
+function parseInfo(rows){
+  var h=rows[0]||[], col=colFinder(h), iT=col("タイトル"), iP=col("人数"), iM=col("時間"), iA=col("別名"), iU=col("URL","リンク");
+  if(iT<0) return [];
+  var headT=(h[iT]||"").trim();
+  return rows.slice(1).filter(function(r){ var t=(r[iT]||"").trim(); return t && t!==headT; }).map(function(r){
+    return { t:r[iT].trim(), p:iP>=0?(r[iP]||"").trim():"", m:iM>=0?(r[iM]||"").trim():"", u:iU>=0?(r[iU]||"").trim():"",
+             a:iA>=0 ? (r[iA]||"").split(/[／、]/).map(function(s){return s.trim();}).filter(Boolean) : [] };
+  });
+}
+async function fetchInfo(){
+  var rows=null, gid=await tabGid(CONFIG.infoTab);
+  if(gid){
+    try{
+      var res=await fetch("https://docs.google.com/spreadsheets/d/"+encodeURIComponent(CONFIG.sheetId)+"/export?format=csv&gid="+gid+"&_="+Date.now());
+      if(res.ok) rows=parseInfo(parseCSV(await res.text()));
+    }catch(e){}
+    if(!rows || !rows.length){ S.gids=null; try{ localStorage.removeItem("takusagashi.gids."+CONFIG.sheetId); }catch(e){} }
+  }
+  if(!rows || !rows.length){ try{ rows=parseInfo(await fetchTab(CONFIG.infoTab)); }catch(e){ rows=[]; } }
+  return rows;
+}
+// 「アイコン」タブ：XのID｜画像URL（ファイル名から「_」が抜けていることがあるので「_」なしでも引けるようにする）
+function parseIcons(rows){
+  var h=rows[0]||[], col=colFinder(h), iX=col("XのID","ID"), iU=col("URL","画像"), out={};
+  if(iX<0 || iU<0) return out;
+  rows.slice(1).forEach(function(r){
+    var k=normX(r[iX]), u=(r[iU]||"").trim();
+    if(k && /^https:\/\/[^\s"'<>]+$/.test(u)){ out[k]=u; out["~"+k.replace(/_/g,"")]=u; }
+  });
+  return out;
+}
+function renderAva(){
+  var el=document.getElementById("whoAva"), name=S.reg?S.reg.name:"", k=normX(document.getElementById("eXid").value);
+  var u=k ? (S.icons[k]||S.icons["~"+k.replace(/_/g,"")]||"") : "";
+  el.textContent=Array.from(name)[0]||"?";
+  if(u){ var img=document.createElement("img"); img.src=u; img.alt=""; img.referrerPolicy="no-referrer"; img.onerror=function(){ img.remove(); }; el.appendChild(img); }
+}
+function parseSettings(rows){
+  var out={}; rows.slice(1).forEach(function(r){ if((r[0]||"").trim()) out[r[0].trim()]=(r[1]||"").trim(); }); return out;
+}
+function setMaster(list){
+  S.master=list.map(function(x){
+    var e={ t:x.t, k:norm(x.t), f:fold(x.t), p:x.p, m:x.m, u:x.u, a:x.a.map(function(a){ return { raw:a, k:norm(a), f:fold(a) }; }) };
+    S.alias[e.k]=e; e.a.forEach(function(a){ if(a.k && !S.alias[a.k]) S.alias[a.k]=e; });
+    return e;
+  });
+}
+
+/* ===== 回答タブ：同じ人（名前）はいちばん下の行が最新 ===== */
+var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", months:"時期", days:"曜日",
+  time:"時間帯", venue:"会場", need:"人数", note:"ひとこと", done:"締め切" };
+function answerCols(h){
+  var col=colFinder(h), find=function(t){ return h.findIndex(t); };
+  return { name:col("名前"), xid:col("XのID"),
+    want:SLOTS.map(function(k){ return { t:find(function(x){ return x.indexOf("遊びたいシナリオ"+k)>=0; }),
+      d:find(function(x){ return x.indexOf(k)===0 && x.indexOf("決まった")>=0; }) }; }),
+    rec:SLOTS.map(function(k){ var m={}; Object.keys(RECRUIT_COLS).forEach(function(f){
+      m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); }); return m; }) };
+}
+function rowsFor(rows, name){
+  var c=answerCols(rows[0]||[]), n=norm(name);
+  if(c.name<0) return [];
+  return rows.slice(1).filter(function(r){ return norm(r[c.name])===n && n; });
+}
+function rowToReg(rows, r){
+  var c=answerCols(rows[0]||[]), g=function(i){ return i>=0 ? (r[i]||"").trim() : ""; };
+  var reg={ name:g(c.name), xid:g(c.xid), ts:tsLabel(r[0]), recruits:[], wants:[] };
+  c.rec.forEach(function(m){
+    var title=g(m.title); if(!title) return;
+    var fmt=g(m.format).normalize("NFKC"), d=parseDate(g(m.date));
+    var split=function(s){ return s.split(/\s*,\s*|・/).map(function(x){ return x.trim(); }).filter(Boolean); };
+    reg.recruits.push({ title:title, format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
+      date:d?ymd(d):"", start:parseTime(g(m.start)), months:g(m.months), days:split(g(m.days)), time:split(g(m.time)),
+      venue:g(m.venue), need:g(m.need), note:g(m.note), done:!!g(m.done), origTitle:title,
+      mode: (d || !(g(m.months)||g(m.days)||g(m.time))) ? "date" : "rough" });
+  });
+  c.want.forEach(function(w){ var t=g(w.t); if(t) reg.wants.push({ t:t, done:!!g(w.d), origT:t }); });
+  return reg;
+}
+
+/* ===== シナリオ名の候補 ===== */
+function lookup(title){
+  var k=norm(title); if(!k) return null;
+  return S.alias[k]||null;
+}
+function suggest(q){
+  var f=fold(q); if(!f) return [];
+  var out=[];
+  S.master.forEach(function(e){
+    var s=-1, via="";
+    if(e.f.indexOf(f)===0) s=0; else if(e.f.indexOf(f)>0) s=1;
+    else for(var i=0;i<e.a.length;i++){ if(e.a[i].f.indexOf(f)>=0){ s=2; via=e.a[i].raw; break; } }
+    if(s>=0) out.push({ e:e, s:s, via:via });
+  });
+  out.sort(function(a,b){ return a.s-b.s || a.e.t.length-b.e.t.length || a.e.t.localeCompare(b.e.t,"ja"); });
+  return out.slice(0,8);
+}
+function metaOf(e){
+  var parts=[];
+  if(e.p) parts.push("👥 "+e.p.replace(/[~〜\-]/,"〜")+(/人/.test(e.p)?"":"人"));
+  if(e.m && /^\d+$/.test(e.m.normalize("NFKC"))) parts.push("⏱ "+e.m+"分");
+  return parts.join("　");
+}
+function hl(text, q){
+  // 入力と同じ並びの部分に色をつける（大文字小文字・かなの違いは気にしない簡易版）
+  var i=text.toLowerCase().indexOf(String(q).trim().toLowerCase());
+  if(i<0 || !q.trim()) return esc(text);
+  return esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.trim().length))+"</mark>"+esc(text.slice(i+q.trim().length));
+}
+function sgState(input, typing){
+  var st=input.parentNode.querySelector(".sg-state"); if(!st) return;
+  var v=input.value.trim(), e=lookup(v), isWant=input.dataset.kind==="want";
+  st.className="sg-state";
+  // 打っている途中は「一覧にない」を出さない（候補のほうを見てもらう）
+  if(!v || (typing && !e)){ st.textContent=""; return; }
+  if(e){
+    var meta=metaOf(e);
+    st.className="sg-state ok";
+    st.innerHTML="✓ "+(norm(e.t)===norm(v) ? "シナリオ一覧にあります" : "「"+esc(e.t)+"」としてまとめて表示します")+(meta?"（"+esc(meta)+"）":"");
+  } else if(isWant && VAGUE.test(v.normalize("NFKC"))){
+    st.className="sg-state free"; st.textContent="🎲 「おまかせ」として表示されます";
+  } else if(S.master.length){
+    st.className="sg-state warn"; st.textContent="シナリオ一覧にない名前です。候補に出てくるならそちらを選んでください（なければこのままでOK）";
+  } else st.textContent="";
+}
+var SG={ input:null, items:[], idx:-1 };
+function sgOpen(input){
+  var list=input.parentNode.querySelector(".sg-list"), q=input.value;
+  var items=q.trim() ? suggest(q) : [];
+  if(items.length===1 && norm(items[0].e.t)===norm(q)) items=[];
+  SG={ input:input, items:items, idx:-1 };
+  if(!items.length){ sgClose(); return; }
+  list.innerHTML=items.map(function(it,i){
+    var meta=metaOf(it.e);
+    return '<li role="option" id="'+input.id+'-o'+i+'" data-i="'+i+'" aria-selected="false">'+hl(it.e.t,q)
+      +((meta||it.via)?'<small>'+esc(meta)+(it.via?(meta?"　":"")+"別名：「"+esc(it.via)+"」":"")+'</small>':'')+'</li>';
+  }).join("");
+  list.hidden=false; input.setAttribute("aria-expanded","true");
+}
+function sgClose(){
+  document.querySelectorAll(".sg-list").forEach(function(l){ l.hidden=true; l.innerHTML=""; });
+  document.querySelectorAll(".sg-in").forEach(function(i){ i.setAttribute("aria-expanded","false"); i.removeAttribute("aria-activedescendant"); });
+  SG.items=[]; SG.idx=-1;
+}
+function sgMove(d){
+  if(!SG.items.length) return;
+  SG.idx=(SG.idx+d+SG.items.length)%SG.items.length;
+  var list=SG.input.parentNode.querySelector(".sg-list");
+  list.querySelectorAll("li").forEach(function(li,i){ li.setAttribute("aria-selected", String(i===SG.idx)); if(i===SG.idx) li.scrollIntoView({block:"nearest"}); });
+  SG.input.setAttribute("aria-activedescendant", SG.input.id+"-o"+SG.idx);
+}
+function sgPick(i){
+  var it=SG.items[i], input=SG.input; if(!it||!input) return;
+  input.value=it.e.t; sgClose(); sgState(input);
+}
+document.addEventListener("input", function(e){ if(e.target.classList.contains("sg-in")){ sgOpen(e.target); sgState(e.target, true); } });
+document.addEventListener("focusin", function(e){ if(e.target.classList.contains("sg-in") && e.target.value.trim()) sgOpen(e.target); });
+document.addEventListener("focusout", function(e){
+  var t=e.target; if(!t.classList.contains("sg-in")) return;
+  setTimeout(function(){ if(document.activeElement!==SG.input) sgClose(); sgState(t); }, 120);
+});
+document.addEventListener("keydown", function(e){
+  if(!e.target.classList.contains("sg-in") || !SG.items.length) return;
+  if(e.key==="ArrowDown"){ e.preventDefault(); sgMove(1); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); sgMove(-1); }
+  else if(e.key==="Enter" && SG.idx>=0){ e.preventDefault(); sgPick(SG.idx); }
+  else if(e.key==="Escape"){ sgClose(); }
+});
+// タップで選ぶ（pointerdownで先に選ばないと、入力欄のフォーカスが外れて候補が消える）
+document.addEventListener("pointerdown", function(e){
+  var li=e.target.closest(".sg-list li"); if(!li) return;
+  e.preventDefault(); sgPick(+li.dataset.i);
+});
+
+/* ===== 入力欄を組み立てる ===== */
+function chipGroup(group, opts, picked, multi){
+  return '<div class="chips" data-g="'+group+'"'+(multi?' data-multi="1"':'')+' role="group">'+opts.map(function(o){
+    var v=o[0], label=o[1]||o[0];
+    return '<button type="button" class="chip" data-v="'+esc(v)+'" aria-pressed="'+(picked.indexOf(v)>=0)+'">'+esc(label)+'</button>';
+  }).join("")+'</div>';
+}
+var uid=0;
+function recCard(r, i){
+  var id="t"+(++uid);
+  return '<div class="rec" data-orig-title="'+esc(r.origTitle||"")+'" data-done="'+(r.done?1:0)+'">'
+    +'<div class="rec-h"><b>卓募集'+SLOTS[i]+'</b>'+(r.done && r.origTitle?'<span class="rec-done">🌸 締め切り済み</span>':'')
+    +'<button type="button" class="btn del" data-del="1">この募集を消す</button></div>'
+    +'<div class="field">シナリオ名<span class="req">*</span><div class="sg">'
+    +'<input class="sg-in" id="'+id+'" data-f="title" data-kind="rec" value="'+esc(r.title)+'" placeholder="打つと候補が出ます" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">'
+    +'<ul class="sg-list" role="listbox" hidden></ul><span class="sg-state"></span></div></div>'
+    +'<div class="field">形式<span class="req">*</span>'+chipGroup("format",[["オフライン","🏪 オフライン"],["パッケージ","📦 パッケージ"],["オンライン","💻 オンライン"]],[r.format])+'</div>'
+    +'<div class="field">日程'+chipGroup("mode",[["date","📅 日付が決まってる"],["rough","🤷 まだ・ざっくり"]],[r.mode||"date"])+'</div>'
+    +'<div class="half-row" data-when="date"'+(r.mode==="rough"?' hidden':'')+'>'
+    +'<label class="field">日付<span class="opt">（決まっていれば）</span><input type="date" data-f="date" value="'+esc(r.date)+'"></label>'
+    +'<label class="field">開始時刻<input type="time" data-f="start" value="'+esc(r.start)+'"></label></div>'
+    +'<div data-when="rough"'+(r.mode==="rough"?'':' hidden')+'>'
+    +'<label class="field">時期<input data-f="months" value="'+esc(r.months)+'" placeholder="例：10月〜12月"></label>'
+    +'<div class="field">曜日'+chipGroup("days",[["平日"],["土日祝"],["どちらでも"]],r.days||[],true)+'</div>'
+    +'<div class="field">時間帯'+chipGroup("time",[["日中","☀ 日中"],["夜","🌙 夜"],["どちらでも"]],r.time||[],true)+'</div></div>'
+    +'<label class="field">会場<span class="opt">（任意・店舗名など）</span><input data-f="venue" value="'+esc(r.venue)+'"></label>'
+    +'<label class="field">募集人数<span class="opt">（任意・あと何人）</span><input type="number" inputmode="numeric" min="1" max="99" data-f="need" value="'+esc(r.need)+'"></label>'
+    +'<label class="field">ひとこと<span class="opt">（任意）</span><textarea rows="2" data-f="note">'+esc(r.note)+'</textarea></label>'
+    +'</div>';
+}
+function wantRow(w, i){
+  var id="w"+i;
+  return '<div class="want-row" data-orig-t="'+esc(w.origT||"")+'" data-done="'+(w.done?1:0)+'"><span class="num" aria-hidden="true">'+SLOTS[i]+'</span>'
+    +'<div class="sg"><input class="sg-in" id="'+id+'" data-f="want" data-kind="want" value="'+esc(w.t)+'" placeholder="打つと候補が出ます" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="遊びたいシナリオ'+SLOTS[i]+'">'
+    +'<ul class="sg-list" role="listbox" hidden></ul><span class="sg-state"></span>'
+    +(w.done && w.origT?'<span class="done-tag">🎉 卓決定ずみ</span>':'')+'</div></div>';
+}
+function renderEdit(reg){
+  var rl=document.getElementById("recList");
+  rl.innerHTML = reg.recruits.length ? reg.recruits.map(recCard).join("") : '<p class="empty-rec">卓募集はまだありません（なくても登録できます）</p>';
+  document.getElementById("addRec").hidden = reg.recruits.length>=3;
+  var ws=reg.wants.slice(0,3); while(ws.length<3) ws.push({ t:"", done:false, origT:"" });
+  document.getElementById("wantList").innerHTML=ws.map(wantRow).join("");
+  document.querySelectorAll(".sg-in").forEach(sgState);
+}
+function collect(){
+  var recs=[].map.call(document.querySelectorAll("#recList .rec"), function(el){
+    var g=function(f){ var x=el.querySelector('[data-f="'+f+'"]'); return x ? x.value.trim() : ""; };
+    var picked=function(grp){ return [].map.call(el.querySelectorAll('[data-g="'+grp+'"] [aria-pressed="true"]'), function(b){ return b.dataset.v; }); };
+    var mode=picked("mode")[0]||"date", title=g("title"), orig=el.dataset.origTitle||"";
+    var r={ title:title, format:picked("format")[0]||"", mode:mode, venue:g("venue"), need:g("need").normalize("NFKC"), note:g("note"),
+      origTitle:orig, done:el.dataset.done==="1" && !!title && norm(title)===norm(orig),
+      date:"", start:"", months:"", days:[], time:[] };
+    if(mode==="date"){ r.date=g("date"); r.start=g("start"); }
+    else { r.months=g("months"); r.days=picked("days"); r.time=picked("time"); }
+    return r;
+  });
+  var wants=[].map.call(document.querySelectorAll("#wantList .want-row"), function(el){
+    var t=el.querySelector("input").value.trim(), orig=el.dataset.origT||"";
+    return { t:t, origT:orig, done:el.dataset.done==="1" && !!t && norm(t)===norm(orig) };
+  });
+  return { name:S.reg.name, xid:document.getElementById("eXid").value.trim(), recruits:recs, wants:wants };
+}
+function isBlankRec(r){ return !r.title && !r.format && !r.venue && !r.need && !r.note && !r.date && !r.start && !r.months && !r.days.length && !r.time.length; }
+
+document.addEventListener("click", function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  var grp=b.parentNode && b.parentNode.dataset ? b.parentNode.dataset.g : null;
+  if(grp && b.classList.contains("chip")){
+    var box=b.parentNode, multi=box.dataset.multi==="1", on=b.getAttribute("aria-pressed")==="true";
+    if(multi){
+      // 「どちらでも」はほかと同時に選ばない
+      if(!on){ box.querySelectorAll(".chip").forEach(function(x){ if((b.dataset.v==="どちらでも")!==(x.dataset.v==="どちらでも")) x.setAttribute("aria-pressed","false"); }); }
+      b.setAttribute("aria-pressed", String(!on));
+    } else {
+      box.querySelectorAll(".chip").forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
+    }
+    if(grp==="mode"){
+      var card=b.closest(".rec");
+      card.querySelector('[data-when="date"]').hidden = b.dataset.v!=="date";
+      card.querySelector('[data-when="rough"]').hidden = b.dataset.v!=="rough";
+    }
+  } else if(b.dataset.del){
+    var v=collect(), cards=[].slice.call(document.querySelectorAll("#recList .rec")), idx=cards.indexOf(b.closest(".rec"));
+    var r=v.recruits[idx];
+    if(r && !isBlankRec(r) && !confirm("卓募集"+SLOTS[idx]+(r.title?"「"+r.title+"」":"")+"を消しますか？\n（「登録する」を押すまではまだ保存されません）")) return;
+    v.recruits.splice(idx,1); S.reg.recruits=v.recruits; S.reg.wants=v.wants; renderEdit(S.reg);
+  }
+});
+document.getElementById("addRec").addEventListener("click", function(){
+  var v=collect(); if(v.recruits.length>=3) return;
+  v.recruits.push({ title:"", format:"", mode:"date", date:"", start:"", months:"", days:[], time:[], venue:"", need:"", note:"", done:false, origTitle:"" });
+  S.reg.recruits=v.recruits; S.reg.wants=v.wants; renderEdit(S.reg);
+  var cards=document.querySelectorAll("#recList .rec"); var last=cards[cards.length-1];
+  if(last){ last.scrollIntoView({block:"center", behavior:"smooth"}); last.querySelector(".sg-in").focus({preventScroll:true}); }
+});
+
+/* ===== 1. お名前 → 登録を呼び出す ===== */
+var DEMO_ROWS = [["タイムスタンプ","お名前（名札と同じ表記で）","XのID（任意・@なしでOK）","卓募集をしますか？","募集①のシナリオ名","募集①の形式","募集①の日付（決まっていれば）","募集①の開始時刻","募集①の時期（日付が未定なら 例：10月〜12月）","募集①の曜日（日付が未定なら）","募集①の時間帯（日付が未定なら）","募集①の会場（店舗名など）","募集①の募集人数（あと何人）","募集①のひとこと","遊びたいシナリオ①","遊びたいシナリオ②"],
+  ["2026/09/13 12:00:00","うみねこ","","する","立方館","オフライン","","","10月〜11月","土日祝","日中","都内の店舗","3","初見の方歓迎です！","アイザック・エバンスの探究","告別詩"]];
+function showStep(which){
+  document.getElementById("stepName").hidden = which!=="name";
+  document.getElementById("stepEdit").hidden = which!=="edit";
+  document.getElementById("stepDone").hidden = which!=="done";
+}
+async function loadAnswers(){ return CONFIG.sheetId ? await fetchTab(CONFIG.answerTab) : DEMO_ROWS; }
+async function goNext(auto){
+  var name=document.getElementById("fName").value.trim(), xin=document.getElementById("fXid").value.trim();
+  var err=document.getElementById("nameErr"), btn=document.getElementById("goNext");
+  var fail=function(msg){ err.textContent=msg; err.hidden=false; showStep("name"); };
+  err.hidden=true;
+  if(!name){ if(!auto) fail("お名前を入れてください。"); return; }
+  if(xin && !normX(xin)){ fail("XのIDは、@のあとの英数字（と _ ）だけを入れてください。"); return; }
+  btn.disabled=true; btn.textContent="確認中…";
+  var rows;
+  try{ rows=await loadAnswers(); }
+  catch(e){ btn.disabled=false; btn.textContent="つぎへ →"; fail(e.message==="offline" ? "📡 通信できませんでした。電波のいい場所でもう一度押してください。" : "⚠ "+e.message); return; }
+  btn.disabled=false; btn.textContent="つぎへ →";
+  var mine=rowsFor(rows, name), last=mine[mine.length-1], sess=loadSession();
+  var sameDevice = sess && norm(sess.name)===norm(name);
+  var reg = last ? rowToReg(rows, last) : { name:name, xid:"", ts:"", recruits:[], wants:[] };
+  // 簡易の本人確認：XのID付きで登録された名前は、同じ端末か、同じXのIDを入れたときだけ呼び出せる
+  if(last && normX(reg.xid) && !sameDevice && normX(reg.xid)!==normX(xin)){
+    fail("「"+name+"」さんは XのID 付きで登録されています。登録したときの XのID を入れてください。"
+      +"（別の方なら、名札と同じ表記でお名前を変えてください。わからなくなったら幹事まで）");
+    return;
+  }
+  reg.name = last ? reg.name : name;
+  if(!reg.xid && xin) reg.xid=xin.replace(/^@/,"");
+  if(sameDevice && !reg.xid && sess.xid) reg.xid=sess.xid;
+  S.reg=reg;
+  saveSession({ name:reg.name, xid:reg.xid });
+  document.getElementById("whoName").textContent=reg.name;
+  document.getElementById("eXid").value=reg.xid||"";
+  renderAva();
+  var note=document.getElementById("loadedNote");
+  if(last){
+    note.className="loaded";
+    note.textContent="📂 登録ずみの内容"+(reg.ts?"（"+reg.ts+" 送信）":"")+"を読み込みました。直したいところを書きかえて、いちばん下の「登録する」を押してください。";
+  } else {
+    note.className="loaded new";
+    note.textContent="🆕 はじめての登録です。卓募集か遊びたいシナリオ（どちらか片方だけでもOK）を書いて、いちばん下の「登録する」を押してください。";
+  }
+  renderEdit(reg);
+  showStep("edit");
+  if(!auto) window.scrollTo({ top:0, behavior:"smooth" });
+}
+document.getElementById("nameForm").addEventListener("submit", function(e){ e.preventDefault(); goNext(false); });
+document.getElementById("eXid").addEventListener("input", renderAva);
+document.getElementById("changeWho").addEventListener("click", function(){
+  if(!confirm("別の人の登録に切りかえますか？（書きかけの内容は消えます）")) return;
+  saveSession(null); S.reg=null;
+  document.getElementById("fName").value=""; document.getElementById("fXid").value="";
+  showStep("name"); document.getElementById("fName").focus();
+});
+
+/* ===== 2. 送信（裏でGoogleフォームへ） ===== */
+function addField(form, name, value){
+  if(!name || value==null || value==="") return;
+  var i=document.createElement("input"); i.type="hidden"; i.name=name; i.value=value; form.appendChild(i);
+}
+function postRegistration(v){
+  var P=S.post, form=document.createElement("form");
+  form.action=P.action; form.method="POST"; form.target="regSink"; form.style.display="none";
+  var n=v.recruits.length, pages=[0];
+  addField(form, P.name, v.name); addField(form, P.xid, v.xid);
+  addField(form, P.recruit, n ? P.choice.yes : P.choice.noFirst);
+  v.recruits.forEach(function(r,i){
+    var e=P.rec[i]; pages.push(e.page);
+    addField(form, e.title, r.title); addField(form, e.format, r.format);
+    if(r.date){ var d=r.date.split("-"); addField(form, e.date.y, d[0]); addField(form, e.date.m, String(+d[1])); addField(form, e.date.d, String(+d[2])); }
+    if(r.start){ var t=r.start.split(":"); addField(form, e.start.h, String(+t[0])); addField(form, e.start.mi, String(+t[1])); }
+    addField(form, e.months, r.months);
+    r.days.forEach(function(x){ addField(form, e.days, x); });
+    r.time.forEach(function(x){ addField(form, e.time, x); });
+    addField(form, e.venue, r.venue); addField(form, e.need, r.need); addField(form, e.note, r.note);
+    if(r.done) addField(form, e.done, P.choice.done);
+    if(e.more) addField(form, e.more, i<n-1 ? P.choice.yes : P.choice.no);
+  });
+  pages.push(P.wantPage);
+  v.wants.forEach(function(w,i){ addField(form, P.want[i].t, w.t); if(w.done) addField(form, P.want[i].d, P.choice.wantDone); });
+  // セクションが分かれたフォームは、通ったセクションの番号を一緒に送る
+  addField(form, "pageHistory", pages.join(","));
+  addField(form, "fvv", "1");
+  document.body.appendChild(form); form.submit();
+  setTimeout(function(){ form.remove(); }, 5000);
+}
+function validate(v){
+  v.recruits=v.recruits.filter(function(r){ return !isBlankRec(r); });
+  v.wants=v.wants.filter(function(w){ return w.t; });
+  for(var i=0;i<v.recruits.length;i++){
+    var r=v.recruits[i], k="卓募集"+SLOTS[i];
+    if(!r.title) return k+"のシナリオ名を入れてください。";
+    if(!r.format) return k+"（"+r.title+"）の形式（オフライン／パッケージ／オンライン）を選んでください。";
+    if(r.need && !/^\d{1,2}$/.test(r.need)) return k+"（"+r.title+"）の募集人数は数字で入れてください。";
+  }
+  if(v.xid && !normX(v.xid)) return "XのIDは、@のあとの英数字（と _ ）だけを入れてください。";
+  v.xid=v.xid.replace(/^@/,"");
+  return "";
+}
+function compare(v, got){
+  var bad=[];
+  v.recruits.forEach(function(r,i){
+    var g=got.recruits[i]||{}, k="卓募集"+SLOTS[i];
+    if(norm(g.title)!==norm(r.title)) bad.push(k+"のシナリオ名");
+    else {
+      if(g.format!==r.format) bad.push(k+"の形式");
+      if((r.date||"")!==(g.date||"")) bad.push(k+"の日付");
+      if(norm(r.note)!==norm(g.note)) bad.push(k+"のひとこと");
+    }
+  });
+  if(got.recruits.length>v.recruits.length) bad.push("消したはずの卓募集");
+  v.wants.forEach(function(w,i){ var g=got.wants[i]; if(!g || norm(g.t)!==norm(w.t)) bad.push("遊びたいシナリオ"+SLOTS[i]); });
+  return bad;
+}
+document.getElementById("send").addEventListener("click", async function(){
+  var v=collect(), err=document.getElementById("sendErr"), btn=this, sending=document.getElementById("sending");
+  err.hidden=true;
+  var msg=validate(v);
+  if(msg){ err.textContent=msg; err.hidden=false; return; }
+  if(!v.recruits.length && !v.wants.length && !confirm("卓募集も遊びたいシナリオも空のまま登録しますか？\n（前に登録した内容は消えます）")) return;
+  if(CONFIG.sheetId && !S.post){ err.textContent="まだ登録の受付準備中です。少し待ってから開き直してください。"; err.hidden=false; return; }
+  btn.disabled=true; sending.hidden=false;
+  var finish=function(){ btn.disabled=false; sending.hidden=true; };
+  if(!CONFIG.sheetId){ await sleep(900); finish(); showDone(v, []); return; }   // デモは送信しない
+  try{
+    var before=rowsFor(await fetchTab(CONFIG.answerTab), v.name).length;
+    postRegistration(v);
+    var t0=Date.now(), got=null;
+    while(Date.now()-t0 < CONFIG.verifyMs){
+      await sleep(2500);
+      try{ var rows=await fetchTab(CONFIG.answerTab), mine=rowsFor(rows, v.name); if(mine.length>before){ got=rowToReg(rows, mine[mine.length-1]); break; } }catch(e){}
+    }
+    finish();
+    if(!got){
+      err.textContent="送信したものの、スプレッドシートへの反映を確認できませんでした。電波のいい場所で、もう一度「登録する」を押してください。（2回送っても、新しいほうが有効になるだけなので大丈夫です）";
+      err.hidden=false; return;
+    }
+    showDone(v, compare(v, got));
+  }catch(e){
+    finish();
+    err.textContent = e.message==="offline" ? "📡 通信できませんでした。電波のいい場所でもう一度押してください。" : "⚠ "+e.message;
+    err.hidden=false;
+  }
+});
+
+/* ===== 3. できた ===== */
+function recLine(r){
+  var e=lookup(r.title), when=r.date ? r.date.replace(/^\d{4}-0?(\d+)-0?(\d+)$/,"$1/$2")+(r.start?" "+r.start+"〜":"")
+    : [r.months, r.days.join("・"), r.time.join("・")].filter(Boolean).join("　");
+  return '<li>'+esc(e?e.t:r.title)+'<small>'+esc([r.format, when, r.venue, r.need?"あと"+r.need+"人":""].filter(Boolean).join("　"))+'</small></li>';
+}
+function showDone(v, bad){
+  S.reg={ name:v.name, xid:v.xid, ts:"", recruits:v.recruits.map(function(r){ return Object.assign({}, r, { origTitle:r.title }); }),
+          wants:v.wants.map(function(w){ return Object.assign({}, w, { origT:w.t }); }) };
+  saveSession({ name:v.name, xid:v.xid }); saveMe(v.name);
+  document.getElementById("doneSub").textContent=v.name+" さんの登録を受け付けました。内容はいつでもこのページから直せます。";
+  document.getElementById("doneWarn").innerHTML = bad.length
+    ? '<div class="warn-box">⚠ 一部の項目がうまく保存されていないかもしれません：'+esc(bad.join("、"))+'。お手数ですが、もう一度「内容を直す」→「登録する」を押すか、幹事に知らせてください。</div>' : "";
+  document.getElementById("doneSum").innerHTML=
+    '<div class="sum"><h3>📣 卓募集</h3>'+(v.recruits.length?'<ul>'+v.recruits.map(recLine).join("")+'</ul>':'<p class="none">なし</p>')+'</div>'
+    +'<div class="sum"><h3>🙋 遊びたいシナリオ</h3>'+(v.wants.length?'<ul>'+v.wants.map(function(w){ var e=lookup(w.t); return '<li>'+esc(e?e.t:w.t)+'</li>'; }).join("")+'</ul>':'<p class="none">なし</p>')+'</div>';
+  var s=S.settings["ボード公開"]||"", open=!/^(しない|まだ|非公開|off|false|no|×|✕)$/i.test(s.trim());
+  document.getElementById("doneNext").innerHTML = "当日は「卓さがしボード」に、みんなの卓募集と遊びたいシナリオが並びます。人が集まったら、ボードの「🌸 成立」ボタンをワンタップで押せます。"
+    +(open && CONFIG.sheetId ? '<br><a class="link" href="./?id='+encodeURIComponent(CONFIG.sheetId)+'">📋 卓さがしボードを見る →</a>' : "");
+  showStep("done");
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+document.getElementById("editAgain").addEventListener("click", function(){
+  document.getElementById("whoName").textContent=S.reg.name;
+  document.getElementById("eXid").value=S.reg.xid||"";
+  renderAva();
+  var note=document.getElementById("loadedNote"); note.className="loaded"; note.textContent="📂 さっき登録した内容です。直したいところを書きかえて、もう一度「登録する」を押してください。";
+  renderEdit(S.reg); showStep("edit"); window.scrollTo({ top:0, behavior:"smooth" });
+});
+
+/* ===== はじめに ===== */
+function notice(msg){ var n=document.getElementById("notice"); n.hidden=!msg; n.textContent=msg||""; }
+async function init(){
+  var sess=loadSession();
+  if(sess){ document.getElementById("fName").value=sess.name||""; document.getElementById("fXid").value=sess.xid||""; }
+  else { try{ var me=localStorage.getItem(ME_KEY); if(me) document.getElementById("fName").value=me; }catch(e){} }
+  if(!CONFIG.sheetId){
+    setMaster(DEMO_TITLES.map(function(x){ return { t:x[0], p:x[1], m:x[2], u:"", a:[] }; }));
+    notice("見た目の確認用のデモです（送信はしません）。「うみねこ」で登録ずみの例を呼び出せます。");
+    if(sess && sess.name) goNext(true);
+    return;
+  }
+  var r=await Promise.all([fetchInfo().catch(function(){ return []; }), fetchTab(CONFIG.settingsTab).catch(function(){ return []; }),
+    fetchTab("アイコン").catch(function(){ return []; })]);
+  setMaster(r[0]);
+  S.settings=parseSettings(r[1]);
+  S.icons=parseIcons(r[2]);
+  try{ S.post=JSON.parse(S.settings["登録フォーム送信先"]||""); }catch(e){ S.post=null; }
+  if(!S.post || !S.post.action || !S.post.rec) notice("登録の受付はまだ準備中です。幹事からの案内をお待ちください。");
+  if(sess && sess.name) goNext(true);
+}
+init();
+</script>
+</body>
+</html>
