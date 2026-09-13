@@ -943,8 +943,11 @@ function parseDate(s){
   return null;
 }
 function parseTime(s){
-  var m=String(s||"").normalize("NFKC").match(/(\d{1,2})(?::(\d{2}))?/);
-  return m ? (+m[1])+":"+(m[2]||"00") : "";
+  s=String(s||"").normalize("NFKC");
+  var m=s.match(/(\d{1,2})(?::(\d{2}))?/); if(!m) return "";
+  var h=+m[1];
+  if(/PM|午後/i.test(s) && h<12) h+=12; else if(/AM|午前/i.test(s) && h===12) h=0;   // 「7:30:00 PM」の形でも読む
+  return h+":"+(m[2]||"00");
 }
 function dateLabel(d){
   var h=HOLIDAYS[ymd(d)];
