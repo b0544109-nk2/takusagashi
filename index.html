@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卓さがしボード</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -350,6 +355,9 @@
     border-left:0;border-radius:0 12px 12px 0;padding:0 10px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;white-space:nowrap}
   .my-item.est{background:#ffe3e8}
   .rc-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .owner-menu{background:#f4f1ff;border:2px dashed var(--ink);border-radius:14px;padding:9px 11px 11px}
+  .owner-menu p{margin:0 0 8px;font-size:.78rem;font-weight:700;color:var(--ink)}
+  .rc.mine .owner-menu{background:#ffe8ec;border-style:solid}
   .need-btn{font:inherit;font-weight:700;font-size:.82rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
     border-radius:999px;padding:6px 14px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .need-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
@@ -382,13 +390,19 @@
   .mc .rosette.in .rb{width:1.9vmin;height:3.8vmin;bottom:-2.2vmin}
   .mc .rosette.in .rb1{left:2.3vmin}.mc .rosette.in .rb2{right:2.3vmin}
 
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   @media (max-width:640px){
+    html{font-size:17px}   /* スマホは全体を少し大きく（remで指定した文字がまとめて大きくなる） */
     .steps{grid-template-columns:1fr}
     .stats{grid-template-columns:repeat(2,1fr)}
     .seg{flex:1}.seg button{flex:1;padding:10px 6px}
+    .wrap{padding-left:12px;padding-right:12px}
+    .tabs{gap:8px}.tab{padding:9px 12px;font-size:.9rem}
   }
   @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash{animation:none}.tk{transition:none}}
 </style>
+</head>
+<body>
 
 <div class="deck" aria-hidden="true"></div>
 <div class="deco" aria-hidden="true"><span>🚢</span><span>🔍</span><span>⚓</span><span>🗝️</span><span>🎭</span><span>🛟</span></div>
@@ -463,11 +477,11 @@
     <div class="steps">
       <div class="step"><b>1</b><div>フォームの「卓募集をしますか？」で<strong>「する」</strong>を選んで、シナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
       <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
-      <div class="step"><b>3</b><div>集まったら、カードの<strong>「🌸 成立した！」</strong>を押す→🌸成立タブに移ります</div></div>
+      <div class="step"><b>3</b><div>集まったら、カードの「募集している人用メニュー」の<strong>「🌸 人が集まった（成立）」</strong>を押す→🌸成立タブに移ります</div></div>
     </div>
     <div class="cta-row">
       <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
-      <a class="cta" id="ctaRecruit" href="#">📣 事前にフォームで募集する <small id="ctaRecruitNote">準備中</small></a>
+      <a class="cta" id="ctaRecruit" href="#">✍️ フォームの内容を確認・編集する <small id="ctaRecruitNote">準備中</small></a>
     </div>
     <div class="filters" role="group" aria-label="日程で絞り込み">
       <span>日程でしぼる</span>
@@ -561,7 +575,7 @@
 </div>
 <div class="qr-overlay" id="needOverlay" hidden>
   <div class="qr-modal pm" role="dialog" aria-modal="true" aria-labelledby="needHeading">
-    <h2 id="needHeading" class="pop">✏️ 募集人数を変える</h2>
+    <h2 id="needHeading" class="pop">👥 あと何人か変える</h2>
     <p class="qr-lead" id="needLead"></p>
     <div class="stepper">
       <button type="button" id="needMinus" aria-label="1人減らす">−</button>
@@ -983,11 +997,10 @@ function renderRecruits(){
       +(meta?'<div class="meta" style="margin-top:0">'+meta+'</div>':'')
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
-      +'<div class="wanters">'+(w.length
-        ? '<p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div>'
-        : '<p>🙋 ボードにはまだ遊びたい人がいません</p>')+'</div>'
-      +(STATE.eventPost && !r.local ? '<div class="rc-actions"><button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 成立した！</button>'
-        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">✏️ 募集人数</button></div>' : '')
+      +(w.length ? '<div class="wanters"><p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>' : '')
+      +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
+        +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 人が集まった（成立）</button>'
+        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 あと何人か変える</button></div></div>' : '')
       +'</div></article>';
   }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
 }
@@ -1051,7 +1064,7 @@ function renderEst(){
       +'<div class="est-foot"><span>🌸 '+esc(estWhen(it))+'</span>'
       +(it.eventId && STATE.eventPost && !it.local ? '<button type="button" class="undo" data-undo="'+esc(it.eventId)+'" data-undo-what="「'+esc(it.title)+'」の成立">取り消す</button>' : '')+'</div>'
       +'</div></article>';
-  }).join("") : '<div class="empty">まだ成立した卓はありません。人が集まったら卓募集カードの「🌸 成立した！」を押してね</div>';
+  }).join("") : '<div class="empty">まだ成立した卓はありません。人が集まったら卓募集カードの「🌸 人が集まった（成立）」を押してね</div>';
 }
 
 /* ===== 表示切り替え ===== */
@@ -1603,3 +1616,5 @@ document.addEventListener("keydown", function(e){
 load();
 if(CONFIG.sheetId) setInterval(load, CONFIG.refreshMs);
 </script>
+</body>
+</html>
