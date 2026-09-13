@@ -767,9 +767,10 @@ function saveMe(v){ try{ if(v) localStorage.setItem(ME_KEY,v); else localStorage
 
 var STATE = { groups:[], free:[], doneTitles:[], entries:[], stats:{}, sort:"count", q:"", me:loadMe(), onlyMe:false, editingMe:false };
 
+// 名前が完全に同じときだけ自分とみなす（部分一致だと「まる」さんが「まるさら」さんの募集まで自分のものとして扱ってしまう）
 function isMe(name){
   var m=norm(STATE.me); if(!m) return false;
-  var n=norm(name); return n===m || (m.length>=2 && n.indexOf(m)>=0);
+  return norm(name)===m;
 }
 
 // 当日Webで「決まった」を押した人、または自分の卓募集が成立した人は、そのシナリオを消し込む

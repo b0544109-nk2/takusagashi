@@ -191,6 +191,7 @@
     <form id="nameForm" novalidate>
       <label class="field">お名前<span class="req">*</span>
         <input id="fName" autocomplete="nickname" placeholder="名札と同じ表記で" required>
+        <small class="help">同じお名前の人がいるときは、区別できるように少し変えてください（例：名前のあとに色や絵文字をつける）。</small>
       </label>
       <label class="field">XのID<span class="opt">（任意）</span>
         <input id="fXid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@のあとの英数字（例：madamis_cruise）">
@@ -686,6 +687,15 @@ async function goNext(auto){
     fail("「"+name+"」さんは XのID 付きで登録されています。登録したときの XのID を入れてください。"
       +"（別の方なら、名札と同じ表記でお名前を変えてください。わからなくなったら幹事まで）");
     return;
+  }
+  // 同じ名前の別人がうっかり上書きしないよう、ほかの端末で登録された名前を開くときは本人か確かめる
+  var xidOk = normX(reg.xid) && normX(reg.xid)===normX(xin);
+  if(last && !sameDevice && !xidOk && !auto){
+    var what=[reg.recruits.length?"卓募集 "+reg.recruits.length+"件":"", reg.wants.length?"遊びたい "+reg.wants.length+"つ":""].filter(Boolean).join("・")||"内容なし";
+    if(!confirm("「"+name+"」さんの登録がすでにあります（"+(reg.ts?reg.ts+" 送信・":"")+what+"）。\nあなたの登録ですか？\n\n別の人の場合は「キャンセル」を押して、同じ名前の人と区別できるようにお名前を少し変えてください。")){
+      fail("同じお名前の登録がすでにあります。別の方は、区別できるようにお名前を少し変えてください（例：「"+name+"（"+"◯◯）」）。");
+      return;
+    }
   }
   reg.name = last ? reg.name : name;
   if(!reg.xid && xin) reg.xid=xin.replace(/^@/,"");
