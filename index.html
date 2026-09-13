@@ -349,6 +349,19 @@
   .my-done{font:inherit;font-weight:700;font-size:.78rem;color:var(--ink);background:#c9f2d8;border:2.5px solid var(--ink);
     border-left:0;border-radius:0 12px 12px 0;padding:0 10px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;white-space:nowrap}
   .my-item.est{background:#ffe3e8}
+  .rc-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .need-btn{font:inherit;font-weight:700;font-size:.82rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
+    border-radius:999px;padding:6px 14px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
+  .need-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+  .need-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .stepper{display:flex;align-items:center;justify-content:center;gap:22px;margin:6px 0 4px}
+  .stepper button{width:56px;height:56px;border-radius:50%;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;
+    font-size:1.7rem;line-height:1;color:var(--ink);background:var(--yellow);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+  .stepper button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .stepper button:disabled{opacity:.35;cursor:default}
+  .stepper button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .stepper output{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:2.6rem;min-width:2.2ch;text-align:center;font-variant-numeric:tabular-nums}
+  .need-hint{text-align:center;margin:4px 0 12px;font-size:.84rem;font-weight:700;color:var(--muted);min-height:1.3em}
   .pchip{font-family:inherit;cursor:pointer}
   .pchip:hover{translate:0 -1px}
   .pchip:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
@@ -544,6 +557,22 @@
     <h2 id="pmHeading" class="pop"></h2>
     <div id="pmBody"></div>
     <div class="qr-actions"><button type="button" class="btn ghost" id="pmClose">とじる</button></div>
+  </div>
+</div>
+<div class="qr-overlay" id="needOverlay" hidden>
+  <div class="qr-modal pm" role="dialog" aria-modal="true" aria-labelledby="needHeading">
+    <h2 id="needHeading" class="pop">✏️ 募集人数を変える</h2>
+    <p class="qr-lead" id="needLead"></p>
+    <div class="stepper">
+      <button type="button" id="needMinus" aria-label="1人減らす">−</button>
+      <output id="needVal" aria-live="polite">0</output>
+      <button type="button" id="needPlus" aria-label="1人増やす">＋</button>
+    </div>
+    <p class="need-hint" id="needHint"></p>
+    <div class="qr-actions">
+      <button type="button" class="btn ghost" id="needCancel">やめる</button>
+      <button type="button" class="btn" id="needSave">保存する</button>
+    </div>
   </div>
 </div>
 <div id="toast" role="status" aria-live="polite" hidden><span id="toastMsg"></span><button type="button" id="toastUndo" hidden>取り消す</button></div>
@@ -878,6 +907,8 @@ function setRecruits(list){
   var t0=today0();
   var out=list.filter(function(r){ return r.title; }).map(function(r,i){
     r.key=groupKey(r.title); r.id=r.id||("r"+hash(r.name+"|"+r.title+"|"+i).toString(36));
+    var nb=STATE.needBy && STATE.needBy[norm(r.name)+"|"+r.key];
+    if(nb){ var nn=parseInt(String(nb.note).normalize("NFKC"),10); if(!isNaN(nn)) r.need=Math.max(0,nn); }
     r.d=parseDate(r.date);
     if(r.d){
       r.start=parseTime(r.start);
@@ -955,7 +986,8 @@ function renderRecruits(){
       +'<div class="wanters">'+(w.length
         ? '<p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div>'
         : '<p>🙋 ボードにはまだ遊びたい人がいません</p>')+'</div>'
-      +(STATE.eventPost && !r.local ? '<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 成立した！</button>' : '')
+      +(STATE.eventPost && !r.local ? '<div class="rc-actions"><button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 成立した！</button>'
+        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">✏️ 募集人数</button></div>' : '')
       +'</div></article>';
   }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
 }
@@ -977,14 +1009,16 @@ function parseEvents(rows){
 function computeEvents(evs){
   var cancelled={};
   evs.forEach(function(e){ if(e.type==="取り消し" && e.target) cancelled[e.target]=1; });
-  var closedBy={}, wantDone={}, act=[];
+  var closedBy={}, wantDone={}, needBy={}, act=[];
   evs.forEach(function(e){
     if(cancelled[e.id] || !e.title) return;
     e.key=groupKey(e.title);
-    if(e.type==="成立" && e.recruiter){ closedBy[norm(e.recruiter)+"|"+e.key]=e; act.push(e); }
+    var rk=norm(e.recruiter)+"|"+e.key;
+    if(e.type==="成立" && e.recruiter){ closedBy[rk]=e; act.push(e); }
     else if(e.type==="決まった" && e.reporter){ wantDone[norm(e.reporter)+"|"+e.key]=e.id; }
+    else if(e.type==="人数変更" && e.recruiter){ if(!needBy[rk] || (e.ts||0)>=(needBy[rk].ts||0)) needBy[rk]=e; }   // いちばん新しい人数を使う
   });
-  STATE.closedBy=closedBy; STATE.wantDone=wantDone; STATE.estEvents=act;
+  STATE.closedBy=closedBy; STATE.wantDone=wantDone; STATE.needBy=needBy; STATE.estEvents=act;
 }
 function buildEstablished(){
   var items=(STATE.closedRecruits||[]).map(function(r){
@@ -1526,6 +1560,44 @@ function showToast(msg, undoFn){
 }
 document.getElementById("toastUndo").addEventListener("click", function(){
   var f=TOAST.undo; TOAST.undo=null; document.getElementById("toast").hidden=true; if(f) f();
+});
+
+/* ===== 募集人数の変更 ===== */
+var NEED={ id:"", val:0, orig:0 };
+function needRender(){
+  document.getElementById("needVal").textContent=NEED.val;
+  document.getElementById("needMinus").disabled=NEED.val<=0;
+  document.getElementById("needHint").textContent = NEED.val===0 ? "0にすると「あと〇人募集」の表示を消します" : "あと "+NEED.val+" 人募集";
+}
+function openNeed(id){
+  var r=findRecruit(id); if(!r) return;
+  NEED={ id:id, val:r.need||0, orig:r.need||0 };
+  document.getElementById("needLead").textContent="「"+displayTitle(r)+"」（"+r.name+" さんの募集）";
+  needRender();
+  var ov=document.getElementById("needOverlay"); ov.hidden=false; ov.classList.add("show");
+  document.getElementById("needPlus").focus();
+}
+function closeNeed(){ var ov=document.getElementById("needOverlay"); ov.classList.remove("show"); ov.hidden=true; }
+document.getElementById("needMinus").addEventListener("click", function(){ if(NEED.val>0){ NEED.val--; needRender(); } });
+document.getElementById("needPlus").addEventListener("click", function(){ if(NEED.val<99){ NEED.val++; needRender(); } });
+document.getElementById("needCancel").addEventListener("click", closeNeed);
+document.getElementById("needOverlay").addEventListener("click", function(e){ if(e.target.id==="needOverlay") closeNeed(); });
+document.getElementById("needSave").addEventListener("click", function(){
+  var r=findRecruit(NEED.id); if(!r){ closeNeed(); return; }
+  if(NEED.val===NEED.orig){ closeNeed(); return; }
+  var n=NEED.val;
+  var ev=recordEvent({ type:"人数変更", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:String(n) });
+  closeNeed();
+  if(ev) showToast("「"+displayTitle(r)+"」の募集人数を"+(n?"あと"+n+"人":"表示なし")+"にしました", function(){
+    recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+    showToast("取り消しました");
+  });
+});
+document.addEventListener("click", function(e){
+  var t=e.target.closest("button[data-need-rec]"); if(t) openNeed(t.dataset.needRec);
+});
+document.addEventListener("keydown", function(e){
+  if(e.key==="Escape" && document.getElementById("needOverlay").classList.contains("show")) closeNeed();
 });
 
 load();
