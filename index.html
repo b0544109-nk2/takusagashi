@@ -1297,10 +1297,11 @@ function applyData(d){
   document.getElementById("openQuick").hidden=!STATE.quick;
   (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m); });
   // 送信直後でまだシートに載っていない分（仮表示）を重ねる
-  var evs=d.events||[];
-  STATE.pendingEvents=(STATE.pendingEvents||[]).filter(function(p){ return !evs.some(function(e){ return e.id===p.id; }); });
+  // 送信に失敗した分（電波切れなど）がずっと残らないよう、2分たってもシートに載らない仮表示は取り下げる
+  var evs=d.events||[], now=Date.now(), PENDING_MS=120000;
+  STATE.pendingEvents=(STATE.pendingEvents||[]).filter(function(p){ return now-p.ts<PENDING_MS && !evs.some(function(e){ return e.id===p.id; }); });
   computeEvents(evs.concat(STATE.pendingEvents).map(function(e){ return Object.assign({}, e); }));
-  var pending=(STATE.pendingLocal||[]).filter(function(p){ return !(d.recruits||[]).some(function(r){ return r.name===p.name && r.title===p.title; }); });
+  var pending=(STATE.pendingLocal||[]).filter(function(p){ return now-(p.ts||now)<PENDING_MS && !(d.recruits||[]).some(function(r){ return r.name===p.name && r.title===p.title; }); });
   STATE.pendingLocal=pending;
   setRecruits((d.recruits||[]).concat(pending).map(function(r){ return Object.assign({}, r); }));
   build(d.people||[]); buildEstablished(); render(); renderRecruits(); renderEst();
@@ -1421,7 +1422,7 @@ document.getElementById("qrForm").addEventListener("submit", function(ev){
 
   qrSubmitToForm(fields);
   if(!STATE.me){ STATE.me=name; saveMe(name); }
-  var local=Object.assign({ local:true, id:"l"+Date.now().toString(36) }, fields);
+  var local=Object.assign({ local:true, id:"l"+Date.now().toString(36), ts:Date.now() }, fields);
   STATE.pendingLocal=(STATE.pendingLocal||[]).concat([local]);
   closeQuick();
   applyData(STATE.lastData);
