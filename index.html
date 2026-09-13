@@ -1277,7 +1277,9 @@ function parseAnswers(rows){
 function parseInfo(rows){
   var h=rows[0]||[], col=colFinder(h), iT=col("タイトル"), iP=col("人数"), iM=col("時間"), iA=col("別名"), iU=col("URL","リンク");
   if(iT<0) return [];
-  return rows.slice(1).filter(function(r){ return (r[iT]||"").trim(); }).map(function(r){
+  var headT=(h[iT]||"").trim();
+  // 貼り付けたときに見出しの行がもう一度入っていても読み飛ばす
+  return rows.slice(1).filter(function(r){ var t=(r[iT]||"").trim(); return t && t!==headT; }).map(function(r){
     return { t:r[iT].trim(), p:iP>=0?r[iP]:"", m:iM>=0?r[iM]:"", u:iU>=0?(r[iU]||"").trim():"",
              a:iA>=0 ? (r[iA]||"").split(/[／、]/).map(function(s){return s.trim();}).filter(Boolean) : [] };
   });
