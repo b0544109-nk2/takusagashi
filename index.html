@@ -1308,7 +1308,12 @@ async function fetchInfo(){
     try{
       var res=await fetch("https://docs.google.com/spreadsheets/d/"+encodeURIComponent(CONFIG.sheetId)+"/export?format=csv&gid="+gid+"&_="+Date.now());
       if(res.ok) rows=parseInfo(parseCSV(await res.text()));
-    }catch(e){ if(STATE.gids) delete STATE.gids[CONFIG.infoTab]; }
+    }catch(e){}
+    // タブを作り直すと番号が変わるので、読めなかった・見出しが違ったら覚えた番号を捨てて次回調べ直す
+    if(!rows || !rows.length){
+      STATE.gids=null;
+      try{ localStorage.removeItem("takusagashi.gids."+CONFIG.sheetId); }catch(e){}
+    }
   }
   if(!rows || !rows.length) rows=parseInfo(await fetchTab(CONFIG.infoTab,false));   // 読めなければ従来どおりgvizで
   STATE.infoCache={ at:Date.now(), rows:rows };
