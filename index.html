@@ -317,6 +317,43 @@
   .rc.local .rc-top::after{content:"送信中…反映まで少し待ってね";position:absolute;left:0;right:0;bottom:-22px;
     text-align:center;font-size:.68rem;font-weight:700;color:#1f9d57}
 
+  /* 成立：選挙の当確花のような紅白のリボン付きの花 */
+  .rosette{position:absolute;top:-24px;right:-14px;width:72px;height:72px;display:grid;place-items:center;
+    rotate:10deg;z-index:3;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.18))}
+  .rosette::before{content:"";position:absolute;inset:0;border-radius:50%;border:2.5px solid var(--ink);
+    background:repeating-conic-gradient(#e8384f 0 12deg,#ff8095 12deg 24deg)}
+  .rosette b{position:relative;width:44px;height:44px;border-radius:50%;background:#d61f3a;border:3px solid #fff;
+    box-shadow:0 0 0 2px var(--ink);display:grid;place-items:center;color:#fff;
+    font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:.8rem;line-height:1}
+  .rosette .rb{position:absolute;bottom:-20px;width:15px;height:32px;background:#d61f3a;border:2px solid var(--ink);z-index:-1;
+    clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
+  .rosette .rb1{left:19px;rotate:16deg}
+  .rosette .rb2{right:19px;rotate:-16deg;background:#fff}
+  .est-lead{text-align:center;font-size:.86rem;font-weight:700;color:var(--muted);margin:26px 0 8px;line-height:1.7}
+  .est-grid{padding-top:18px}
+  .rc.est{position:relative;background:#fff8f9}
+  .est-members p{margin:0 0 7px;font-size:.78rem;font-weight:700}
+  .est-members .chip{font-size:.78rem;padding:3px 9px}
+  .est-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:2px dashed var(--line);
+    padding-top:9px;font-size:.76rem;font-weight:700;color:var(--muted)}
+  .undo{font:inherit;font-size:.72rem;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);
+    border-radius:999px;padding:2px 10px;cursor:pointer}
+  .est-btn{align-self:flex-start;font:inherit;font-weight:700;font-size:.84rem;color:#fff;background:#e8384f;
+    border:2.5px solid var(--ink);border-radius:999px;padding:6px 15px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
+  .est-btn:active,.want-rec:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+  .want-rec{font:inherit;font-weight:700;font-size:.74rem;color:#fff;background:var(--red);border:2px solid var(--ink);
+    border-radius:999px;padding:3px 10px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;margin-left:auto;white-space:nowrap}
+  .est-btn:focus-visible,.want-rec:focus-visible,.undo:focus-visible,.my-done:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .my-wrap{display:inline-flex;align-items:stretch;gap:0}
+  .my-wrap .my-item{border-top-right-radius:0;border-bottom-right-radius:0}
+  .my-done{font:inherit;font-weight:700;font-size:.78rem;color:var(--ink);background:#c9f2d8;border:2.5px solid var(--ink);
+    border-left:0;border-radius:0 12px 12px 0;padding:0 10px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;white-space:nowrap}
+  .my-item.est{background:#ffe3e8}
+  .mc .rosette.in{position:relative;top:auto;right:auto;flex:none;width:9vmin;height:9vmin;rotate:-8deg;margin-left:auto}
+  .mc .rosette.in b{width:5.6vmin;height:5.6vmin;font-size:1.7vmin;border-width:.4vmin}
+  .mc .rosette.in .rb{width:1.9vmin;height:3.8vmin;bottom:-2.2vmin}
+  .mc .rosette.in .rb1{left:2.3vmin}.mc .rosette.in .rb2{right:2.3vmin}
+
   @media (max-width:640px){
     .steps{grid-template-columns:1fr}
     .stats{grid-template-columns:repeat(2,1fr)}
@@ -338,6 +375,7 @@
   <nav class="tabs" role="tablist" aria-label="表示の切り替え">
     <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="true" aria-controls="viewRecruit">📣 卓募集<b id="recCount">0</b></button>
     <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="false" aria-controls="viewWant">🙋 遊びたい</button>
+    <button class="tab" role="tab" id="tabEst" data-view="est" aria-selected="false" aria-controls="viewEst">🌸 成立<b id="estCount">0</b></button>
     <button class="tab mon" type="button" id="openMonitor">📺 モニター表示</button>
   </nav>
 
@@ -346,8 +384,8 @@
   <div id="viewWant" role="tabpanel" aria-labelledby="tabWant" hidden>
   <div class="steps">
     <div class="step"><b>1</b><div>フォームに<strong>遊びたいシナリオを3つまで</strong>書く</div></div>
-    <div class="step"><b>2</b><div>同じシナリオに並んでる人に<strong>声をかけて卓を組む</strong></div></div>
-    <div class="step"><b>3</b><div>卓が決まったら同じフォームを開き直して<strong>「決まった」にチェック</strong>→ここから消えます</div></div>
+    <div class="step"><b>2</b><div>同じシナリオに並んでる人に<strong>声をかける</strong>。自分で卓を立てるならカードの<strong>「📣 この卓を募集する」</strong></div></div>
+    <div class="step"><b>3</b><div>卓が決まったら、名前を入れた欄の<strong>「✓ 決まった」</strong>を押す→ここから消えます</div></div>
   </div>
   <div class="cta-row"><a class="cta" id="cta" href="#">✍️ フォームで登録・更新する <small id="ctaNote">準備中</small></a></div>
 
@@ -397,7 +435,7 @@
     <div class="steps">
       <div class="step"><b>1</b><div>フォームの「卓募集をしますか？」で<strong>「する」</strong>を選んで、シナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
       <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
-      <div class="step"><b>3</b><div>集まったらフォームを開き直して<strong>「締め切った」にチェック</strong>→ここから消えます</div></div>
+      <div class="step"><b>3</b><div>集まったら、カードの<strong>「🌸 成立した！」</strong>を押す→🌸成立タブに移ります</div></div>
     </div>
     <div class="cta-row">
       <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
@@ -415,6 +453,11 @@
       <button class="fchip" type="button" data-f="夜" aria-pressed="false">🌙 夜</button>
     </div>
     <div class="rc-grid" id="recruits"></div>
+  </div>
+
+  <div id="viewEst" role="tabpanel" aria-labelledby="tabEst" hidden>
+    <p class="est-lead">人が集まって成立した卓募集です。🌸の花が「成立」のしるし。</p>
+    <div class="rc-grid est-grid" id="estList"></div>
   </div>
 
   <p class="status" id="status"></p>
@@ -516,6 +559,7 @@ var CONFIG = {
   settingsTab: "設定",      // 登録フォームのURLなど（項目｜値）
   iconTab: "アイコン",       // XのID｜画像URL
   quickTab: "即時卓募集",    // 「⚡その場で卓を立てる」の送信先タブ
+  eventTab: "成立ログ",      // 当日の成立・消し込み・取り消しの記録（追記のみ）
   slideMs: 10000,
   refreshMs: 30000
 };
@@ -626,6 +670,14 @@ function isMe(name){
   var n=norm(name); return n===m || (m.length>=2 && n.indexOf(m)>=0);
 }
 
+// 当日Webで「決まった」を押した人、または自分の卓募集が成立した人は、そのシナリオを消し込む
+function webDoneEvent(name, gk){
+  var k=norm(name)+"|"+gk;
+  if(STATE.wantDone && STATE.wantDone[k]) return { kind:"want", id:STATE.wantDone[k] };
+  if(STATE.closedBy && STATE.closedBy[k]) return { kind:"recruit", id:STATE.closedBy[k].id };
+  return null;
+}
+
 function build(people){
   var groups={}, free=[], entries=[], nPeople=0, active=0, decided=0;
   people.forEach(function(p){
@@ -642,10 +694,11 @@ function build(people){
       }
       var gk=canon?norm(canon):key;
       if(seen[gk]) return; seen[gk]=1;
-      entries.push({name:p.name,key:gk,done:!!s.done});
+      var webEv=webDoneEvent(p.name,gk), dn=!!s.done || !!webEv;
+      entries.push({name:p.name,key:gk,done:dn,ev:webEv&&webEv.kind==="want"?webEv.id:null});
       var g=groups[gk]||(groups[gk]={key:gk,title:canon||"",fixed:!!canon,people:[],done:0,variants:{}});
       g.variants[raw]=(g.variants[raw]||0)+1;
-      if(s.done){ g.done++; decided++; } else { g.people.push(p.name); active++; }
+      if(dn){ g.done++; decided++; } else { g.people.push(p.name); active++; }
     });
     if(any) nPeople++;
   });
@@ -673,6 +726,7 @@ function ticket(g, q, small){
   var foot="";
   if(g.others.length) foot+='<p class="yure"><em>表記ゆれ '+g.others.length+'件まとめ</em>'+g.others.map(esc).join(" ／ ")+'</p>';
   if(g.done) foot+='<span class="stamp">卓決定 '+g.done+'人</span>';
+  if(STATE.quick) foot+='<button type="button" class="want-rec" data-want-rec="'+esc(g.title)+'">📣 この卓を募集する</button>';
   var info=infoFor(g), meta="";
   if(info){
     if(info.min) meta+='<span>👥 '+playersLabel(info)+'</span>';
@@ -740,15 +794,23 @@ function renderMe(){
   var myRecs=(STATE.recruits||[]).filter(function(r){ return isMe(r.name); });
   var names={}; mine.concat(myRecs).forEach(function(e){ names[e.name]=1; });
   var shown=Object.keys(names).filter(function(n){ return n!==STATE.me; });
+  var myEst=(STATE.established||[]).filter(function(it){ return isMe(it.recruiter); });
+  var canWeb=!!STATE.eventPost;
   var items=myRecs.map(function(r){
     var w=wantersOf(r).length;
     return '<button type="button" class="my-item rec" data-rec="'+r.id+'">📣 '+esc(displayTitle(r))+' <b>'+(w?'遊びたい人 '+w+'人':'募集中')+'</b></button>';
+  }).join("")+myEst.map(function(it){
+    return '<button type="button" class="my-item est" data-jump-est="'+esc(it.id)+'">🌸 '+esc(it.title)+' <b>成立</b></button>';
   }).join("")+mine.map(function(e){
     if(e.free!=null) return '<span class="my-item free">🎲 おまかせ：'+esc(e.free)+'</span>';
     var g=STATE.byKey[e.key]; if(!g) return "";
-    if(e.done) return '<span class="my-item done">🎉 '+esc(g.title)+' <b>卓決定</b></span>';
+    if(e.done){
+      var doneChip='<span class="my-item done">🎉 '+esc(g.title)+' <b>卓決定</b></span>';
+      return e.ev && canWeb ? '<span class="my-wrap">'+doneChip+'<button type="button" class="my-done" data-undo="'+esc(e.ev)+'" data-undo-what="「'+esc(g.title)+'」の決定">戻す</button></span>' : doneChip;
+    }
     var others=g.people.filter(function(p){ return !isMe(p); }).length;
-    return '<button type="button" class="my-item" data-jump="'+cardId(g)+'">'+esc(g.title)+' <b>'+(others?'ほか'+others+'人':'まだ自分だけ')+'</b></button>';
+    var jump='<button type="button" class="my-item" data-jump="'+cardId(g)+'">'+esc(g.title)+' <b>'+(others?'ほか'+others+'人':'まだ自分だけ')+'</b></button>';
+    return canWeb ? '<span class="my-wrap">'+jump+'<button type="button" class="my-done" data-done-title="'+esc(g.title)+'" data-done-name="'+esc(e.name)+'">✓ 決まった</button></span>' : jump;
   }).join("");
   bar.innerHTML='<div class="me-top"><span class="me-hello">👋 '+esc(STATE.me)+' さんの募集・希望</span>'
     +'<button class="btn ghost" type="button" id="meEdit">名前を変える</button></div>'
@@ -788,7 +850,7 @@ function dateLabel(d){
 }
 function setRecruits(list){
   var t0=today0();
-  var out=list.filter(function(r){ return r.title && !r.done; }).map(function(r,i){
+  var out=list.filter(function(r){ return r.title; }).map(function(r,i){
     r.key=groupKey(r.title); r.id=r.id||("r"+hash(r.name+"|"+r.title+"|"+i).toString(36));
     r.d=parseDate(r.date);
     if(r.d){
@@ -799,9 +861,16 @@ function setRecruits(list){
       r.left=Math.round((r.d-t0)/86400000);
     }
     return r;
-  }).filter(function(r){ return !r.d || r.left>=0; });   // 日付を過ぎた募集は自動で消す
-  out.sort(function(a,b){ if(a.d&&b.d) return a.d-b.d; if(a.d) return -1; if(b.d) return 1; return 0; });
-  STATE.recruits=out;
+  });
+  // フォームで「締め切った」か、当日Webで「成立した！」を押したものは成立タブへ
+  var open=[], closed=[];
+  out.forEach(function(r){
+    var ev=STATE.closedBy && STATE.closedBy[norm(r.name)+"|"+r.key];
+    if(r.done || ev){ r.closedEvent=ev||null; closed.push(r); }
+    else if(!r.d || r.left>=0) open.push(r);   // 日付を過ぎた募集は自動で消す
+  });
+  open.sort(function(a,b){ if(a.d&&b.d) return a.d-b.d; if(a.d) return -1; if(b.d) return 1; return 0; });
+  STATE.recruits=open; STATE.closedRecruits=closed;
 }
 // XのIDの表記ゆれ（@付き・URL・大文字）をそろえる
 function normX(s){
@@ -822,7 +891,7 @@ function whenChips(r){
   if(r.format) out+='<span class="fmt">'+(FMT_ICON[r.format]||"")+' '+esc(r.format)+'</span>';
   if(r.d){
     out+='<span class="date">📅 '+dateLabel(r.d)+(r.start?' '+esc(r.start)+'〜':'')+'</span>';
-    if(r.left<=7) out+='<span class="soon">'+(r.left===0?'今日！':r.left===1?'明日！':'あと'+r.left+'日')+'</span>';
+    if(r.left>=0 && r.left<=7) out+='<span class="soon">'+(r.left===0?'今日！':r.left===1?'明日！':'あと'+r.left+'日')+'</span>';
   } else {
     if(r.months) out+='<span>📅 '+esc(r.months)+'</span>';
     if(r.days) out+='<span class="d">🗓 '+esc(r.days)+'</span>';
@@ -856,17 +925,80 @@ function renderRecruits(){
       +'<div class="wanters">'+(w.length
         ? '<p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div>'
         : '<p>🙋 ボードにはまだ遊びたい人がいません</p>')+'</div>'
+      +(STATE.eventPost && !r.local ? '<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 成立した！</button>' : '')
       +'</div></article>';
   }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
 }
 
+/* ===== 成立（当日Webで記録する追記ログ） ===== */
+// 成立ログ：種類（成立／決まった／取り消し）｜イベントID｜対象イベントID｜報告者｜募集者｜シナリオ名｜メンバー｜ひとこと
+function parseEvents(rows){
+  var h=(rows[0]||[]).map(function(x){ return (x||"").trim(); }), ix=function(t){ return h.indexOf(t); };
+  var c={ type:ix("種類"), id:ix("イベントID"), target:ix("対象イベントID"), reporter:ix("報告者"), recruiter:ix("募集者"),
+          title:ix("シナリオ名"), note:ix("ひとこと") };
+  if(c.type<0 || c.id<0) return [];
+  var g=function(r,k){ return c[k]>=0 ? (r[c[k]]||"").trim() : ""; };
+  return rows.slice(1).map(function(r){
+    var ts=Date.parse(r[0]||"");
+    return { type:g(r,"type"), id:g(r,"id"), target:g(r,"target"), reporter:g(r,"reporter"), recruiter:g(r,"recruiter"),
+             title:g(r,"title"), note:g(r,"note"), ts:isNaN(ts)?0:ts };
+  }).filter(function(e){ return e.type && e.id; });
+}
+function computeEvents(evs){
+  var cancelled={};
+  evs.forEach(function(e){ if(e.type==="取り消し" && e.target) cancelled[e.target]=1; });
+  var closedBy={}, wantDone={}, act=[];
+  evs.forEach(function(e){
+    if(cancelled[e.id] || !e.title) return;
+    e.key=groupKey(e.title);
+    if(e.type==="成立" && e.recruiter){ closedBy[norm(e.recruiter)+"|"+e.key]=e; act.push(e); }
+    else if(e.type==="決まった" && e.reporter){ wantDone[norm(e.reporter)+"|"+e.key]=e.id; }
+  });
+  STATE.closedBy=closedBy; STATE.wantDone=wantDone; STATE.estEvents=act;
+}
+function buildEstablished(){
+  var items=(STATE.closedRecruits||[]).map(function(r){
+    var ev=r.closedEvent;
+    return { id:"est-"+r.id, r:r, title:displayTitle(r), key:r.key, recruiter:r.name, eventId:ev?ev.id:null,
+             reporter:ev?ev.reporter:"", ts:ev?ev.ts:0, local:ev&&ev.local, fromForm:!ev };
+  });
+  items.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+  STATE.established=items;
+}
+function estWhen(it){
+  if(it.fromForm) return "フォームで締め切り";
+  if(!it.ts) return "成立";
+  var d=new Date(it.ts), same=d.toDateString()===new Date().toDateString();
+  return (same?"":(d.getMonth()+1)+"/"+d.getDate()+" ")+hhmm(it.ts)+" に成立";
+}
+function rosette(extra){ return '<span class="rosette'+(extra||"")+'" aria-hidden="true"><i class="rb rb1"></i><i class="rb rb2"></i><b>成立</b></span>'; }
+function renderEst(){
+  var list=STATE.established||[];
+  document.getElementById("estCount").textContent=list.length;
+  document.getElementById("estList").innerHTML = list.length ? list.map(function(it){
+    var r=it.r, bg=PALETTE[hash(it.key)%PALETTE.length], mine=isMe(it.recruiter);
+    return '<article class="rc est'+(mine?' mine':'')+(it.local?' local':'')+'" id="'+esc(it.id)+'" aria-label="成立：'+esc(it.title)+'">'
+      +rosette()
+      +'<div class="rc-top" style="background:'+bg+';color:'+textOn(bg)+'">'+avatar(r)
+      +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集した人')+'</small><b>'+esc(it.recruiter)+'</b></div></div>'
+      +'<div class="rc-body"><h3>'+esc(it.title)+'</h3>'
+      +'<div class="when">'+whenChips(r)+'</div>'
+      +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
+      +'<div class="est-foot"><span>🌸 '+esc(estWhen(it))+'</span>'
+      +(it.eventId && STATE.eventPost && !it.local ? '<button type="button" class="undo" data-undo="'+esc(it.eventId)+'" data-undo-what="「'+esc(it.title)+'」の成立">取り消す</button>' : '')+'</div>'
+      +'</div></article>';
+  }).join("") : '<div class="empty">まだ成立した卓はありません。人が集まったら卓募集カードの「🌸 成立した！」を押してね</div>';
+}
+
 /* ===== 表示切り替え ===== */
+var VIEWS={ want:["viewWant","tabWant"], recruit:["viewRecruit","tabRecruit"], est:["viewEst","tabEst"] };
 function setView(v){
+  if(!VIEWS[v]) v="recruit";
   STATE.view=v;
-  document.getElementById("viewWant").hidden = v!=="want";
-  document.getElementById("viewRecruit").hidden = v!=="recruit";
-  document.getElementById("tabWant").setAttribute("aria-selected", String(v==="want"));
-  document.getElementById("tabRecruit").setAttribute("aria-selected", String(v==="recruit"));
+  Object.keys(VIEWS).forEach(function(k){
+    document.getElementById(VIEWS[k][0]).hidden = k!==v;
+    document.getElementById(VIEWS[k][1]).setAttribute("aria-selected", String(k===v));
+  });
   try{ history.replaceState(null,"","#"+v); }catch(e){}
 }
 function flashEl(el){
@@ -885,7 +1017,17 @@ function buildSlides(){
   var out=[];
   slides.forEach(function(s,i){ out.push(s); if(i%2===1 && hot.length) out.push({type:"hot", items:hot}); });
   if(hot.length && (!out.length || out[out.length-1].type!=="hot")) out.push({type:"hot", items:hot});
+  // 直近で成立した卓をお祝い（新しい順に4件）
+  var est=(STATE.established||[]).slice(0,4);
+  if(est.length) out.splice(Math.min(1,out.length),0,{type:"est", items:est});
   MON.slides=out;
+}
+function monEst(it){
+  var r=it.r;
+  return '<article class="mc"><div class="mc-top" style="background:#ffe3e8">'+avatar(r)
+    +'<div class="mc-name"><small>卓が立ちました！</small>'+esc(it.recruiter)+' さんの卓</div>'+rosette(" in")+'</div>'
+    +'<div class="mc-body"><h3>'+esc(it.title)+'</h3><div class="when">'+whenChips(r)+'</div>'
+    +'<div class="mc-foot">🌸 '+esc(estWhen(it))+'</div></div></article>';
 }
 function monCard(r){
   var bg=PALETTE[hash(r.key)%PALETTE.length], w=wantersOf(r);
@@ -910,9 +1052,9 @@ function showSlide(){
   if(!total){ grid.innerHTML='<div class="m-empty">まだ募集はありません<br>スマホの「卓さがしボード」から募集してみよう！</div>'; document.getElementById("mPage").textContent=""; return; }
   MON.idx=(MON.idx%total+total)%total;
   var s=MON.slides[MON.idx];
-  grid.innerHTML=s.items.map(s.type==="hot"?monHot:monCard).join("");
+  grid.innerHTML=s.items.map(s.type==="hot"?monHot:s.type==="est"?monEst:monCard).join("");
   grid.classList.remove("anim"); void grid.offsetWidth; grid.classList.add("anim");
-  document.querySelector(".m-title").textContent = s.type==="hot" ? "🔥 いま遊びたい人が多いシナリオ" : "📣 卓メンバー募集中！";
+  document.querySelector(".m-title").textContent = s.type==="hot" ? "🔥 いま遊びたい人が多いシナリオ" : s.type==="est" ? "🌸 卓が立ちました！" : "📣 卓メンバー募集中！";
   document.getElementById("mPage").textContent=(MON.idx+1)+" / "+total;
   var p=document.getElementById("mProg"); p.classList.remove("run"); void p.offsetWidth;
   p.style.animationDuration=CONFIG.slideMs+"ms"; if(!MON.paused) p.classList.add("run");
@@ -979,6 +1121,7 @@ document.getElementById("meBar").addEventListener("click",function(ev){
   else if(t.id==="meCancel"){ STATE.editingMe=false; renderMe(); }
   else if(t.dataset.jump){ jumpTo(t.dataset.jump); }
   else if(t.dataset.rec){ jumpToRecruit(t.dataset.rec); }
+  else if(t.dataset.jumpEst){ setView("est"); var el=document.getElementById(t.dataset.jumpEst); if(el) flashEl(el); }
 });
 function jumpToRecruit(id){
   STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
@@ -1079,9 +1222,11 @@ function parseQuickRecruits(rows){
   });
 }
 async function fetchAll(){
-  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false), fetchTab(CONFIG.iconTab,false), fetchTab(CONFIG.quickTab,false)]);
+  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false),
+    fetchTab(CONFIG.iconTab,false), fetchTab(CONFIG.quickTab,false), fetchTab(CONFIG.eventTab,false)]);
   var a=parseAnswers(r[0]);
-  return { people:a.people, recruits:a.recruits.concat(parseQuickRecruits(r[4])), info:parseInfo(r[1]), settings:parseSettings(r[2]), icons:parseIcons(r[3]), at:Date.now() };
+  return { people:a.people, recruits:a.recruits.concat(parseQuickRecruits(r[4])), info:parseInfo(r[1]), settings:parseSettings(r[2]),
+           icons:parseIcons(r[3]), events:parseEvents(r[5]), at:Date.now() };
 }
 function demoData(){
   var t0=today0();
@@ -1090,6 +1235,11 @@ function demoData(){
     people: DEMO.map(function(r){ return { name:r[0], slots:[r[1],r[2],r[3]].map(function(t,i){ return { text:t||"", done:!!t && hash(r[0]+"|"+i)%100<13 }; }) }; }),
     recruits: DEMO_RECRUITS.map(function(r){ var x=Object.assign({}, r);
       if(/^\+\d+$/.test(x.date||"")){ var d=new Date(t0); d.setDate(d.getDate()+parseInt(x.date,10)); x.date=ymd(d); } return x; }),
+    // 当日Webで成立した例（架空）
+    events: [
+      { type:"成立", id:"demo-e1", reporter:"ほたて", recruiter:"ほたて", title:"されど魔王は殺される", note:"", ts:Date.now()-25*60000 },
+      { type:"成立", id:"demo-e2", reporter:"いかり", recruiter:"いかり", title:"クドリャフカの籤引", note:"", ts:Date.now()-70*60000 }
+    ],
     info:[], settings:{}, at:Date.now()
   };
 }
@@ -1105,17 +1255,23 @@ function setLink(id, noteId, url){
   document.getElementById(noteId).hidden=true;
 }
 function applyData(d){
+  STATE.lastData=d;
   var s=d.settings||{};
   STATE.icons=d.icons||{};
   setLink("cta","ctaNote", s["登録フォーム"]);
   setLink("ctaRecruit","ctaRecruitNote", s["登録フォーム"]);
   try{ STATE.quick=JSON.parse(s["その場で卓を立てるフォーム送信先"]||""); }catch(e){ STATE.quick=null; }
+  try{ STATE.eventPost=JSON.parse(s["成立報告フォーム送信先"]||""); }catch(e){ STATE.eventPost=null; }
   document.getElementById("openQuick").hidden=!STATE.quick;
   (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m); });
+  // 送信直後でまだシートに載っていない分（仮表示）を重ねる
+  var evs=d.events||[];
+  STATE.pendingEvents=(STATE.pendingEvents||[]).filter(function(p){ return !evs.some(function(e){ return e.id===p.id; }); });
+  computeEvents(evs.concat(STATE.pendingEvents).map(function(e){ return Object.assign({}, e); }));
   var pending=(STATE.pendingLocal||[]).filter(function(p){ return !(d.recruits||[]).some(function(r){ return r.name===p.name && r.title===p.title; }); });
   STATE.pendingLocal=pending;
   setRecruits((d.recruits||[]).concat(pending).map(function(r){ return Object.assign({}, r); }));
-  build(d.people||[]); render(); renderRecruits();
+  build(d.people||[]); buildEstablished(); render(); renderRecruits(); renderEst();
   if(!document.getElementById("monitor").hidden) buildSlides();
   if(STATE.pendingMonitor){ STATE.pendingMonitor=false; openMonitor(); }
   STATE.loadedOnce=true;
@@ -1144,7 +1300,7 @@ async function load(){
 }
 
 STATE.view="recruit";
-(function(){ var h=(location.hash||"").slice(1); if(h==="want") setView("want"); else if(h==="monitor") STATE.pendingMonitor=true; })();
+(function(){ var h=(location.hash||"").slice(1); if(h==="want"||h==="est") setView(h); else if(h==="monitor") STATE.pendingMonitor=true; })();
 
 var qEl=document.getElementById("q"), tmr=null;
 qEl.addEventListener("input",function(){ clearTimeout(tmr); tmr=setTimeout(function(){ STATE.q=qEl.value.trim(); render(); },120); });
@@ -1174,9 +1330,10 @@ qrChipGroup("qrMode", function(v){
   document.getElementById("qrWhenRough").hidden = v!=="rough";
 });
 
-function openQuick(){
+function openQuick(prefillTitle){
   if(!STATE.quick){ return; }
   document.getElementById("qrForm").reset();
+  if(typeof prefillTitle==="string") document.getElementById("qrTitle").value=prefillTitle;
   QR = { format:"", mode:"date", days:"", time:"" };
   document.querySelectorAll(".qr-chip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
   document.querySelector('#qrMode .qr-chip[data-v="date"]').setAttribute("aria-pressed","true");
@@ -1232,12 +1389,53 @@ document.getElementById("qrForm").addEventListener("submit", function(ev){
 
   qrSubmitToForm(fields);
   if(!STATE.me){ STATE.me=name; saveMe(name); }
-  var local=Object.assign({ local:true }, fields);
+  var local=Object.assign({ local:true, id:"l"+Date.now().toString(36) }, fields);
   STATE.pendingLocal=(STATE.pendingLocal||[]).concat([local]);
-  setRecruits((STATE.recruits||[]).concat([local]));
-  renderRecruits(); renderMe();
   closeQuick();
+  applyData(STATE.lastData);
+  setView("recruit");
+  var el=document.getElementById(local.id); if(el) flashEl(el);
   setTimeout(load, 4000);
+});
+
+/* ===== 当日の成立・決まった・取り消しを成立ログに送る ===== */
+function newEventId(){ return "e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function postEvent(ev){
+  var p=STATE.eventPost; if(!p) return false;
+  var form=document.createElement("form");
+  form.action=p.action; form.method="POST"; form.target="qrSink"; form.style.display="none";
+  ["type","id","target","reporter","recruiter","title","note"].forEach(function(k){ if(p[k]) qrAdd(form, p[k], ev[k]); });
+  document.body.appendChild(form); form.submit();
+  setTimeout(function(){ form.remove(); }, 4000);
+  return true;
+}
+function recordEvent(ev){
+  ev.id=newEventId(); ev.ts=Date.now(); ev.local=true;
+  if(!postEvent(ev)) return false;
+  STATE.pendingEvents=(STATE.pendingEvents||[]).concat([ev]);
+  applyData(STATE.lastData);
+  setTimeout(load, 4000);
+  return ev;
+}
+function findRecruit(id){ return (STATE.recruits||[]).filter(function(r){ return r.id===id; })[0]; }
+
+document.addEventListener("click", function(e){
+  var t=e.target.closest("button"); if(!t) return;
+  if(t.dataset.estRec){
+    var r=findRecruit(t.dataset.estRec); if(!r) return;
+    if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）を成立にしますか？\n🌸成立タブに移ります。")) return;
+    var ev=recordEvent({ type:"成立", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:"" });
+    if(ev){ setView("est"); var el=document.getElementById("est-"+r.id); if(el) flashEl(el); }
+  } else if(t.dataset.doneTitle){
+    var title=t.dataset.doneTitle, who=t.dataset.doneName||STATE.me;
+    if(!confirm("「"+title+"」の卓が決まったので、遊びたいの一覧から外しますか？")) return;
+    recordEvent({ type:"決まった", reporter:who, recruiter:"", title:title, note:"" });
+  } else if(t.dataset.undo){
+    if(!confirm((t.dataset.undoWhat||"この記録")+"を取り消しますか？（間違えて押したとき用）")) return;
+    recordEvent({ type:"取り消し", target:t.dataset.undo, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+  } else if(t.dataset.wantRec!=null){
+    openQuick(t.dataset.wantRec);
+  }
 });
 
 load();
