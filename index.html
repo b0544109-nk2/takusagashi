@@ -244,7 +244,6 @@
   .when span.d{background:#dff4ff}
   .when span.t{background:#ffe3ef}
   .when span.date{background:var(--yellow)}
-  .when span.soon{background:var(--red);color:#fff}
   .when span.v{background:#fff}
   .when span.fmt{background:var(--ink);color:#fff}
   .rc-note{margin:0;font-size:.86rem;font-weight:700;color:var(--muted);line-height:1.6}
@@ -442,21 +441,25 @@
 
   <div id="boardMain">
   <nav class="tabs" role="tablist" aria-label="表示の切り替え">
-    <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="true" aria-controls="viewRecruit">📣 卓募集<b id="recCount">0</b></button>
-    <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="false" aria-controls="viewWant">🙋 遊びたい</button>
-    <button class="tab" role="tab" id="tabEst" data-view="est" aria-selected="false" aria-controls="viewEst">🌸 成立<b id="estCount">0</b></button>
+    <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="true" aria-controls="viewRecruit">📣 卓募集っ<b id="recCount">0</b></button>
+    <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="false" aria-controls="viewWant">🙋 遊びたいっ</button>
+    <button class="tab" role="tab" id="tabEst" data-view="est" aria-selected="false" aria-controls="viewEst">🌸 成立っ<b id="estCount">0</b></button>
     <button class="tab mon" type="button" id="openMonitor">📺 モニター表示</button>
   </nav>
+
+  <div class="steps">
+    <div class="step"><b>1</b><div><strong>卓募集っ</strong>にはすでに募集が始まってる卓、<strong>遊びたいっ</strong>にはシナリオを遊びたい人が集まってるよっ、ここからシナリオと日程の登録もできるよっ</div></div>
+    <div class="step"><b>2</b><div>興味あるシナリオが被ってる人、募集している人に<strong>声をかけてみよう！</strong></div></div>
+    <div class="step"><b>3</b><div>募集している人は集まったら<strong>成立</strong>を教えてねっ</div></div>
+  </div>
+  <div class="cta-row">
+    <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
+    <a class="cta" id="ctaRecruit" href="#">✍️ シナリオと日程を登録する <small id="ctaRecruitNote">準備中</small></a>
+  </div>
 
   <section class="me-bar" id="meBar" aria-label="あなたの募集・希望"></section>
 
   <div id="viewWant" role="tabpanel" aria-labelledby="tabWant" hidden>
-  <div class="steps">
-    <div class="step"><b>1</b><div>登録ページで<strong>遊びたいシナリオを3つまで</strong>書く</div></div>
-    <div class="step"><b>2</b><div>同じシナリオに並んでる人に<strong>声をかける</strong>。自分で卓を立てるならカードの<strong>「📣 この卓を募集する」</strong></div></div>
-    <div class="step"><b>3</b><div>卓が決まったら、名前を入れた欄の<strong>「✓ 決まった」</strong>を押す→ここから消えます</div></div>
-  </div>
-  <div class="cta-row"><a class="cta" id="cta" href="#">✍️ 登録ページで登録・更新する <small id="ctaNote">準備中</small></a></div>
 
   <div class="stats">
     <div class="stat"><b id="sPeople">–</b><span>登録した人</span></div>
@@ -501,19 +504,10 @@
   </div>
 
   <div id="viewRecruit" role="tabpanel" aria-labelledby="tabRecruit">
-    <div class="steps">
-      <div class="step"><b>1</b><div>登録ページの<strong>「卓募集」</strong>にシナリオと日程を書く（1人3件まで。日付指定でも「10月〜12月の土日」みたいなざっくりでもOK）</div></div>
-      <div class="step"><b>2</b><div>ここと<strong>船のモニター</strong>に流れて、遊びたい人が声をかけてくれる</div></div>
-      <div class="step"><b>3</b><div>集まったら、カードの「募集している人用メニュー」の<strong>「🌸 人が集まった（成立）」</strong>を押す→🌸成立タブに移ります</div></div>
-    </div>
-    <div class="cta-row">
-      <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
-      <a class="cta" id="ctaRecruit" href="#">✍️ 登録した内容を確認・編集する <small id="ctaRecruitNote">準備中</small></a>
-    </div>
     <div class="filters" role="group" aria-label="日程で絞り込み">
       <span>日程でしぼる</span>
       <button class="fchip" type="button" data-f="dated" aria-pressed="false">📅 日付が決まってる</button>
-      <button class="fchip" type="button" data-f="オフライン" aria-pressed="false">🏪 オフライン</button>
+      <button class="fchip" type="button" data-f="オフライン" aria-pressed="false">🏪 店舗</button>
       <button class="fchip" type="button" data-f="パッケージ" aria-pressed="false">📦 パッケージ</button>
       <button class="fchip" type="button" data-f="オンライン" aria-pressed="false">💻 オンライン</button>
       <button class="fchip" type="button" data-f="平日" aria-pressed="false">平日</button>
@@ -551,7 +545,7 @@
 
       <div class="qr-field">形式<span class="req">*</span>
         <div class="qr-chips" id="qrFormat" role="radiogroup" aria-label="形式">
-          <button type="button" class="qr-chip" data-v="オフライン">🏪 オフライン</button>
+          <button type="button" class="qr-chip" data-v="オフライン">🏪 店舗</button>
           <button type="button" class="qr-chip" data-v="パッケージ">📦 パッケージ</button>
           <button type="button" class="qr-chip" data-v="オンライン">💻 オンライン</button>
         </div>
@@ -606,7 +600,7 @@
 </div>
 <div class="qr-overlay" id="needOverlay" hidden>
   <div class="qr-modal pm" role="dialog" aria-modal="true" aria-labelledby="needHeading">
-    <h2 id="needHeading" class="pop">👥 あと何人か変える</h2>
+    <h2 id="needHeading" class="pop">👥 募集人数変更</h2>
     <p class="qr-lead" id="needLead"></p>
     <div class="stepper">
       <button type="button" id="needMinus" aria-label="1人減らす">−</button>
@@ -982,7 +976,8 @@ function setRecruits(list){
     if(r.done || ev){ r.closedEvent=ev||null; closed.push(r); }
     else if(!r.d || r.left>=0) open.push(r);   // 日付を過ぎた募集は自動で消す
   });
-  open.sort(function(a,b){ if(a.d&&b.d) return a.d-b.d; if(a.d) return -1; if(b.d) return 1; return 0; });
+  var left=function(r){ return r.need>0 ? r.need : 999; };
+  open.sort(function(a,b){ return left(a)-left(b) || (a.d&&b.d ? a.d-b.d : a.d ? -1 : b.d ? 1 : 0); });
   STATE.recruits=open; STATE.closedRecruits=closed;
 }
 // XのIDの表記ゆれ（@付き・URL・大文字）をそろえる
@@ -1004,12 +999,12 @@ function avatar(r){
     +(url?'<img src="'+esc(url)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</span>';
 }
 var FMT_ICON = {"オフライン":"🏪","パッケージ":"📦","オンライン":"💻"};
+var FMT_LABEL = {"オフライン":"店舗"};   // 表示だけ「店舗」にそろえる（フォームの選択肢の値はオフラインのまま）
 function whenChips(r){
   var out="";
-  if(r.format) out+='<span class="fmt">'+(FMT_ICON[r.format]||"")+' '+esc(r.format)+'</span>';
+  if(r.format) out+='<span class="fmt">'+(FMT_ICON[r.format]||"")+' '+esc(FMT_LABEL[r.format]||r.format)+'</span>';
   if(r.d){
     out+='<span class="date">📅 '+dateLabel(r.d)+(r.start?' '+esc(r.start)+'〜':'')+'</span>';
-    if(r.left>=0 && r.left<=7) out+='<span class="soon">'+(r.left===0?'今日！':r.left===1?'明日！':'あと'+r.left+'日')+'</span>';
   } else {
     if(r.months) out+='<span>📅 '+esc(r.months)+'</span>';
     if(r.days) out+='<span class="d">🗓 '+esc(r.days)+'</span>';
@@ -1041,7 +1036,7 @@ function renderRecruits(){
       +(w.length ? '<div class="wanters"><p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>' : '')
       +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
         +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 人が集まった（成立）</button>'
-        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 あと何人か変える</button></div></div>' : '')
+        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 募集人数変更</button></div></div>' : '')
       +'</div></article>';
   }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
 }
@@ -1428,7 +1423,7 @@ function setLink(id, noteId, url){
 // Webの登録ページ（touroku.html）の準備ができていればそちら、なければ従来どおりGoogleフォームへ
 function setRegLinks(s){
   var reg = s["登録フォーム送信先"] && CONFIG.sheetId ? "touroku.html?id="+encodeURIComponent(CONFIG.sheetId) : "";
-  [["cta","ctaNote"],["ctaRecruit","ctaRecruitNote"]].forEach(function(p){
+  [["ctaRecruit","ctaRecruitNote"]].forEach(function(p){
     if(!reg){ setLink(p[0], p[1], s["登録フォーム"]); return; }
     var a=document.getElementById(p[0]); a.href=reg; a.removeAttribute("target");
     document.getElementById(p[1]).hidden=true;
@@ -1622,7 +1617,7 @@ document.addEventListener("click", function(e){
   var t=e.target.closest("button"); if(!t) return;
   if(t.dataset.estRec){
     var r=findRecruit(t.dataset.estRec); if(!r) return;
-    if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）を成立にしますか？\n🌸成立タブに移ります。")) return;
+    if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）を成立にしますか？\n「🌸 成立っ」タブに移ります。")) return;
     var ev=recordEvent({ type:"成立", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:"" });
     if(ev){ setView("est"); var el=document.getElementById("est-"+r.id); if(el) flashEl(el); }
   } else if(t.dataset.doneTitle){

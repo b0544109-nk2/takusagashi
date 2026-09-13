@@ -525,7 +525,7 @@ function recCard(r, i){
     +'<div class="field">シナリオ名<span class="req">*</span><div class="sg">'
     +'<input class="sg-in" id="'+id+'" data-f="title" data-kind="rec" value="'+esc(r.title)+'" placeholder="打つと候補が出ます" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">'
     +'<ul class="sg-list" role="listbox" hidden></ul><span class="sg-state"></span></div></div>'
-    +'<div class="field">形式<span class="req">*</span>'+chipGroup("format",[["オフライン","🏪 オフライン"],["パッケージ","📦 パッケージ"],["オンライン","💻 オンライン"]],[r.format])+'</div>'
+    +'<div class="field">形式<span class="req">*</span>'+chipGroup("format",[["オフライン","🏪 店舗"],["パッケージ","📦 パッケージ"],["オンライン","💻 オンライン"]],[r.format])+'</div>'
     +'<div class="field">日程'+chipGroup("mode",[["date","📅 日付が決まってる"],["rough","🤷 まだ・ざっくり"]],[r.mode||"date"])+'</div>'
     +'<div class="half-row" data-when="date"'+(r.mode==="rough"?' hidden':'')+'>'
     +'<label class="field">日付<span class="opt">（決まっていれば）</span><input type="date" data-f="date" value="'+esc(r.date)+'"></label>'
@@ -733,7 +733,7 @@ function validate(v){
   for(var i=0;i<v.recruits.length;i++){
     var r=v.recruits[i], k="卓募集"+SLOTS[i];
     if(!r.title) return k+"のシナリオ名を入れてください。";
-    if(!r.format) return k+"（"+r.title+"）の形式（オフライン／パッケージ／オンライン）を選んでください。";
+    if(!r.format) return k+"（"+r.title+"）の形式（店舗／パッケージ／オンライン）を選んでください。";
     if(r.need && !/^\d{1,2}$/.test(r.need)) return k+"（"+r.title+"）の募集人数は数字で入れてください。";
   }
   if(v.xid && !normX(v.xid)) return "XのIDは、@のあとの英数字（と _ ）だけを入れてください。";
@@ -789,7 +789,7 @@ document.getElementById("send").addEventListener("click", async function(){
 function recLine(r){
   var e=lookup(r.title), when=r.date ? r.date.replace(/^\d{4}-0?(\d+)-0?(\d+)$/,"$1/$2")+(r.start?" "+r.start+"〜":"")
     : [r.months, r.days.join("・"), r.time.join("・")].filter(Boolean).join("　");
-  return '<li>'+esc(e?e.t:r.title)+'<small>'+esc([r.format, when, r.venue, r.need?"あと"+r.need+"人":""].filter(Boolean).join("　"))+'</small></li>';
+  return '<li>'+esc(e?e.t:r.title)+'<small>'+esc([r.format==="オフライン"?"店舗":r.format, when, r.venue, r.need?"あと"+r.need+"人":""].filter(Boolean).join("　"))+'</small></li>';
 }
 function doneWantsHtml(wants){
   if(!wants.length) return '<p class="none">なし</p>';
