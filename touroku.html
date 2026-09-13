@@ -736,7 +736,8 @@ function showDone(v, bad){
   document.getElementById("doneSum").innerHTML=
     '<div class="sum"><h3>📣 卓募集</h3>'+(v.recruits.length?'<ul>'+v.recruits.map(recLine).join("")+'</ul>':'<p class="none">なし</p>')+'</div>'
     +'<div class="sum"><h3>🙋 遊びたいシナリオ</h3>'+(v.wants.length?'<ul>'+v.wants.map(function(w){ var e=lookup(w.t); return '<li>'+esc(e?e.t:w.t)+'</li>'; }).join("")+'</ul>':'<p class="none">なし</p>')+'</div>';
-  var s=S.settings["ボード公開"]||"", open=!/^(しない|まだ|非公開|off|false|no|×|✕)$/i.test(s.trim());
+  // ボードのURLは当日まで幹事だけが知っている運用なので、設定タブで「ボード公開｜する」にしたときだけリンクを出す
+  var open=/^(する|公開|はい|on|true|yes|○|〇)$/i.test(String(S.settings["ボード公開"]||"").trim());
   document.getElementById("doneNext").innerHTML = "当日は「卓さがしボード」に、みんなの卓募集と遊びたいシナリオが並びます。人が集まったら、ボードの「🌸 成立」ボタンをワンタップで押せます。"
     +(open && CONFIG.sheetId ? '<br><a class="link" href="./?id='+encodeURIComponent(CONFIG.sheetId)+'">📋 卓さがしボードを見る →</a>' : "");
   showStep("done");
