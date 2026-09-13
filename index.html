@@ -1283,10 +1283,34 @@ function parseInfo(rows){
   });
 }
 // マスタ（シナリオ情報タブ）は千件以上になるのでめったに変わらない前提で、10分に1回だけ読み直す
+// gvizは列の型を多数決で決めるため、人数の「8」と「8〜9」が混ざると少ない方が空になる。
+// マスタだけはCSVエクスポート（型を推定しない）で読む。エクスポートはタブ番号(gid)でしか指定できないので、
+// 閲覧用ページ(htmlview)からタブ名→gidを一度だけ調べて端末に覚えておく。
+async function tabGid(name){
+  var key="takusagashi.gids."+CONFIG.sheetId;
+  if(!STATE.gids){ try{ STATE.gids=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){} }
+  if(STATE.gids && STATE.gids[name]) return STATE.gids[name];
+  try{
+    var res=await fetch("https://docs.google.com/spreadsheets/d/"+encodeURIComponent(CONFIG.sheetId)+"/htmlview");
+    if(!res.ok) return null;
+    var html=await res.text(), map={}, re=/\{name: "((?:[^"\\]|\\.)*)", pageUrl: "[^"]*", gid: "(\d+)"/g, m;
+    while((m=re.exec(html))){ try{ map[JSON.parse('"'+m[1]+'"')]=m[2]; }catch(e){} }
+    STATE.gids=map;
+    try{ localStorage.setItem(key, JSON.stringify(map)); }catch(e){}
+    return map[name]||null;
+  }catch(e){ return null; }
+}
 async function fetchInfo(){
   var c=STATE.infoCache;
   if(c && Date.now()-c.at < CONFIG.infoRefreshMs) return c.rows;
-  var rows=parseInfo(await fetchTab(CONFIG.infoTab,false));
+  var rows=null, gid=await tabGid(CONFIG.infoTab);
+  if(gid){
+    try{
+      var res=await fetch("https://docs.google.com/spreadsheets/d/"+encodeURIComponent(CONFIG.sheetId)+"/export?format=csv&gid="+gid+"&_="+Date.now());
+      if(res.ok) rows=parseInfo(parseCSV(await res.text()));
+    }catch(e){ if(STATE.gids) delete STATE.gids[CONFIG.infoTab]; }
+  }
+  if(!rows || !rows.length) rows=parseInfo(await fetchTab(CONFIG.infoTab,false));   // 読めなければ従来どおりgvizで
   STATE.infoCache={ at:Date.now(), rows:rows };
   return rows;
 }
