@@ -368,6 +368,7 @@
   .need-btn{font:inherit;font-weight:700;font-size:.82rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
     border-radius:999px;padding:6px 14px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .need-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+  .need-btn.wd-btn{background:#f1efe6;color:#5a5140}
   .need-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .stepper{display:flex;align-items:center;justify-content:center;gap:22px;margin:6px 0 4px}
   .stepper button{width:56px;height:56px;border-radius:50%;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;
@@ -903,6 +904,10 @@ function renderMe(){
     return '<button type="button" class="my-item rec" data-rec="'+r.id+'">📣 '+esc(displayTitle(r))+' <b>'+(w?'遊びたい人 '+w+'人':'募集中')+'</b></button>';
   }).join("")+myEst.map(function(it){
     return '<button type="button" class="my-item est" data-jump-est="'+esc(it.id)+'">🌸 '+esc(it.title)+' <b>成立</b></button>';
+  }).join("")+(STATE.withdrawnRecruits||[]).filter(function(r){ return isMe(r.name); }).map(function(r){
+    // 取り下げた募集は、ここから元に戻せる
+    var chipHtml='<span class="my-item done">🙇 '+esc(displayTitle(r))+' <b>取り下げ</b></span>';
+    return r.withdrawEvent && r.withdrawEvent.id && canWeb ? '<span class="my-wrap">'+chipHtml+'<button type="button" class="my-done" data-undo="'+esc(r.withdrawEvent.id)+'" data-undo-what="「'+esc(displayTitle(r))+'」の取り下げ">戻す</button></span>' : chipHtml;
   }).join("")+mine.map(function(e){
     if(e.free!=null) return '<span class="my-item free">🎲 おまかせ：'+esc(e.free)+'</span>';
     var g=STATE.byKey[e.key]; if(!g) return "";
@@ -970,15 +975,17 @@ function setRecruits(list){
     return r;
   });
   // フォームで「締め切った」か、当日Webで「成立した！」を押したものは成立タブへ
-  var open=[], closed=[];
+  // 「取り下げ」（ほかの人の卓に合流するときなど）は、成立タブにも出さずに一覧から外す
+  var open=[], closed=[], withdrawn=[];
   out.forEach(function(r){
-    var ev=STATE.closedBy && STATE.closedBy[norm(r.name)+"|"+r.key];
-    if(r.done || ev){ r.closedEvent=ev||null; closed.push(r); }
+    var rk=norm(r.name)+"|"+r.key, ev=STATE.closedBy && STATE.closedBy[rk], wd=STATE.withdrawnBy && STATE.withdrawnBy[rk];
+    if(wd){ r.withdrawEvent=wd; withdrawn.push(r); }
+    else if(r.done || ev){ r.closedEvent=ev||null; closed.push(r); }
     else if(!r.d || r.left>=0) open.push(r);   // 日付を過ぎた募集は自動で消す
   });
   var left=function(r){ return r.need>0 ? r.need : 999; };
   open.sort(function(a,b){ return left(a)-left(b) || (a.d&&b.d ? a.d-b.d : a.d ? -1 : b.d ? 1 : 0); });
-  STATE.recruits=open; STATE.closedRecruits=closed;
+  STATE.recruits=open; STATE.closedRecruits=closed; STATE.withdrawnRecruits=withdrawn;
 }
 // XのIDの表記ゆれ（@付き・URL・大文字）をそろえる
 function normX(s){
@@ -1036,7 +1043,8 @@ function renderRecruits(){
       +(w.length ? '<div class="wanters"><p>🙋（参考）このシナリオを遊びたい人 '+w.length+'人</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>' : '')
       +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
         +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 人が集まった（成立）</button>'
-        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 募集人数変更</button></div></div>' : '')
+        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 募集人数変更</button>'
+        +'<button type="button" class="need-btn wd-btn" data-withdraw-rec="'+esc(r.id)+'">🙇 募集を取り下げる</button></div></div>' : '')
       +'</div></article>';
   }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
 }
@@ -1058,16 +1066,17 @@ function parseEvents(rows){
 function computeEvents(evs){
   var cancelled={};
   evs.forEach(function(e){ if(e.type==="取り消し" && e.target) cancelled[e.target]=1; });
-  var closedBy={}, wantDone={}, needBy={}, act=[];
+  var closedBy={}, wantDone={}, needBy={}, withdrawnBy={}, act=[];
   evs.forEach(function(e){
     if(cancelled[e.id] || !e.title) return;
     e.key=groupKey(e.title);
     var rk=norm(e.recruiter)+"|"+e.key;
     if(e.type==="成立" && e.recruiter){ closedBy[rk]=e; act.push(e); }
+    else if(e.type==="取り下げ" && e.recruiter){ withdrawnBy[rk]=e; }
     else if(e.type==="決まった" && e.reporter){ wantDone[norm(e.reporter)+"|"+e.key]=e.id; }
     else if(e.type==="人数変更" && e.recruiter){ if(!needBy[rk] || (e.ts||0)>=(needBy[rk].ts||0)) needBy[rk]=e; }   // いちばん新しい人数を使う
   });
-  STATE.closedBy=closedBy; STATE.wantDone=wantDone; STATE.needBy=needBy; STATE.estEvents=act;
+  STATE.closedBy=closedBy; STATE.wantDone=wantDone; STATE.needBy=needBy; STATE.withdrawnBy=withdrawnBy; STATE.estEvents=act;
 }
 function buildEstablished(){
   var items=(STATE.closedRecruits||[]).map(function(r){
@@ -1722,6 +1731,18 @@ document.getElementById("needSave").addEventListener("click", function(){
 });
 document.addEventListener("click", function(e){
   var t=e.target.closest("button[data-need-rec]"); if(t) openNeed(t.dataset.needRec);
+});
+
+/* ===== 募集の取り下げ（ほかの人の卓に合流するときなど） ===== */
+document.addEventListener("click", function(e){
+  var t=e.target.closest("button[data-withdraw-rec]"); if(!t) return;
+  var r=findRecruit(t.dataset.withdrawRec); if(!r) return;
+  if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）を取り下げますか？\n卓募集っの一覧から消えます（ほかの人の卓に合流するときなど）。")) return;
+  var ev=recordEvent({ type:"取り下げ", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:"" });
+  if(ev) showToast("🙇 「"+displayTitle(r)+"」の募集を取り下げました", function(){
+    recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+    showToast("取り消しました");
+  });
 });
 document.addEventListener("keydown", function(e){
   if(e.key==="Escape" && document.getElementById("needOverlay").classList.contains("show")) closeNeed();

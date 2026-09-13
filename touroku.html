@@ -126,6 +126,8 @@
   .sum li.want-li span{flex:1;min-width:0}
   .sum li.want-li.done{background:#eefaf2}
   .rec.done{background:#fff1f3}
+  .li-btns{flex:none;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+  .plan-btn.wd{background:#f1efe6;color:#5a5140;font-size:.74rem}
   .sg-hint{margin-top:-8px;color:var(--ink)}
   .bug{margin:30px auto 0;max-width:560px;text-align:center;font-size:.86rem;font-weight:700;background:#fff;border:2.5px dashed var(--ink);
     border-radius:14px;padding:10px 14px;line-height:1.6}
@@ -810,7 +812,8 @@ function recLine(r, i){
     : [r.months, r.days.join("・"), r.time.join("・")].filter(Boolean).join("　");
   return '<li class="want-li'+(r.done?' done':'')+'"><span>'+esc(e?e.t:r.title)
     +'<small>'+(r.done?'🌸 成立：ボードの「成立っ」に移っています':esc([r.format==="オフライン"?"店舗":r.format, when, r.venue, r.need?"あと"+r.need+"人":""].filter(Boolean).join("　")))+'</small></span>'
-    +'<button type="button" class="plan-btn" data-gather-now="'+i+'" aria-pressed="'+!!r.done+'">'+(r.done?'↩ 戻す':gatherLabel(false))+'</button></li>';
+    +'<span class="li-btns"><button type="button" class="plan-btn" data-gather-now="'+i+'" aria-pressed="'+!!r.done+'">'+(r.done?'↩ 戻す':gatherLabel(false))+'</button>'
+    +(r.done?'':'<button type="button" class="plan-btn wd" data-withdraw-now="'+i+'">🙇 取り下げる</button>')+'</span></li>';
 }
 function doneWantsHtml(wants){
   if(!wants.length) return '<p class="none">なし</p>';
@@ -829,7 +832,7 @@ function showDone(v, bad, msg){
     ? '<div class="warn-box">⚠ 一部の項目がうまく保存されていないかもしれません：'+esc(bad.join("、"))+'。お手数ですが、もう一度「内容を直す」→「登録する」を押すか、幹事に知らせてください。</div>' : "";
   document.getElementById("doneSum").innerHTML=
     '<div class="sum"><h3>📣 卓募集</h3>'+(v.recruits.length?'<ul>'+v.recruits.map(recLine).join("")+'</ul>'
-      +'<p class="sum-help">人が集まったら「集まった！」を押すと、そのまま送信してボードの「成立っ」に移ります。</p>':'<p class="none">なし</p>')+'</div>'
+      +'<p class="sum-help">人が集まったら「集まった！」を押すと、そのまま送信してボードの「成立っ」に移ります。ほかの人の卓に合流するときなどは「取り下げる」で募集を消せます。</p>':'<p class="none">なし</p>')+'</div>'
     +'<div class="sum"><h3>🙋 遊びたいシナリオ</h3>'+doneWantsHtml(v.wants)
     +(v.wants.length?'<p class="sum-help">予定が立ったら「予定立った！」を押すと、そのまま送信してボードの一覧から外れます。</p>':'')+'</div>';
   // ボードのURLは当日まで幹事だけが知っている運用なので、設定タブで「ボード公開｜する」にしたときだけリンクを出す
@@ -840,8 +843,23 @@ function showDone(v, bad, msg){
   showStep("done");
   if(!msg) window.scrollTo({ top:0, behavior:"smooth" });
 }
-// 登録後の画面から「予定立った！」をワンタップで送る（登録内容はそのままで、そのシナリオだけ予定立ったにして送り直す）
+var DONE_BTNS="[data-plan-now], [data-gather-now], [data-withdraw-now], #editAgain";
+// 登録後の画面から卓募集を取り下げる（ほかの人の卓に合流するときなど）：その募集を外して送り直す
+async function withdrawNow(b){
+  var i=+b.dataset.withdrawNow, r=S.reg.recruits[i]; if(!r) return;
+  var name=(lookup(r.title)||{t:r.title}).t;
+  if(!confirm("「"+name+"」の募集を取り下げますか？\nボードの「卓募集っ」から消えます（ほかの人の卓に合流するときなど）。")) return;
+  var v={ name:S.reg.name, xid:S.reg.xid||"", recruits:S.reg.recruits.filter(function(x,j){ return j!==i; }).map(function(x){ return Object.assign({}, x); }),
+          wants:S.reg.wants.map(function(x){ return Object.assign({}, x); }) };
+  document.querySelectorAll(DONE_BTNS).forEach(function(x){ x.disabled=true; });
+  b.textContent="送信中…";
+  try{ var bad=await submitReg(v); showDone(v, bad, "🙇 「"+name+"」の募集を取り下げました。"); }
+  catch(err){ showDone(S.reg, [], " "); document.getElementById("doneWarn").innerHTML='<div class="warn-box">'+esc(sendErrText(err))+'</div>'; }
+  document.querySelectorAll(DONE_BTNS).forEach(function(x){ x.disabled=false; });
+}
+// 登録後の画面から「予定立った！」「集まった！」をワンタップで送る（登録内容はそのままで、その項目だけ変えて送り直す）
 document.getElementById("doneSum").addEventListener("click", async function(e){
+  var w=e.target.closest("[data-withdraw-now]"); if(w){ if(!w.disabled) withdrawNow(w); return; }
   var b=e.target.closest("[data-plan-now],[data-gather-now]"); if(!b || b.disabled) return;
   var isRec=b.dataset.gatherNow!=null, i=+(isRec ? b.dataset.gatherNow : b.dataset.planNow);
   var item=isRec ? S.reg.recruits[i] : S.reg.wants[i]; if(!item) return;
@@ -850,7 +868,7 @@ document.getElementById("doneSum").addEventListener("click", async function(e){
   var v={ name:S.reg.name, xid:S.reg.xid||"",
           recruits:S.reg.recruits.map(function(x,j){ return Object.assign({}, x, isRec && j===i ? { done:on } : {}); }),
           wants:S.reg.wants.map(function(x,j){ return Object.assign({}, x, !isRec && j===i ? { done:on } : {}); }) };
-  document.querySelectorAll("[data-plan-now], [data-gather-now], #editAgain").forEach(function(x){ x.disabled=true; });
+  document.querySelectorAll(DONE_BTNS).forEach(function(x){ x.disabled=true; });
   b.textContent="送信中…";
   var msg = isRec ? (on ? "🌸 「"+name+"」を成立にしました。ボードの「成立っ」に移ります。" : "「"+name+"」を卓募集に戻しました。")
                   : (on ? "🎉 「"+name+"」を予定立ったにしました。ボードの「遊びたい」一覧から外れます。" : "「"+name+"」をボードの「遊びたい」一覧に戻しました。");
@@ -861,7 +879,7 @@ document.getElementById("doneSum").addEventListener("click", async function(e){
     showDone(S.reg, [], " ");
     document.getElementById("doneWarn").innerHTML='<div class="warn-box">'+esc(sendErrText(err))+'</div>';
   }
-  document.querySelectorAll("[data-plan-now], [data-gather-now], #editAgain").forEach(function(x){ x.disabled=false; });
+  document.querySelectorAll(DONE_BTNS).forEach(function(x){ x.disabled=false; });
 });
 document.getElementById("editAgain").addEventListener("click", function(){
   document.getElementById("whoName").textContent=S.reg.name;
