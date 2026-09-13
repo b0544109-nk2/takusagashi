@@ -146,8 +146,14 @@
     border-radius:999px;padding:1px 8px;margin-bottom:6px}
   .tk h3{margin:0;font-size:1.12rem;line-height:1.35;overflow-wrap:anywhere;text-wrap:balance}
   .tk.t3 h3,.tk.t1 h3{color:#fff;text-shadow:1.5px 1.5px 0 rgba(0,0,0,.22)}
-  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-  .meta span{font-size:.72rem;font-weight:700;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:2px 9px;white-space:nowrap;color:var(--ink)}
+  .gaiyou{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:8px;background:#fff;border:2px solid var(--ink);
+    border-radius:10px;padding:5px 9px;color:var(--ink);text-shadow:none}
+  .gaiyou b{font-size:.66rem;font-weight:700;background:var(--ink);color:#fff;border-radius:6px;padding:1px 7px;letter-spacing:.04em}
+  .gaiyou span{font-size:.76rem;font-weight:700;white-space:nowrap}
+  .gaiyou a{font-size:.76rem;font-weight:700;color:#1a5fd6;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
+  .gaiyou a:focus-visible{outline:3px solid var(--cyan);outline-offset:2px;border-radius:4px}
+  .rc-body .gaiyou{margin-top:0}
+  .qr-help{display:block;margin-top:5px;font-size:.74rem;font-weight:700;color:var(--muted)}
   .tk-stub{flex:none;width:74px;border-left:3px dashed var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:rgba(255,255,255,.55);border-top-right-radius:14px;padding:6px 0}
   .tk-stub b{font-size:1.85rem;line-height:1;font-variant-numeric:tabular-nums}
@@ -182,8 +188,8 @@
   .grid.small .tk-stub{display:none}
   .grid.small .tk.mine{box-shadow:4px 4px 0 var(--red)}
   .grid.small .tk-label{font-size:.6rem;margin-bottom:5px}
-  .grid.small .meta{margin-top:6px}
-  .grid.small .meta span{font-size:.68rem;padding:1px 7px}
+  .grid.small .gaiyou{margin-top:6px;padding:3px 7px}
+  .grid.small .gaiyou span,.grid.small .gaiyou a{font-size:.7rem}
 
   /* なんでもOK */
   .free-list{background:#fff;border:3.5px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);padding:6px 16px}
@@ -515,7 +521,9 @@
         <input id="qrName" required autocomplete="nickname" placeholder="名札と同じ表記で">
       </label>
       <label class="qr-field">シナリオ名<span class="req">*</span>
-        <input id="qrTitle" required placeholder="例：立方館">
+        <input id="qrTitle" required placeholder="例：立方館" list="qrTitles" autocomplete="off">
+        <small class="qr-help">入力すると候補が出ます。候補から選ぶと表記がそろって、遊びたい人とつながります</small>
+        <datalist id="qrTitles"></datalist>
       </label>
 
       <div class="qr-field">形式<span class="req">*</span>
@@ -624,7 +632,8 @@ var CONFIG = {
   quickTab: "即時卓募集",    // 「⚡その場で卓を立てる」の送信先タブ
   eventTab: "成立ログ",      // 当日の成立・消し込み・取り消しの記録（追記のみ）
   slideMs: 10000,
-  refreshMs: 30000
+  refreshMs: 30000,
+  infoRefreshMs: 600000     // マスタ（シナリオ情報）は10分に1回
 };
 
 // 卓募集のサンプル（架空の募集者）。date があれば日付指定、なければ「時期・曜日・時間帯」のざっくり指定
@@ -703,10 +712,21 @@ var PALETTE = ["#ff6fae","#33c4ff","#ffd23f","#4bd08a","#ff9f1c","#9b7bff","#ff5
 function norm(s){ return String(s||"").normalize("NFKC").toLowerCase().replace(/[\s・:：!！?？\-‐－―ー〜~()（）「」『』【】.、。,]/g,""); }
 var ALIAS = {}, INFO = {};
 function addAlias(c, variants){ ALIAS[norm(c)] = c; (variants||[]).forEach(function(v){ if(v) ALIAS[norm(v)] = c; }); }
-function addInfo(title, players, minutes, temp){
+function addInfo(title, players, minutes, temp, url){
   var p=String(players||"").normalize("NFKC").match(/(\d+)(?:\D+(\d+))?/), m=parseInt(String(minutes||"").normalize("NFKC"),10);
-  if(!p && !m) return;
-  INFO[norm(title)] = { min:p?+p[1]:null, max:p?+(p[2]||p[1]):null, minutes:isNaN(m)?null:m, temp:!!temp };
+  var u=/^https:\/\/(www\.)?mdms\.jp\/[^\s"'<>]*$/.test(String(url||"").trim()) ? String(url).trim() : "";
+  if(!p && isNaN(m) && !u) return;
+  INFO[norm(title)] = { min:p?+p[1]:null, max:p?+(p[2]||p[1]):null, minutes:isNaN(m)?null:m, temp:!!temp, url:u };
+}
+function infoForKey(key, title){ return INFO[key] || INFO[norm(title||"")] || null; }
+// 人数・時間・マダミス.jpのリンクを「シナリオ概要」としてまとめて出す
+function gaiyou(info){
+  if(!info) return "";
+  var items="";
+  if(info.min) items+='<span>👥 '+playersLabel(info)+'</span>';
+  if(info.minutes) items+='<span>⏱ '+info.minutes+'分</span>';
+  if(info.url) items+='<a href="'+esc(info.url)+'" target="_blank" rel="noopener">📖 マダミス.jpで見る ↗</a>';
+  return items ? '<div class="gaiyou"><b>シナリオ概要</b>'+items+'</div>' : '';
 }
 Object.keys(ALIAS_SRC).forEach(function(c){ addAlias(c, ALIAS_SRC[c]); });
 Object.keys(INFO_SRC).forEach(function(t){ var v=INFO_SRC[t].split("|"); addInfo(t, v[0], v[1]); });
@@ -796,15 +816,10 @@ function ticket(g, q, small){
   if(g.others.length) foot+='<p class="yure"><em>表記ゆれ '+g.others.length+'件まとめ</em>'+g.others.map(esc).join(" ／ ")+'</p>';
   if(g.done) foot+='<span class="stamp">卓決定 '+g.done+'人</span>';
   if(STATE.quick) foot+='<button type="button" class="want-rec" data-want-rec="'+esc(g.title)+'">📣 この卓を募集する</button>';
-  var info=infoFor(g), meta="";
-  if(info){
-    if(info.min) meta+='<span>👥 '+playersLabel(info)+'</span>';
-    if(info.minutes) meta+='<span>⏱ '+info.minutes+'分</span>';
-  }
   return '<article class="tk '+(small?'':tier)+(mine?' mine':'')+'" id="'+cardId(g)+'">'
     +'<div class="tk-head"><div class="tk-title">'+(mine?'<span class="tk-label">★ あなたも希望中</span>':'')
     +'<h3>'+esc(g.title)+(n>=5&&!small?'<span class="hot">HOT</span>':'')+'</h3>'
-    +(meta?'<div class="meta">'+meta+'</div>':'')
+    +gaiyou(infoFor(g))
     +(function(){ var rs=recruitsFor(g.key); return rs.length?'<button type="button" class="rec-badge" data-rec="'+rs[0].id+'">📣 この卓の募集 '+rs.length+'件</button>':''; })()
     +'</div>'
     +'<div class="tk-stub" aria-label="希望 '+n+'人"><b>'+n+'</b><span>人が希望</span></div></div>'
@@ -986,15 +1001,13 @@ function renderRecruits(){
   document.getElementById("recCount").textContent=(STATE.recruits||[]).length;
   document.getElementById("recruits").innerHTML = list.length ? list.map(function(r){
     var bg=PALETTE[hash(r.key)%PALETTE.length], fg=textOn(bg), w=wantersOf(r), mine=isMe(r.name);
-    var info=STATE.byKey&&STATE.byKey[r.key]?infoFor(STATE.byKey[r.key]):null;
-    var meta=info&&info.min?'<span>👥 '+playersLabel(info)+'</span>':'';
-    if(info&&info.minutes) meta+='<span>⏱ '+info.minutes+'分</span>';
+    var wg=STATE.byKey&&STATE.byKey[r.key], info=wg?infoFor(wg):infoForKey(r.key, r.title);
     return '<article class="rc'+(mine?' mine':'')+(r.local?' local':'')+'" id="'+r.id+'">'
       +'<div class="rc-top" style="background:'+bg+';color:'+fg+'">'+avatar(r)
       +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集してる人')+'</small><b>'+esc(r.name)+'</b></div>'
       +(r.need?'<div class="rc-need">'+r.need+'<small>人募集</small></div>':'')+'</div>'
       +'<div class="rc-body"><h3>'+esc(displayTitle(r))+'</h3>'
-      +(meta?'<div class="meta" style="margin-top:0">'+meta+'</div>':'')
+      +gaiyou(info)
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
       +(w.length ? '<div class="wanters"><p>🙋 このシナリオを遊びたい人 '+w.length+'人（ボードより）</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>' : '')
@@ -1059,6 +1072,7 @@ function renderEst(){
       +'<div class="rc-top" style="background:'+bg+';color:'+textOn(bg)+'">'+avatar(r)
       +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集した人')+'</small><b>'+esc(it.recruiter)+'</b></div></div>'
       +'<div class="rc-body"><h3>'+esc(it.title)+'</h3>'
+      +gaiyou(infoForKey(it.key, r.title))
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
       +'<div class="est-foot"><span>🌸 '+esc(estWhen(it))+'</span>'
@@ -1261,12 +1275,20 @@ function parseAnswers(rows){
 }
 // 「シナリオ情報」タブ：タイトル｜人数｜時間(分)｜別名（／区切り）
 function parseInfo(rows){
-  var h=rows[0]||[], col=colFinder(h), iT=col("タイトル"), iP=col("人数"), iM=col("時間"), iA=col("別名");
+  var h=rows[0]||[], col=colFinder(h), iT=col("タイトル"), iP=col("人数"), iM=col("時間"), iA=col("別名"), iU=col("URL","リンク");
   if(iT<0) return [];
   return rows.slice(1).filter(function(r){ return (r[iT]||"").trim(); }).map(function(r){
-    return { t:r[iT].trim(), p:iP>=0?r[iP]:"", m:iM>=0?r[iM]:"",
+    return { t:r[iT].trim(), p:iP>=0?r[iP]:"", m:iM>=0?r[iM]:"", u:iU>=0?(r[iU]||"").trim():"",
              a:iA>=0 ? (r[iA]||"").split(/[／、]/).map(function(s){return s.trim();}).filter(Boolean) : [] };
   });
+}
+// マスタ（シナリオ情報タブ）は千件以上になるのでめったに変わらない前提で、10分に1回だけ読み直す
+async function fetchInfo(){
+  var c=STATE.infoCache;
+  if(c && Date.now()-c.at < CONFIG.infoRefreshMs) return c.rows;
+  var rows=parseInfo(await fetchTab(CONFIG.infoTab,false));
+  STATE.infoCache={ at:Date.now(), rows:rows };
+  return rows;
 }
 // 「アイコン」タブ：XのID｜画像URL（httpsの画像だけ使う）
 function parseIcons(rows){
@@ -1299,10 +1321,10 @@ function parseQuickRecruits(rows){
   });
 }
 async function fetchAll(){
-  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchTab(CONFIG.infoTab,false), fetchTab(CONFIG.settingsTab,false),
+  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchInfo(), fetchTab(CONFIG.settingsTab,false),
     fetchTab(CONFIG.iconTab,false), fetchTab(CONFIG.quickTab,false), fetchTab(CONFIG.eventTab,false)]);
   var a=parseAnswers(r[0]);
-  return { people:a.people, recruits:a.recruits.concat(parseQuickRecruits(r[4])), info:parseInfo(r[1]), settings:parseSettings(r[2]),
+  return { people:a.people, recruits:a.recruits.concat(parseQuickRecruits(r[4])), info:r[1], settings:parseSettings(r[2]),
            icons:parseIcons(r[3]), events:parseEvents(r[5]), at:Date.now() };
 }
 function demoData(){
@@ -1342,7 +1364,13 @@ function applyData(d){
   try{ STATE.quick=JSON.parse(s["その場で卓を立てるフォーム送信先"]||""); }catch(e){ STATE.quick=null; }
   try{ STATE.eventPost=JSON.parse(s["成立報告フォーム送信先"]||""); }catch(e){ STATE.eventPost=null; }
   document.getElementById("openQuick").hidden=!STATE.quick;
-  (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m); });
+  (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m, false, x.u); });
+  // その場で卓を立てるのシナリオ名に、マスタの候補を出す（表記ゆれを入口で減らす）
+  var titles=(d.info&&d.info.length) ? d.info.map(function(x){ return x.t; }) : Object.keys(INFO_SRC);
+  if(STATE.dlCount!==titles.length){
+    STATE.dlCount=titles.length;
+    document.getElementById("qrTitles").innerHTML=titles.map(function(t){ return '<option value="'+esc(t)+'">'; }).join("");
+  }
   // 送信直後でまだシートに載っていない分（仮表示）を重ねる
   // 送信に失敗した分（電波切れなど）がずっと残らないよう、2分たってもシートに載らない仮表示は取り下げる
   var evs=d.events||[], now=Date.now(), PENDING_MS=120000;
