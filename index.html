@@ -369,6 +369,12 @@
     border-radius:999px;padding:6px 14px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .need-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
   .need-btn.wd-btn{background:#f1efe6;color:#5a5140}
+  .want-link{display:block;width:100%;text-align:left;font:inherit;font-weight:700;font-size:.84rem;line-height:1.6;color:var(--ink);
+    background:#eef8ff;border:2.5px solid var(--ink);border-radius:12px;padding:8px 12px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
+  .want-link b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1rem;color:var(--sea);white-space:nowrap}
+  .want-link span{display:block;font-size:.74rem;color:#1a5fd6;text-decoration:underline;text-underline-offset:2px}
+  .want-link:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+  .want-link:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .need-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .stepper{display:flex;align-items:center;justify-content:center;gap:22px;margin:6px 0 4px}
   .stepper button{width:56px;height:56px;border-radius:50%;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;
@@ -1027,9 +1033,26 @@ function passFilter(r){
   var f=STATE.rFilter||{}, any=function(v,s){ return !v || v.indexOf(s)>=0 || v.indexOf("どちらでも")>=0; };
   return (!f.dated||!!r.d) && (!f["オフライン"]||r.format==="オフライン") && (!f["パッケージ"]||r.format==="パッケージ") && (!f["オンライン"]||r.format==="オンライン") && (!f["平日"]||any(r.days,"平日")) && (!f["土日祝"]||any(r.days,"土日祝")) && (!f["日中"]||any(r.time,"日中")) && (!f["夜"]||any(r.time,"夜"));
 }
+// 卓募集カードの「遊びたい人」の見せ方のA/Bテスト（名前が並ぶと卓のメンバーと誤解されるかもしれないため）
+//  A：名前を並べる　B：人数だけにして、遊びたいっタブのそのシナリオへのリンクにする
+// カードごとに交互に出す。URLに &ab=a / &ab=b を付けるとどちらかにそろえられる
+var AB_FORCE=(new URLSearchParams(location.search).get("ab")||"").toLowerCase();
+var AB_COUNT=0;   // 「遊びたい人」がいるカードだけで数えて、A→B→A…と交互にする
+function wantersBlock(r, w){
+  if(!w.length) return "";
+  var v = AB_FORCE==="a" || AB_FORCE==="b" ? AB_FORCE : (AB_COUNT++ % 2 ? "b" : "a");
+  var g=STATE.byKey && STATE.byKey[r.key];
+  if(v==="b" && g) return '<div class="wanters"><button type="button" class="want-link" data-jump-want="'+cardId(g)+'">'
+    +'🙋 このシナリオを遊びたがってる人が <b>'+w.length+'人</b> います！<span>遊びたいっで見る →</span></button></div>';
+  return '<div class="wanters"><p>🙋（参考）このシナリオを遊びたい人 '+w.length+'人</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>';
+}
+document.addEventListener("click", function(e){
+  var t=e.target.closest("button[data-jump-want]"); if(t) jumpTo(t.dataset.jumpWant);
+});
 function renderRecruits(){
   var list=(STATE.recruits||[]).filter(passFilter);
   document.getElementById("recCount").textContent=(STATE.recruits||[]).length;
+  AB_COUNT=0;
   document.getElementById("recruits").innerHTML = list.length ? list.map(function(r){
     var bg=PALETTE[hash(r.key)%PALETTE.length], fg=textOn(bg), w=wantersOf(r), mine=isMe(r.name);
     var wg=STATE.byKey&&STATE.byKey[r.key], info=wg?infoFor(wg):infoForKey(r.key, r.title);
@@ -1041,7 +1064,7 @@ function renderRecruits(){
       +gaiyou(info)
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
-      +(w.length ? '<div class="wanters"><p>🙋（参考）このシナリオを遊びたい人 '+w.length+'人</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>' : '')
+      +wantersBlock(r, w)
       +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
         +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 人が集まった（成立）</button>'
         +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 募集人数変更</button>'
