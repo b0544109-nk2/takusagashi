@@ -349,6 +349,21 @@
   .my-done{font:inherit;font-weight:700;font-size:.78rem;color:var(--ink);background:#c9f2d8;border:2.5px solid var(--ink);
     border-left:0;border-radius:0 12px 12px 0;padding:0 10px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;white-space:nowrap}
   .my-item.est{background:#ffe3e8}
+  .pchip{font-family:inherit;cursor:pointer}
+  .pchip:hover{translate:0 -1px}
+  .pchip:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .qr-modal.pm{max-width:420px}
+  .pm-done{display:block;width:100%;font:inherit;font-weight:700;font-size:.95rem;color:#fff;background:#e8384f;
+    border:3px solid var(--ink);border-radius:14px;padding:11px 14px;box-shadow:3px 3px 0 var(--ink);cursor:pointer;margin:4px 0 16px;text-align:left}
+  .pm-done:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .pm-done:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .pm-sub{margin:0 0 8px;font-size:.84rem;font-weight:700}
+  .pm-none{margin:0;font-size:.84rem;font-weight:700;color:var(--muted)}
+  #toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:95;display:flex;align-items:center;gap:12px;
+    background:var(--ink);color:#fff;font-weight:700;font-size:.88rem;padding:11px 16px;border-radius:999px;
+    box-shadow:4px 4px 0 rgba(0,0,0,.25);max-width:min(92vw,520px)}
+  #toast button{font:inherit;font-size:.8rem;font-weight:700;color:var(--ink);background:var(--yellow);border:2px solid #fff;
+    border-radius:999px;padding:3px 12px;cursor:pointer;white-space:nowrap}
   .mc .rosette.in{position:relative;top:auto;right:auto;flex:none;width:9vmin;height:9vmin;rotate:-8deg;margin-left:auto}
   .mc .rosette.in b{width:5.6vmin;height:5.6vmin;font-size:1.7vmin;border-width:.4vmin}
   .mc .rosette.in .rb{width:1.9vmin;height:3.8vmin;bottom:-2.2vmin}
@@ -472,9 +487,6 @@
       <label class="qr-field">お名前<span class="req">*</span>
         <input id="qrName" required autocomplete="nickname" placeholder="名札と同じ表記で">
       </label>
-      <label class="qr-field">XのID（任意）
-        <input id="qrXid" placeholder="@なしでOK">
-      </label>
       <label class="qr-field">シナリオ名<span class="req">*</span>
         <input id="qrTitle" required placeholder="例：立方館">
       </label>
@@ -527,6 +539,14 @@
     </form>
   </div>
 </div>
+<div class="qr-overlay" id="pmOverlay" hidden>
+  <div class="qr-modal pm" role="dialog" aria-modal="true" aria-labelledby="pmHeading">
+    <h2 id="pmHeading" class="pop"></h2>
+    <div id="pmBody"></div>
+    <div class="qr-actions"><button type="button" class="btn ghost" id="pmClose">とじる</button></div>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden><span id="toastMsg"></span><button type="button" id="toastUndo" hidden>取り消す</button></div>
 <iframe name="qrSink" id="qrSink" hidden title="送信用（非表示）"></iframe>
 
 <div class="monitor" id="monitor" hidden aria-label="モニター表示">
@@ -720,6 +740,12 @@ function chip(name, q){
   var bg=PALETTE[hash(name)%PALETTE.length], hit=q && norm(name).indexOf(q)>=0;
   return '<span class="chip'+(hit?' hit':'')+(isMe(name)?' self':'')+'" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(name)+'</span>';
 }
+// 遊びたいカードの名前は押せる：その人の他のシナリオを見る／このシナリオが決まった
+function personChip(name, q, g){
+  var bg=PALETTE[hash(name)%PALETTE.length], hit=q && norm(name).indexOf(q)>=0;
+  return '<button type="button" class="chip pchip'+(hit?' hit':'')+(isMe(name)?' self':'')+'" style="background:'+bg+';color:'+textOn(bg)+'"'
+    +' data-person="'+esc(name)+'" data-pkey="'+esc(g.key)+'" aria-label="'+esc(name)+' さんのメニュー">'+esc(name)+'</button>';
+}
 function cardId(g){ return "g"+hash(g.key).toString(36); }
 function ticket(g, q, small){
   var n=g.people.length, tier=n>=5?"t3":(n>=3?"t2":"t1"), mine=g.people.some(isMe);
@@ -739,7 +765,7 @@ function ticket(g, q, small){
     +(function(){ var rs=recruitsFor(g.key); return rs.length?'<button type="button" class="rec-badge" data-rec="'+rs[0].id+'">📣 この卓の募集 '+rs.length+'件</button>':''; })()
     +'</div>'
     +'<div class="tk-stub" aria-label="希望 '+n+'人"><b>'+n+'</b><span>人が希望</span></div></div>'
-    +'<div class="tk-body"><div class="chips">'+g.people.map(function(p){return chip(p,q);}).join("")+'</div>'
+    +'<div class="tk-body"><div class="chips">'+g.people.map(function(p){return personChip(p,q,g);}).join("")+'</div>'
     +'<div class="tk-foot">'+foot+'</div></div></article>';
 }
 
@@ -877,7 +903,11 @@ function normX(s){
   s=String(s||"").normalize("NFKC").trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i,"").replace(/^@/,"").split(/[\/?#\s]/)[0];
   return /^[A-Za-z0-9_]{1,15}$/.test(s) ? s.toLowerCase() : "";
 }
-function iconUrl(r){ var k=normX(r.xid); return k && STATE.icons ? (STATE.icons[k]||"") : ""; }
+// 募集にXのIDが無くても（Webで立てた募集など）、同じ名前の人がフォームで登録したIDを使う
+function iconUrl(r){
+  var k=normX(r.xid) || (STATE.nameToXid ? STATE.nameToXid[norm(r.name)] : "");
+  return k && STATE.icons ? (STATE.icons[k]||"") : "";
+}
 function avatar(r){
   var bg=PALETTE[hash(r.name)%PALETTE.length], url=iconUrl(r);
   if(!url && r.icon) return '<span class="ava" aria-hidden="true">'+esc(r.icon)+'</span>';
@@ -1167,8 +1197,8 @@ function parseAnswers(rows){
   var people=[], recruits=[];
   rows.slice(1).forEach(function(r){
     var name=(r[iName]||"").trim(); if(!name) return;
-    people.push({ name:name, slots:want.map(function(s){ return { text:s.t>=0?(r[s.t]||""):"", done:s.d>=0 && !!(r[s.d]||"").trim() }; }) });
     var xid=iX>=0?(r[iX]||"").trim():"";
+    people.push({ name:name, xid:xid, slots:want.map(function(s){ return { text:s.t>=0?(r[s.t]||""):"", done:s.d>=0 && !!(r[s.d]||"").trim() }; }) });
     rec.forEach(function(m,i){
       var get=function(f){ return m[f]>=0 ? (r[m[f]]||"").trim() : ""; };
       if(!get("title")) return;
@@ -1258,6 +1288,8 @@ function applyData(d){
   STATE.lastData=d;
   var s=d.settings||{};
   STATE.icons=d.icons||{};
+  STATE.nameToXid={};
+  (d.people||[]).concat(d.recruits||[]).forEach(function(p){ var k=normX(p.xid); if(k) STATE.nameToXid[norm(p.name)]=k; });
   setLink("cta","ctaNote", s["登録フォーム"]);
   setLink("ctaRecruit","ctaRecruitNote", s["登録フォーム"]);
   try{ STATE.quick=JSON.parse(s["その場で卓を立てるフォーム送信先"]||""); }catch(e){ STATE.quick=null; }
@@ -1380,7 +1412,7 @@ document.getElementById("qrForm").addEventListener("submit", function(ev){
     err.textContent="お名前・シナリオ名・形式は必須です。"; err.hidden=false; return;
   }
   var fields = {
-    name:name, xid:document.getElementById("qrXid").value.trim(), title:title, format:QR.format,
+    name:name, title:title, format:QR.format,
     venue:document.getElementById("qrVenue").value.trim(), need:document.getElementById("qrNeed").value.trim(),
     note:document.getElementById("qrNote").value.trim()
   };
@@ -1436,6 +1468,63 @@ document.addEventListener("click", function(e){
   } else if(t.dataset.wantRec!=null){
     openQuick(t.dataset.wantRec);
   }
+});
+
+/* ===== 名前を押したときのメニュー ===== */
+var PM={ name:"", key:"" };
+function openPerson(name, key){
+  PM={ name:name, key:key };
+  var g=STATE.byKey&&STATE.byKey[key], title=g?g.title:"";
+  document.getElementById("pmHeading").textContent="👤 "+name+" さん";
+  var others=(STATE.entries||[]).filter(function(e){ return e.name===name && e.key!==key; });
+  var list=others.map(function(e){
+    if(e.free!=null) return '<span class="my-item free">🎲 おまかせ：'+esc(e.free)+'</span>';
+    var og=STATE.byKey[e.key]; if(!og) return "";
+    if(e.done) return '<span class="my-item done">🎉 '+esc(og.title)+' <b>卓決定</b></span>';
+    var n=og.people.filter(function(p){ return p!==name; }).length;
+    return '<button type="button" class="my-item" data-pm-jump="'+cardId(og)+'">'+esc(og.title)+' <b>'+(n?'ほか'+n+'人':'この人だけ')+'</b></button>';
+  }).join("");
+  document.getElementById("pmBody").innerHTML=
+    (STATE.eventPost && title ? '<button type="button" class="pm-done" data-pm-done="1">🎉 '+esc(name)+' さんの「'+esc(title)+'」が決まった！</button>' : '')
+    +'<p class="pm-sub">🔍 この人が気になってる他のシナリオ</p>'
+    +(list ? '<div class="my-list">'+list+'</div>' : '<p class="pm-none">ほかに登録しているシナリオはありません</p>');
+  var ov=document.getElementById("pmOverlay"); ov.hidden=false; ov.classList.add("show");
+  var first=ov.querySelector(".pm-done, [data-pm-jump], #pmClose"); if(first) first.focus();
+}
+function closePerson(){ var ov=document.getElementById("pmOverlay"); ov.classList.remove("show"); ov.hidden=true; }
+document.getElementById("pmClose").addEventListener("click", closePerson);
+document.getElementById("pmOverlay").addEventListener("click", function(e){
+  if(e.target.id==="pmOverlay"){ closePerson(); return; }
+  var t=e.target.closest("button"); if(!t) return;
+  if(t.dataset.pmJump){ closePerson(); jumpTo(t.dataset.pmJump); }
+  else if(t.dataset.pmDone){
+    var g=STATE.byKey[PM.key], name=PM.name; if(!g) return;
+    var ev=recordEvent({ type:"決まった", reporter:name, recruiter:"", title:g.title, note:"" });
+    closePerson();
+    if(ev) showToast("🎉 "+name+" さんの「"+g.title+"」を決定にしました", function(){
+      recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+      showToast("取り消しました");
+    });
+  }
+});
+document.addEventListener("click", function(e){
+  var t=e.target.closest("button[data-person]"); if(!t) return;
+  openPerson(t.dataset.person, t.dataset.pkey);
+});
+document.addEventListener("keydown", function(e){
+  if(e.key==="Escape" && document.getElementById("pmOverlay").classList.contains("show")) closePerson();
+});
+
+var TOAST={ timer:null, undo:null };
+function showToast(msg, undoFn){
+  var el=document.getElementById("toast"), u=document.getElementById("toastUndo");
+  document.getElementById("toastMsg").textContent=msg;
+  TOAST.undo=undoFn||null; u.hidden=!undoFn;
+  el.hidden=false; clearTimeout(TOAST.timer);
+  TOAST.timer=setTimeout(function(){ el.hidden=true; TOAST.undo=null; }, undoFn?7000:3000);
+}
+document.getElementById("toastUndo").addEventListener("click", function(){
+  var f=TOAST.undo; TOAST.undo=null; document.getElementById("toast").hidden=true; if(f) f();
 });
 
 load();
