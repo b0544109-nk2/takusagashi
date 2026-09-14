@@ -375,6 +375,9 @@
   .want-link span{display:block;font-size:.74rem;color:#1a5fd6;text-decoration:underline;text-underline-offset:2px}
   .want-link:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
   .want-link:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .want-link.rec-link{background:#fff0f6;margin:0 0 10px}
+  .want-link.rec-link b{color:#d6246e}
+  .grid.small .want-link{font-size:.76rem;padding:6px 10px}
   .need-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .stepper{display:flex;align-items:center;justify-content:center;gap:22px;margin:6px 0 4px}
   .stepper button{width:56px;height:56px;border-radius:50%;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;
@@ -846,10 +849,13 @@ function ticket(g, q, small){
     +'<div class="tk-head"><div class="tk-title">'+(mine?'<span class="tk-label">★ あなたも希望中</span>':'')
     +'<h3>'+esc(g.title)+(n>=5&&!small?'<span class="hot">HOT</span>':'')+'</h3>'
     +gaiyou(infoFor(g))
-    +(function(){ var rs=recruitsFor(g.key); return rs.length?'<button type="button" class="rec-badge" data-rec="'+rs[0].id+'">📣 この卓の募集 '+rs.length+'件</button>':''; })()
     +'</div>'
     +'<div class="tk-stub" aria-label="希望 '+n+'人"><b>'+n+'</b><span>人が希望</span></div></div>'
-    +'<div class="tk-body"><div class="chips">'+g.people.map(function(p){return personChip(p,q,g);}).join("")+'</div>'
+    +'<div class="tk-body">'
+    // このシナリオの卓募集があれば、卓募集っタブへのリンクを目立たせる
+    +(function(){ var rs=recruitsFor(g.key); return rs.length ? '<button type="button" class="want-link rec-link" data-rec-key="'+esc(g.key)+'">'
+      +'📣 このシナリオの募集が <b>'+rs.length+'件</b> あります！<span>卓募集っで見る →</span></button>' : ''; })()
+    +'<div class="chips">'+g.people.map(function(p){return personChip(p,q,g);}).join("")+'</div>'
     +'<div class="tk-foot">'+foot+'</div></div></article>';
 }
 
@@ -1048,6 +1054,14 @@ function wantersBlock(r, w){
 }
 document.addEventListener("click", function(e){
   var t=e.target.closest("button[data-jump-want]"); if(t) jumpTo(t.dataset.jumpWant);
+});
+// 遊びたいっのカード →「卓募集っ」タブの、そのシナリオの募集（何件あっても全部光らせる）
+document.addEventListener("click", function(e){
+  var t=e.target.closest("button[data-rec-key]"); if(!t) return;
+  var rs=recruitsFor(t.dataset.recKey); if(!rs.length) return;
+  STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  renderRecruits(); setView("recruit");
+  rs.forEach(function(r,i){ var el=document.getElementById(r.id); if(el){ if(i===0) el.scrollIntoView({block:"center", behavior:"smooth"}); flashEl(el); } });
 });
 function renderRecruits(){
   var list=(STATE.recruits||[]).filter(passFilter);
