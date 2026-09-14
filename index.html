@@ -469,6 +469,7 @@
   .want-link span{color:var(--ink)}
   .want-link b,.want-link.rec-link b{color:#c01d5a}
   .join-btn.off{background:#f1efe6;color:var(--ink)}
+  .owner-hint{margin:0;font-size:.74rem;font-weight:700;color:var(--muted);line-height:1.55}
   /* 募集している人用メニュー：うすい紫の地、ボタン3つはスマホでも横並び（絵文字の下に文字） */
   .owner-menu,.rc.mine .owner-menu{background:#efeaff;border:1.5px solid #cfc4f5}
   .rc-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:stretch}
@@ -858,6 +859,9 @@ function isMe(name){
   return norm(name)===m;
 }
 
+// 名前欄の名前を「ログイン」の代わりにする：募集している人用メニューなどは、その名前の本人（と &staff 付きURLの幹事）にだけ出す
+function canManage(name){ return CONFIG.staff || isMe(name); }
+
 // 当日Webで「決まった」を押した人、または自分の卓募集が成立した人は、そのシナリオを消し込む
 function webDoneEvent(name, gk){
   var k=norm(name)+"|"+gk;
@@ -981,6 +985,7 @@ function render(){
   renderMe();
   updateRegCta();
   if(STATE.recruits) renderRecruits();
+  if(STATE.established) renderEst();
 }
 
 function renderMe(){
@@ -1190,10 +1195,11 @@ function renderRecruits(){
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
       +joinBlock(r)
       +wantersBlock(r, w)
-      +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
+      +(STATE.eventPost && !r.local && canManage(r.name) ? '<div class="owner-menu"><p>🔑 募集している人用メニュー'+(isMe(r.name)?'':'（幹事として表示中）')+'</p><div class="rc-actions">'
         +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'"><i>🌸</i>人が集まった<br>（成立）</button>'
         +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'"><i>👥</i>募集人数<br>変更</button>'
-        +'<button type="button" class="need-btn wd-btn" data-withdraw-rec="'+esc(r.id)+'"><i>🙇</i>募集を<br>取り下げる</button></div></div>' : '')
+        +'<button type="button" class="need-btn wd-btn" data-withdraw-rec="'+esc(r.id)+'"><i>🙇</i>募集を<br>取り下げる</button></div></div>'
+        : (STATE.eventPost && !r.local && !STATE.me ? '<p class="owner-hint">🔑 この募集をした人は、上の名前欄に登録した名前を入れると操作メニューが出ます</p>' : ''))
       +'</div></article>';
   }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
 }
@@ -1260,7 +1266,7 @@ function renderEst(){
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
       +(function(){ var js=joinersOf(r); return js.length ? '<div class="est-members"><p>🙋 同卓者</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div></div>' : ''; })()
       +'<div class="est-foot"><span>🌸 '+esc(estWhen(it))+'</span>'
-      +(it.eventId && STATE.eventPost && !it.local ? '<button type="button" class="undo" data-undo="'+esc(it.eventId)+'" data-undo-what="「'+esc(it.title)+'」の成立">取り消す</button>' : '')+'</div>'
+      +(it.eventId && STATE.eventPost && !it.local && (canManage(it.recruiter) || isMe(it.reporter)) ? '<button type="button" class="undo" data-undo="'+esc(it.eventId)+'" data-undo-what="「'+esc(it.title)+'」の成立">取り消す</button>' : '')+'</div>'
       +'</div></article>';
   }).join("") : '<div class="empty">まだ成立した卓はありません。人が集まったら卓募集カードの「🌸 人が集まった（成立）」を押してね</div>';
 }
