@@ -469,6 +469,18 @@
   .want-link span{color:var(--ink)}
   .want-link b,.want-link.rec-link b{color:#c01d5a}
   .join-btn.off{background:#f1efe6;color:var(--ink)}
+  /* 募集している人用メニュー：うすい紫の地、ボタン3つはスマホでも横並び（絵文字の下に文字） */
+  .owner-menu,.rc.mine .owner-menu{background:#efeaff;border:1.5px solid #cfc4f5}
+  .rc-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:stretch}
+  .rc-actions button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;
+    font-size:.7rem;line-height:1.3;padding:7px 2px 8px;border-radius:14px;margin:0;white-space:nowrap}
+  .rc-actions button i{font-style:normal;font-size:1.25rem;line-height:1}
+  .rc-actions button{align-self:stretch}
+  /* 「遊びたがってる人がN人」「募集がN件」は1行で、右に「見る ›」 */
+  .want-link{display:flex;align-items:center;gap:8px;line-height:1.4;padding:8px 12px}
+  .want-link em{font-style:normal;flex:1;min-width:0;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .want-link span{display:inline;flex:none;text-decoration:none;font-size:1.5rem;line-height:1;font-weight:700}
+  .want-link b{font-size:.92rem}
 
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   @media (max-width:640px){
@@ -922,7 +934,7 @@ function ticket(g, q, small){
     +'<div class="tk-body">'
     // このシナリオの卓募集があれば、卓募集っタブへのリンクを目立たせる
     +(function(){ var rs=recruitsFor(g.key); return rs.length ? '<button type="button" class="want-link rec-link" data-rec-key="'+esc(g.key)+'">'
-      +'📣 このシナリオの募集が <b>'+rs.length+'件</b> あります！<span>卓募集っで見る →</span></button>' : ''; })()
+      +'<em>📣 募集が <b>'+rs.length+'件</b> あります！</em><span aria-hidden="true">›</span></button>' : ''; })()
     +'<div class="chips">'+g.people.map(function(p){return personChip(p,q,g);}).join("")+'</div>'
     +'<div class="tk-foot">'+foot+'</div></div></article>';
 }
@@ -1138,7 +1150,7 @@ function wantersBlock(r, w){
   var v = AB_FORCE==="a" || AB_FORCE==="b" ? AB_FORCE : (AB_COUNT++ % 2 ? "b" : "a");
   var g=STATE.byKey && STATE.byKey[r.key];
   if(v==="b" && g) return '<div class="wanters"><button type="button" class="want-link" data-jump-want="'+cardId(g)+'">'
-    +'🙋 このシナリオを遊びたがってる人が <b>'+w.length+'人</b> います！<span>遊びたいっで見る →</span></button></div>';
+    +'<em>🙋 遊びたがってる人が <b>'+w.length+'人</b> います！</em><span aria-hidden="true">›</span></button></div>';
   return '<div class="wanters"><p>🙋（参考）このシナリオを遊びたい人 '+w.length+'人</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>';
 }
 document.addEventListener("click", function(e){
@@ -1170,9 +1182,9 @@ function renderRecruits(){
       +joinBlock(r)
       +wantersBlock(r, w)
       +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
-        +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 人が集まった（成立）</button>'
-        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'">👥 募集人数変更</button>'
-        +'<button type="button" class="need-btn wd-btn" data-withdraw-rec="'+esc(r.id)+'">🙇 募集を取り下げる</button></div></div>' : '')
+        +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'"><i>🌸</i>人が集まった<br>（成立）</button>'
+        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'"><i>👥</i>募集人数<br>変更</button>'
+        +'<button type="button" class="need-btn wd-btn" data-withdraw-rec="'+esc(r.id)+'"><i>🙇</i>募集を<br>取り下げる</button></div></div>' : '')
       +'</div></article>';
   }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
 }
