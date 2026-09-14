@@ -527,13 +527,13 @@
   </nav>
 
   <div class="steps">
-    <div class="step"><b>1</b><div><strong>卓募集っ</strong>にはすでに募集が始まってる卓、<strong>遊びたいっ</strong>にはシナリオを遊びたい人が集まってるよっ、ここからシナリオと日程の登録もできるよっ</div></div>
+    <div class="step"><b>1</b><div><strong>卓募集っ</strong>にはすでに募集が始まってる卓、<strong>遊びたいっ</strong>にはシナリオを遊びたい人が集まってるよっ、ここから事前登録や見直しもできるよっ</div></div>
     <div class="step"><b>2</b><div>興味あるシナリオが被ってる人、募集している人に<strong>声をかけてみよう！</strong></div></div>
     <div class="step"><b>3</b><div>募集している人は集まったら<strong>成立</strong>を押してねっ</div></div>
   </div>
   <div class="cta-row">
     <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
-    <a class="cta" id="ctaRecruit" href="#">✍️ シナリオと日程を登録する <small id="ctaRecruitNote">準備中</small></a>
+    <a class="cta" id="ctaRecruit" href="#"><span id="ctaRecruitLabel">✍️ 事前登録する（卓募集・遊びたい）</span> <small id="ctaRecruitNote">準備中</small></a>
   </div>
 
   <section class="me-bar" id="meBar" aria-label="あなたの募集・希望"></section>
@@ -941,6 +941,12 @@ function ticket(g, q, small){
     +'<div class="tk-foot">'+foot+'</div></div></article>';
 }
 
+// 登録ボタンの文言：名前（または同じ端末の登録）が回答にあれば「見直す」、なければ「事前登録する」
+function updateRegCta(){
+  var el=document.getElementById("ctaRecruitLabel"); if(!el) return;
+  var me=norm(STATE.me), has=!!me && ((STATE.lastData&&STATE.lastData.people)||[]).some(function(p){ return norm(p.name)===me; });
+  el.textContent = has ? "✍️ 登録内容を見直す・直す" : "✍️ 事前登録する（卓募集・遊びたい）";
+}
 function render(){
   var q=norm(STATE.q), sort=STATE.sort;
   var match=function(g){ if(!q) return true; if(norm(g.title).indexOf(q)>=0) return true; return g.people.some(function(p){return norm(p).indexOf(q)>=0;}); };
@@ -973,6 +979,7 @@ function render(){
   var only=document.getElementById("only");
   only.hidden=!STATE.me; only.setAttribute("aria-pressed", String(!!mineOnly));
   renderMe();
+  updateRegCta();
   if(STATE.recruits) renderRecruits();
 }
 
