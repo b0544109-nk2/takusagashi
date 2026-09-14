@@ -163,6 +163,29 @@
   .next-box{margin-top:6px;border-top:2px dashed var(--line);padding-top:14px;font-size:.84rem;font-weight:700;line-height:1.7;color:var(--muted)}
   .link{color:#1a5fd6;font-weight:700}
 
+
+  /* ===== デザインC：押せるもの＝色つき＋下に厚み（押すと沈む）／押せないもの＝白地に細い枠・影なし ===== */
+  :root{--press:0 4px 0 var(--ink);--press-sm:0 3px 0 var(--ink);--pressed:0 1px 0 var(--ink);--info-line:1.5px solid rgba(29,34,66,.25)}
+  .kicker,.sec-h,.card,.card.me{box-shadow:none}
+  .card.me{border-color:var(--red)}
+  .sum li,.loaded,.rec{border:var(--info-line)}
+  .btn,.cta,.chip,.add,.plan-btn{border:2.5px solid var(--ink);box-shadow:var(--press)}
+  .chip,.plan-btn,.btn.ghost,.btn.del{box-shadow:var(--press-sm)}
+  .btn:active,.cta:active,.chip:active,.add:active,.plan-btn:active{transform:translateY(3px);box-shadow:var(--pressed)}
+  .chip{background:var(--hl)}
+  .chip[aria-pressed="true"]{background:var(--ink);color:var(--yellow);transform:translateY(2px);box-shadow:var(--pressed)}
+  .add{border-style:solid;background:var(--yellow)}
+  .add:hover{background:var(--yellow)}
+  .btn.ghost,.btn.del{background:#f1efe6}
+  .plan-btn{background:var(--yellow)}
+  .plan-btn[aria-pressed="true"]{background:#c9f2d8}
+  .plan-btn.wd{background:#f1efe6}
+  .cta:disabled{transform:none;box-shadow:var(--press)}
+  .rec-h{flex-wrap:wrap;row-gap:8px}
+  .rec-h b{white-space:nowrap}
+  .rec-h .plan-btn,.rec-h .btn{white-space:nowrap;font-size:.74rem;padding:4px 10px}
+  .rec-h .plan-btn{margin-left:auto}
+  .rec-h .btn{margin-left:auto}
   .site-foot{margin:40px auto 0;max-width:560px;padding-top:14px;border-top:2px dashed var(--line);text-align:center;
     font-size:.74rem;font-weight:700;color:var(--muted);line-height:1.8}
 

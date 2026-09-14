@@ -427,6 +427,49 @@
   .gate p{font-size:.9rem;font-weight:700;color:var(--muted);line-height:1.75;margin:0 0 18px}
   .gate .gate-ship{margin:0;font-size:3.2rem;line-height:1;animation:bob 6s ease-in-out infinite}
 
+
+  /* ===== デザインC：押せるもの＝色つき＋下に厚み（押すと沈む）／押せないもの＝白地に細い枠・影なし ===== */
+  :root{--press:0 4px 0 var(--ink);--press-sm:0 3px 0 var(--ink);--pressed:0 1px 0 var(--ink);--info-line:1.5px solid rgba(29,34,66,.25)}
+  /* 押せないもの：影を消して、細い枠か枠なしに */
+  .kicker,.sec-h,.step,.stat,.tk,.rc,.free-list,.qr-modal,.gate,.search{box-shadow:none}
+  .grid > .tk:nth-child(odd),.grid > .tk:nth-child(even),.rc-grid > .rc:nth-child(odd),.rc-grid > .rc:nth-child(even){rotate:0deg}
+  .grid > .tk:hover{translate:none}
+  .step,.stat{border:var(--info-line)}
+  .me-bar{box-shadow:none;border-color:var(--red)}
+  .tk.mine,.rc.mine,.grid.small .tk.mine{box-shadow:0 0 0 3px var(--red)}
+  .rc.local{box-shadow:0 0 0 3px var(--mint)}
+  .chip{background:#fff;color:var(--ink);border:var(--info-line);box-shadow:none}
+  .when span,.when span.d,.when span.t,.when span.date,.when span.v,.when span.fmt{background:#fff;color:var(--ink);border:var(--info-line)}
+  .gaiyou{border:var(--info-line)}
+  .rc-need{border:none}
+  .owner-menu,.rc.mine .owner-menu{background:#fff;border:var(--info-line)}
+  span.my-item{background:#fff;border:var(--info-line);box-shadow:none}
+  .stamp{box-shadow:none}
+  /* 押せるもの：色つき＋黒い太枠＋下に厚み */
+  .btn,.cta,.tab,.fchip,.only,.seg,button.my-item,.my-done,.pchip,.want-rec,.want-link,.rec-badge,.est-btn,.need-btn,.join-btn,
+  .qr-chip,.undo,.pm-done,.stepper button{border:2.5px solid var(--ink);box-shadow:var(--press)}
+  .pchip,.my-done,.want-rec,.undo,.fchip,.qr-chip{box-shadow:var(--press-sm)}
+  .btn:active,.cta:active,.tab:active,.fchip:active,.only:active,button.my-item:active,.my-done:active,.pchip:active,.want-rec:active,
+  .want-link:active,.rec-badge:active,.est-btn:active,.need-btn:active,.join-btn:active,.qr-chip:active,.undo:active,.pm-done:active,
+  .stepper button:active{transform:translateY(3px);box-shadow:var(--pressed)}
+  .pchip:hover{translate:none}
+  .tab{background:var(--yellow)}
+  .tab.mon{background:var(--cyan)}
+  .tab[aria-selected="true"]{background:var(--ink);color:var(--yellow);transform:translateY(3px);box-shadow:var(--pressed)}
+  .fchip,.qr-chip{background:var(--hl)}
+  .fchip[aria-pressed="true"],.qr-chip[aria-pressed="true"]{background:var(--ink);color:var(--yellow);transform:translateY(2px);box-shadow:var(--pressed)}
+  .seg{overflow:hidden}
+  .seg button{background:var(--hl)}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--yellow)}
+  .only{background:var(--hl)}
+  .only[aria-pressed="true"]{background:var(--red);color:#fff;transform:translateY(3px);box-shadow:var(--pressed)}
+  .btn.ghost{background:#f1efe6}
+  .need-btn,.need-btn.wd-btn,.undo{background:var(--yellow);color:var(--ink)}
+  .want-link,.want-link.rec-link{background:var(--yellow)}
+  .want-link span{color:var(--ink)}
+  .want-link b,.want-link.rec-link b{color:#c01d5a}
+  .join-btn.off{background:#f1efe6;color:var(--ink)}
+
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   @media (max-width:640px){
     html{font-size:17px}   /* スマホは全体を少し大きく（remで指定した文字がまとめて大きくなる） */
@@ -847,9 +890,15 @@ function build(people){
   STATE.stats={people:nPeople,titles:list.length,active:active,decided:decided};
 }
 
+// 押せない名前は白地（押せる名前＝personChip だけ色をつける）
 function chip(name, q){
-  var bg=PALETTE[hash(name)%PALETTE.length], hit=q && norm(name).indexOf(q)>=0;
-  return '<span class="chip'+(hit?' hit':'')+(isMe(name)?' self':'')+'" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(name)+'</span>';
+  var hit=q && norm(name).indexOf(q)>=0;
+  return '<span class="chip'+(hit?' hit':'')+(isMe(name)?' self':'')+'">'+esc(name)+'</span>';
+}
+// 船のモニター用（見るだけの画面なので色つき）
+function colorChip(name){
+  var bg=PALETTE[hash(name)%PALETTE.length];
+  return '<span class="chip" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(name)+'</span>';
 }
 // 遊びたいカードの名前は押せる：その人の他のシナリオを見る／このシナリオが決まった
 function personChip(name, q, g){
@@ -1249,7 +1298,7 @@ function monHot(g){
     +'<div class="mc-name"><small>遊びたい人が多いシナリオ</small>'+n+'人が希望</div>'
     +(info&&info.min?'<div class="mc-need">'+playersLabel(info)+'<small>'+(info.minutes?info.minutes+'分':'')+'</small></div>':'')+'</div>'
     +'<div class="mc-body"><h3>'+esc(g.title)+'</h3>'
-    +'<div class="chips">'+g.people.slice(0,8).map(function(p){return chip(p,"");}).join("")+(n>8?'<span class="chip" style="background:#fff">ほか'+(n-8)+'人</span>':'')+'</div>'
+    +'<div class="chips">'+g.people.slice(0,8).map(function(p){return colorChip(p);}).join("")+(n>8?'<span class="chip" style="background:#fff">ほか'+(n-8)+'人</span>':'')+'</div>'
     +'</div></article>';
 }
 function showSlide(){
