@@ -172,7 +172,7 @@
   .tk.flash{animation:flash 1.1s ease-out}
   @keyframes flash{0%{scale:1.04;box-shadow:0 0 0 8px var(--yellow),6px 6px 0 var(--red)}100%{scale:1}}
   @keyframes wiggle{0%,100%{rotate:-3deg}50%{rotate:3deg}}
-  .tk-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px}
+  .tk-foot{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 10px;margin-top:10px}
   .tk-foot:empty{display:none}
   .yure{margin:0;font-size:.72rem;color:var(--muted);font-weight:700;line-height:1.5}
   .yure em{font-style:normal;background:var(--line);border-radius:6px;padding:0 5px;margin-right:4px}
@@ -369,6 +369,15 @@
     border-radius:999px;padding:6px 14px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .need-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
   .need-btn.wd-btn{background:#f1efe6;color:#5a5140}
+  .joiners{border-top:2px dashed var(--line);padding-top:10px}
+  .joiners p{margin:0 0 8px;font-size:.8rem;font-weight:700}
+  .joiners .chip{font-size:.8rem;padding:3px 10px}
+  .join-btn{font:inherit;font-weight:700;font-size:.9rem;color:#fff;background:var(--sea);border:2.5px solid var(--ink);border-radius:999px;
+    padding:7px 16px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;margin-top:8px}
+  .join-btn.off{background:#fff;color:var(--ink);font-size:.8rem;padding:5px 12px}
+  .join-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+  .join-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .my-item.join{background:#e8f4ff}
   .want-link{display:block;width:100%;text-align:left;font:inherit;font-weight:700;font-size:.84rem;line-height:1.6;color:var(--ink);
     background:#eef8ff;border:2.5px solid var(--ink);border-radius:12px;padding:8px 12px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .want-link b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1rem;color:var(--sea);white-space:nowrap}
@@ -771,7 +780,14 @@ function hash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt
 function textOn(hex){ var r=parseInt(hex.substr(1,2),16),g=parseInt(hex.substr(3,2),16),b=parseInt(hex.substr(5,2),16); return (0.299*r+0.587*g+0.114*b)/255>0.62?"#1d2242":"#ffffff"; }
 
 var ME_KEY = "takusagashi.myName";
-function loadMe(){ try{ return localStorage.getItem(ME_KEY)||""; }catch(e){ return ""; } }
+function loadMe(){
+  try{
+    var v=localStorage.getItem(ME_KEY); if(v) return v;
+    // 同じ端末で事前登録ページを使っていれば、その名前を引き継ぐ
+    var reg=JSON.parse(localStorage.getItem("takusagashi.reg."+CONFIG.sheetId)||"null");
+    return reg && reg.name || "";
+  }catch(e){ return ""; }
+}
 function saveMe(v){ try{ if(v) localStorage.setItem(ME_KEY,v); else localStorage.removeItem(ME_KEY); }catch(e){} }
 
 var STATE = { groups:[], free:[], doneTitles:[], entries:[], stats:{}, sort:"count", q:"", me:loadMe(), onlyMe:false, editingMe:false };
@@ -917,6 +933,8 @@ function renderMe(){
     return '<button type="button" class="my-item rec" data-rec="'+r.id+'">📣 '+esc(displayTitle(r))+' <b>'+(w?'遊びたい人 '+w+'人':'募集中')+'</b></button>';
   }).join("")+myEst.map(function(it){
     return '<button type="button" class="my-item est" data-jump-est="'+esc(it.id)+'">🌸 '+esc(it.title)+' <b>成立</b></button>';
+  }).join("")+(STATE.recruits||[]).filter(function(r){ return !isMe(r.name) && joinersOf(r).some(function(e){ return isMe(e.reporter); }); }).map(function(r){
+    return '<button type="button" class="my-item join" data-rec="'+r.id+'">🙋 '+esc(displayTitle(r))+' <b>'+esc(r.name)+' さんの卓に参加希望</b></button>';
   }).join("")+(STATE.withdrawnRecruits||[]).filter(function(r){ return isMe(r.name); }).map(function(r){
     // 取り下げた募集は、ここから元に戻せる
     var chipHtml='<span class="my-item done">🙇 '+esc(displayTitle(r))+' <b>取り下げ</b></span>';
@@ -1034,10 +1052,31 @@ function whenChips(r){
   return out;
 }
 function displayTitle(r){ var g=STATE.byKey&&STATE.byKey[r.key]; return g?g.title:(ALIAS[norm(r.title)]||r.title); }
-function wantersOf(r){ var g=STATE.byKey&&STATE.byKey[r.key]; return g?g.people.filter(function(p){ return norm(p)!==norm(r.name); }):[]; }
+function wantersOf(r){
+  var g=STATE.byKey&&STATE.byKey[r.key]; if(!g) return [];
+  var joined={}; joinersOf(r).forEach(function(e){ joined[norm(e.reporter)]=1; });
+  return g.people.filter(function(p){ return norm(p)!==norm(r.name) && !joined[norm(p)]; });
+}
 function passFilter(r){
   var f=STATE.rFilter||{}, any=function(v,s){ return !v || v.indexOf(s)>=0 || v.indexOf("どちらでも")>=0; };
   return (!f.dated||!!r.d) && (!f["オフライン"]||r.format==="オフライン") && (!f["パッケージ"]||r.format==="パッケージ") && (!f["オンライン"]||r.format==="オンライン") && (!f["平日"]||any(r.days,"平日")) && (!f["土日祝"]||any(r.days,"土日祝")) && (!f["日中"]||any(r.time,"日中")) && (!f["夜"]||any(r.time,"夜"));
+}
+// 卓募集に「私もここにいます！」で手を挙げた人（募集者＋シナリオごと、名前→イベント）
+function joinersOf(r){
+  var m=STATE.joinBy && STATE.joinBy[norm(r.name)+"|"+r.key]; if(!m) return [];
+  return Object.keys(m).map(function(k){ return m[k]; }).filter(function(e){ return norm(e.reporter)!==norm(r.name); })
+    .sort(function(a,b){ return (a.ts||0)-(b.ts||0); });
+}
+function joinBlock(r){
+  var js=joinersOf(r), mineJoin=js.filter(function(e){ return isMe(e.reporter); })[0];
+  var canJoin=STATE.eventPost && !r.local && !isMe(r.name);
+  if(!js.length && !canJoin) return "";
+  return '<div class="joiners">'
+    +(js.length ? '<p>🙋 ここにいる人（参加したい人）'+js.length+'人</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div>' : '')
+    +(canJoin ? (mineJoin
+        ? '<button type="button" class="join-btn off" data-undo="'+esc(mineJoin.id)+'" data-undo-what="「'+esc(displayTitle(r))+'」への参加">✋ やっぱりやめる</button>'
+        : '<button type="button" class="join-btn" data-join-rec="'+esc(r.id)+'">🙋 私もここにいます！</button>') : '')
+    +'</div>';
 }
 // 卓募集カードの「遊びたい人」の見せ方のA/Bテスト（名前が並ぶと卓のメンバーと誤解されるかもしれないため）
 //  A：名前を並べる　B：人数だけにして、遊びたいっタブのそのシナリオへのリンクにする
@@ -1078,6 +1117,7 @@ function renderRecruits(){
       +gaiyou(info)
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
+      +joinBlock(r)
       +wantersBlock(r, w)
       +(STATE.eventPost && !r.local ? '<div class="owner-menu"><p>🔑 募集している人用メニュー</p><div class="rc-actions">'
         +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'">🌸 人が集まった（成立）</button>'
@@ -1104,17 +1144,19 @@ function parseEvents(rows){
 function computeEvents(evs){
   var cancelled={};
   evs.forEach(function(e){ if(e.type==="取り消し" && e.target) cancelled[e.target]=1; });
-  var closedBy={}, wantDone={}, needBy={}, withdrawnBy={}, act=[];
+  var closedBy={}, wantDone={}, needBy={}, withdrawnBy={}, joinBy={}, act=[];
   evs.forEach(function(e){
     if(cancelled[e.id] || !e.title) return;
     e.key=groupKey(e.title);
     var rk=norm(e.recruiter)+"|"+e.key;
     if(e.type==="成立" && e.recruiter){ closedBy[rk]=e; act.push(e); }
     else if(e.type==="取り下げ" && e.recruiter){ withdrawnBy[rk]=e; }
+    else if(e.type==="参加" && e.recruiter && e.reporter){ (joinBy[rk]=joinBy[rk]||{})[norm(e.reporter)]=e; }
     else if(e.type==="決まった" && e.reporter){ wantDone[norm(e.reporter)+"|"+e.key]=e.id; }
     else if(e.type==="人数変更" && e.recruiter){ if(!needBy[rk] || (e.ts||0)>=(needBy[rk].ts||0)) needBy[rk]=e; }   // いちばん新しい人数を使う
   });
   STATE.closedBy=closedBy; STATE.wantDone=wantDone; STATE.needBy=needBy; STATE.withdrawnBy=withdrawnBy; STATE.estEvents=act;
+  STATE.joinBy=joinBy;
 }
 function buildEstablished(){
   var items=(STATE.closedRecruits||[]).map(function(r){
@@ -1145,6 +1187,7 @@ function renderEst(){
       +gaiyou(infoForKey(it.key, r.title))
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
+      +(function(){ var js=joinersOf(r); return js.length ? '<div class="est-members"><p>🙋 ここにいた人 '+js.length+'人</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div></div>' : ''; })()
       +'<div class="est-foot"><span>🌸 '+esc(estWhen(it))+'</span>'
       +(it.eventId && STATE.eventPost && !it.local ? '<button type="button" class="undo" data-undo="'+esc(it.eventId)+'" data-undo-what="「'+esc(it.title)+'」の成立">取り消す</button>' : '')+'</div>'
       +'</div></article>';
@@ -1769,6 +1812,26 @@ document.getElementById("needSave").addEventListener("click", function(){
 });
 document.addEventListener("click", function(e){
   var t=e.target.closest("button[data-need-rec]"); if(t) openNeed(t.dataset.needRec);
+});
+
+/* ===== 私もここにいます！（卓募集に手を挙げる） ===== */
+document.addEventListener("click", function(e){
+  var t=e.target.closest("button[data-join-rec]"); if(!t) return;
+  var r=findRecruit(t.dataset.joinRec); if(!r) return;
+  if(!STATE.me){
+    // 名前がまだなら、先に名前を入れてもらう
+    STATE.editingMe=true; renderMe();
+    document.getElementById("meBar").scrollIntoView({block:"center", behavior:"smooth"});
+    var i=document.getElementById("meName"); if(i) i.focus({preventScroll:true});
+    showToast("先にあなたの名前を入れてね（登録したときと同じ名前）");
+    return;
+  }
+  var ev=recordEvent({ type:"参加", reporter:STATE.me, recruiter:r.name, title:r.title, note:"" });
+  if(ev) showToast("🙋 「"+displayTitle(r)+"」（"+r.name+" さんの卓）に手を挙げました", function(){
+    recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+    showToast("取り消しました");
+  });
+  var el=document.getElementById(r.id); if(el) flashEl(el);
 });
 
 /* ===== 募集の取り下げ（ほかの人の卓に合流するときなど） ===== */
