@@ -432,7 +432,10 @@
     html{font-size:17px}   /* スマホは全体を少し大きく（remで指定した文字がまとめて大きくなる） */
     .steps{grid-template-columns:1fr}
     .stats{grid-template-columns:repeat(2,1fr)}
-    .seg{flex:1}.seg button{flex:1;padding:10px 6px}
+    .tools{position:static;margin-top:20px}
+    .tools .search{flex:1 1 100%}
+    .seg{flex:1 1 auto}.seg button{flex:1;padding:9px 8px;white-space:nowrap}
+    .only{white-space:nowrap;padding:9px 12px}
     .wrap{padding-left:12px;padding-right:12px}
     .tabs{gap:8px}.tab{padding:9px 12px;font-size:.9rem}
   }
@@ -469,7 +472,7 @@
   <div class="steps">
     <div class="step"><b>1</b><div><strong>卓募集っ</strong>にはすでに募集が始まってる卓、<strong>遊びたいっ</strong>にはシナリオを遊びたい人が集まってるよっ、ここからシナリオと日程の登録もできるよっ</div></div>
     <div class="step"><b>2</b><div>興味あるシナリオが被ってる人、募集している人に<strong>声をかけてみよう！</strong></div></div>
-    <div class="step"><b>3</b><div>募集している人は集まったら<strong>成立</strong>を教えてねっ</div></div>
+    <div class="step"><b>3</b><div>募集している人は集まったら<strong>成立</strong>を押してねっ</div></div>
   </div>
   <div class="cta-row">
     <button type="button" class="cta bolt" id="openQuick" hidden>⚡ その場で卓を立てる</button>
@@ -933,8 +936,6 @@ function renderMe(){
     return '<button type="button" class="my-item rec" data-rec="'+r.id+'">📣 '+esc(displayTitle(r))+' <b>'+(w?'遊びたい人 '+w+'人':'募集中')+'</b></button>';
   }).join("")+myEst.map(function(it){
     return '<button type="button" class="my-item est" data-jump-est="'+esc(it.id)+'">🌸 '+esc(it.title)+' <b>成立</b></button>';
-  }).join("")+(STATE.recruits||[]).filter(function(r){ return !isMe(r.name) && joinersOf(r).some(function(e){ return isMe(e.reporter); }); }).map(function(r){
-    return '<button type="button" class="my-item join" data-rec="'+r.id+'">🙋 '+esc(displayTitle(r))+' <b>'+esc(r.name)+' さんの卓に参加希望</b></button>';
   }).join("")+(STATE.withdrawnRecruits||[]).filter(function(r){ return isMe(r.name); }).map(function(r){
     // 取り下げた募集は、ここから元に戻せる
     var chipHtml='<span class="my-item done">🙇 '+esc(displayTitle(r))+' <b>取り下げ</b></span>';
@@ -1072,7 +1073,7 @@ function joinBlock(r){
   var canJoin=STATE.eventPost && !r.local && !isMe(r.name);
   if(!js.length && !canJoin) return "";
   return '<div class="joiners">'
-    +(js.length ? '<p>🙋 ここにいる人（参加したい人）'+js.length+'人</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div>' : '')
+    +(js.length ? '<p>🙋 参加する人 '+js.length+'人</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div>' : '')
     +(canJoin ? (mineJoin
         ? '<button type="button" class="join-btn off" data-undo="'+esc(mineJoin.id)+'" data-undo-what="「'+esc(displayTitle(r))+'」への参加">✋ やっぱりやめる</button>'
         : '<button type="button" class="join-btn" data-join-rec="'+esc(r.id)+'">🙋 私もここにいます！</button>') : '')
@@ -1187,7 +1188,7 @@ function renderEst(){
       +gaiyou(infoForKey(it.key, r.title))
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
-      +(function(){ var js=joinersOf(r); return js.length ? '<div class="est-members"><p>🙋 ここにいた人 '+js.length+'人</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div></div>' : ''; })()
+      +(function(){ var js=joinersOf(r); return js.length ? '<div class="est-members"><p>🙋 参加した人 '+js.length+'人</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div></div>' : ''; })()
       +'<div class="est-foot"><span>🌸 '+esc(estWhen(it))+'</span>'
       +(it.eventId && STATE.eventPost && !it.local ? '<button type="button" class="undo" data-undo="'+esc(it.eventId)+'" data-undo-what="「'+esc(it.title)+'」の成立">取り消す</button>' : '')+'</div>'
       +'</div></article>';
