@@ -1644,12 +1644,14 @@ function applyData(d){
   var evs=d.events||[], now=Date.now(), PENDING_MS=120000, unsent=[];
   STATE.pendingEvents=(STATE.pendingEvents||[]).filter(function(p){
     if(evs.some(function(e){ return e.id===p.id; })) return false;
+    if(inOutbox(p)) return true;
     if(now-p.ts>=PENDING_MS){ unsent.push(eventLabel(p)); return false; }
     return true;
   });
   computeEvents(evs.concat(STATE.pendingEvents).map(function(e){ return Object.assign({}, e); }));
   var pending=(STATE.pendingLocal||[]).filter(function(p){
     if((d.recruits||[]).some(function(r){ return r.name===p.name && r.title===p.title; })) return false;
+    if(inOutbox(p)) return true;
     if(now-(p.ts||now)>=PENDING_MS){ unsent.push("「"+p.title+"」の卓募集"); return false; }
     return true;
   });
@@ -1668,6 +1670,10 @@ function eventLabel(e){
 }
 function hhmm(t){ return new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"}); }
 function notice(msg){ var n=document.getElementById("demo"); n.hidden=!msg; n.textContent=msg||""; }
+function updateNotice(base){
+  if(base!=null) STATE.noticeBase=base;
+  notice([STATE.noticeBase||"", outboxNote()].filter(Boolean).join(" "));
+}
 async function load(){
   var st=document.getElementById("status");
   if(!CONFIG.sheetId){
@@ -1676,7 +1682,8 @@ async function load(){
     return;
   }
   try{
-    var d=await fetchAll(); saveCache(d); applyData(d); notice(STATE.staffNote||"");
+    var d=await fetchAll(); saveCache(d); applyData(d); updateNotice(STATE.staffNote||"");
+    flushOutbox();   // 読み込めた＝つながっているので、送信待ちがあれば送る
     POLL.fails=0; POLL.lastAt=Date.now();
     st.textContent="最終更新 "+hhmm(d.at)+"（"+CONFIG.refreshMs/1000+"秒ごとに自動更新）";
   }catch(e){
@@ -1684,9 +1691,9 @@ async function load(){
     var c=readCache();
     if(e.message==="offline" && c){
       if(!STATE.loadedOnce) applyData(c);
-      notice("📡 電波が不安定なため、"+hhmm(c.at)+" 時点の一覧を表示しています。つながったら自動で更新します。");
+      updateNotice("📡 電波が不安定なため、"+hhmm(c.at)+" 時点の一覧を表示しています。つながったら自動で更新します。");
     } else {
-      notice(e.message==="offline" ? "📡 通信できませんでした。電波のいい場所で開き直してください。" : "⚠ "+e.message);
+      updateNotice(e.message==="offline" ? "📡 通信できませんでした。電波のいい場所で開き直してください。" : "⚠ "+e.message);
     }
   }
 }
@@ -1748,7 +1755,12 @@ function qrAdd(form, name, value){
   if(value==null || value==="") return;
   var i=document.createElement("input"); i.type="hidden"; i.name=name; i.value=value; form.appendChild(i);
 }
-function qrSubmitToForm(fields){
+function qrSubmitToForm(fields, local){
+  if(!STATE.quick) return false;
+  if(isOffline()){ queueOutbox({ kind:"quick", fields:fields, local:local }); return true; }
+  return sendQuickNow(fields);
+}
+function sendQuickNow(fields){
   var q=STATE.quick; if(!q) return false;
   var form=document.createElement("form");
   form.action=q.action; form.method="POST"; form.target="qrSink"; form.style.display="none";
@@ -1779,9 +1791,9 @@ document.getElementById("qrForm").addEventListener("submit", function(ev){
   if(QR.mode==="date") fields.date=document.getElementById("qrDate").value, fields.start=document.getElementById("qrStart").value;
   else fields.months=document.getElementById("qrMonths").value.trim(), fields.days=QR.days, fields.time=QR.time;
 
-  qrSubmitToForm(fields);
-  if(!STATE.me){ STATE.me=name; saveMe(name); }
   var local=Object.assign({ local:true, id:"l"+Date.now().toString(36), ts:Date.now() }, fields);
+  qrSubmitToForm(fields, local);
+  if(!STATE.me){ STATE.me=name; saveMe(name); }
   STATE.pendingLocal=(STATE.pendingLocal||[]).concat([local]);
   closeQuick();
   applyData(STATE.lastData);
@@ -1793,6 +1805,11 @@ document.getElementById("qrForm").addEventListener("submit", function(ev){
 /* ===== 当日の成立・決まった・取り消しを成立ログに送る ===== */
 function newEventId(){ return "e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function postEvent(ev){
+  if(!STATE.eventPost) return false;
+  if(isOffline()){ queueOutbox({ kind:"event", ev:ev }); return true; }
+  return sendEventNow(ev);
+}
+function sendEventNow(ev){
   var p=STATE.eventPost; if(!p) return false;
   var form=document.createElement("form");
   form.action=p.action; form.method="POST"; form.target="qrSink"; form.style.display="none";
@@ -1810,6 +1827,46 @@ function recordEvent(ev){
   return ev;
 }
 function findRecruit(id){ return (STATE.recruits||[]).filter(function(r){ return r.id===id; })[0]; }
+
+/* ===== 電波がないときに押した操作は、端末に取っておいて、つながったら自動で送る ===== */
+var OUTBOX_KEY="takusagashi.outbox."+CONFIG.sheetId;
+function isOffline(){ return navigator.onLine===false; }
+function readOutbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY)||"[]"); }catch(e){ return []; } }
+function writeOutbox(q){ try{ if(q.length) localStorage.setItem(OUTBOX_KEY, JSON.stringify(q)); else localStorage.removeItem(OUTBOX_KEY); }catch(e){} }
+function queueOutbox(item){ var q=readOutbox(); q.push(item); writeOutbox(q); updateNotice(); }
+function outboxNote(){
+  var n=readOutbox().length;
+  return n ? "📡 電波がないため、送信待ちが"+n+"件あります。つながったら自動で送ります。" : "";
+}
+function inOutbox(p){
+  return readOutbox().some(function(it){ return (it.ev && it.ev.id===p.id) || (it.local && it.local.id===p.id); });
+}
+function flushOutbox(){
+  if(isOffline()) return 0;
+  var all=readOutbox(); if(!all.length) return 0;
+  // 送信先（設定タブ）をまだ読めていない種類は、箱に残して次の機会に送る
+  var q=all.filter(function(it){ return it.kind==="event" ? !!STATE.eventPost : !!STATE.quick; });
+  writeOutbox(all.filter(function(it){ return q.indexOf(it)<0; }));
+  if(!q.length){ updateNotice(); return 0; }
+  q.forEach(function(it, i){
+    // 送った時刻から数え直す（2分たっても載らなければ「送れなかったかも」を出す）
+    if(it.ev){ (STATE.pendingEvents||[]).forEach(function(p){ if(p.id===it.ev.id) p.ts=Date.now(); }); }
+    if(it.local){ (STATE.pendingLocal||[]).forEach(function(p){ if(p.id===it.local.id) p.ts=Date.now(); }); }
+    setTimeout(function(){ if(it.kind==="event") sendEventNow(it.ev); else if(it.kind==="quick") sendQuickNow(it.fields); }, i*800);
+  });
+  showToast("📡 電波が戻ったので、送信待ちだった"+q.length+"件を送りました");
+  setTimeout(load, q.length*800+4000);
+  updateNotice();
+  return q.length;
+}
+// ページを開き直しても、送信待ちの操作は画面に仮表示しておく
+(function(){
+  var q=readOutbox();
+  STATE.pendingEvents=q.filter(function(it){ return it.ev; }).map(function(it){ return it.ev; });
+  STATE.pendingLocal=q.filter(function(it){ return it.local; }).map(function(it){ return it.local; });
+})();
+window.addEventListener("online", function(){ flushOutbox(); });
+window.addEventListener("offline", function(){ updateNotice(); });
 
 document.addEventListener("click", function(e){
   var t=e.target.closest("button"); if(!t) return;
@@ -1982,6 +2039,7 @@ document.addEventListener("visibilitychange", function(){
 });
 load();
 if(CONFIG.sheetId) schedulePoll();
+if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
 </body>
 </html>
