@@ -405,6 +405,7 @@
   .pm-done:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
   .pm-done:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .pm-sub{margin:0 0 8px;font-size:.84rem;font-weight:700}
+  .pm-recs{margin:0 0 16px}
   .pm-none{margin:0;font-size:.84rem;font-weight:700;color:var(--muted)}
   #toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:95;display:flex;align-items:center;gap:12px;
     background:var(--ink);color:#fff;font-weight:700;font-size:.88rem;padding:11px 16px;border-radius:999px;
@@ -1164,7 +1165,7 @@ function wantersBlock(r, w){
   var v = AB_FORCE==="a" || AB_FORCE==="b" ? AB_FORCE : AB_FORCE==="mix" ? (AB_COUNT++ % 2 ? "b" : "a") : "b";
   var g=STATE.byKey && STATE.byKey[r.key];
   if(v==="b" && g) return '<div class="wanters"><button type="button" class="want-link" data-jump-want="'+cardId(g)+'">'
-    +'<em>🙋 遊びたがってる人が <b>'+w.length+'人</b> います！</em><span aria-hidden="true">›</span></button></div>';
+    +'<em>🙋 遊びたい人が <b>'+w.length+'人</b> います！</em><span aria-hidden="true">›</span></button></div>';
   return '<div class="wanters"><p>🙋（参考）このシナリオを遊びたい人 '+w.length+'人</p><div class="chips">'+w.map(function(p){return chip(p,"");}).join("")+'</div></div>';
 }
 document.addEventListener("click", function(e){
@@ -1813,8 +1814,14 @@ function openPerson(name, key){
     var n=og.people.filter(function(p){ return p!==name; }).length;
     return '<button type="button" class="my-item" data-pm-jump="'+cardId(og)+'">'+esc(og.title)+' <b>'+(n?'ほか'+n+'人':'この人だけ')+'</b></button>';
   }).join("");
+  // この人が募集している卓（押すと卓募集っのそのカードへ）
+  var recs=(STATE.recruits||[]).filter(function(r){ return norm(r.name)===norm(name); }).map(function(r){
+    return '<button type="button" class="my-item rec" data-pm-rec="'+esc(r.id)+'">📣 '+esc(displayTitle(r))+' <b>'+(r.need?'あと'+r.need+'人':'募集中')+'</b></button>';
+  }).join("");
   document.getElementById("pmBody").innerHTML=
     (STATE.eventPost && title ? '<button type="button" class="pm-done" data-pm-done="1">🎉 '+esc(name)+' さんの「'+esc(title)+'」が決まった！</button>' : '')
+    +'<p class="pm-sub">📣 この人が募集している卓</p>'
+    +(recs ? '<div class="my-list pm-recs">'+recs+'</div>' : '<p class="pm-none pm-recs">いま募集している卓はありません</p>')
     +'<p class="pm-sub">🔍 この人が気になってる他のシナリオ</p>'
     +(list ? '<div class="my-list">'+list+'</div>' : '<p class="pm-none">ほかに登録しているシナリオはありません</p>');
   var ov=document.getElementById("pmOverlay"); ov.hidden=false; ov.classList.add("show");
@@ -1826,6 +1833,7 @@ document.getElementById("pmOverlay").addEventListener("click", function(e){
   if(e.target.id==="pmOverlay"){ closePerson(); return; }
   var t=e.target.closest("button"); if(!t) return;
   if(t.dataset.pmJump){ closePerson(); jumpTo(t.dataset.pmJump); }
+  else if(t.dataset.pmRec){ closePerson(); jumpToRecruit(t.dataset.pmRec); }
   else if(t.dataset.pmDone){
     var g=STATE.byKey[PM.key], name=PM.name; if(!g) return;
     var ev=recordEvent({ type:"決まった", reporter:name, recruiter:"", title:g.title, note:"" });
