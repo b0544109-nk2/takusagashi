@@ -6,6 +6,27 @@
 <title>卓さがしボード</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>
+// LINEのアプリ内ブラウザで開かれたら、普段のブラウザ（Safari・Chrome）で開き直す。
+// LINEはURLに openExternalBrowser=1 が付いていると外のブラウザで開く（LINE公式の仕組み）。
+// それでも抜けられなかったときのために、上に案内を出す。
+(function(){
+  if(!/\bLine\//i.test(navigator.userAgent)) return;
+  var u=new URL(location.href);
+  if(u.searchParams.get("openExternalBrowser")!=="1"){
+    u.searchParams.set("openExternalBrowser","1");
+    location.replace(u.toString());
+    return;
+  }
+  document.addEventListener("DOMContentLoaded", function(){
+    var b=document.createElement("div");
+    b.setAttribute("role","note");
+    b.style.cssText="position:sticky;top:0;z-index:200;background:#1d2242;color:#fff;font:700 14px/1.6 'Kosugi Maru',system-ui,sans-serif;padding:10px 14px;text-align:center";
+    b.textContent="LINEの中のブラウザで開いています。右上のメニューから「ブラウザで開く」を選ぶと、名前の保存や電波がないときの表示がちゃんと動きます。";
+    document.body.insertBefore(b, document.body.firstChild);
+  });
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
