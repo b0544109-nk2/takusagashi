@@ -732,7 +732,8 @@ var CONFIG = {
   eventTab: "成立ログ",      // 当日の成立・消し込み・取り消しの記録（追記のみ）
   slideMs: 10000,
   refreshMs: 30000,
-  infoRefreshMs: 600000     // マスタ（シナリオ情報）は10分に1回
+  infoRefreshMs: 600000,    // マスタ（シナリオ情報）は10分に1回
+  slowRefreshMs: 600000     // 設定・アイコンもめったに変わらないので10分に1回
 };
 
 // 卓募集のサンプル（架空の募集者）。date があれば日付指定、なければ「時期・曜日・時間帯」のざっくり指定
@@ -1555,12 +1556,25 @@ function parseQuickRecruits(rows){
       date:get(r,"date"), start:get(r,"start"), venue:get(r,"venue") };
   });
 }
+// 140人が30秒ごとに読むので、毎回読むのは変わるタブ（回答・即時卓募集・成立ログ）だけにする
+async function fetchSlow(){
+  var c=STATE.slowCache;
+  if(c && Date.now()-c.at < CONFIG.slowRefreshMs) return c;
+  var r=await Promise.all([fetchTab(CONFIG.settingsTab,false), fetchTab(CONFIG.iconTab,false)]);
+  var st=parseSettings(r[0]), ic=parseIcons(r[1]);
+  if(!Object.keys(st).length){
+    if(c) return c;                          // 読めなかったら前回の内容を使い続ける
+    return { settings:{}, icons:ic };        // 初回に読めなかったら覚えずに次回また読む
+  }
+  STATE.slowCache={ at:Date.now(), settings:st, icons:ic };
+  return STATE.slowCache;
+}
 async function fetchAll(){
-  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchInfo(), fetchTab(CONFIG.settingsTab,false),
-    fetchTab(CONFIG.iconTab,false), fetchTab(CONFIG.quickTab,false), fetchTab(CONFIG.eventTab,false)]);
+  var r=await Promise.all([fetchTab(CONFIG.answerTab,true), fetchInfo(), fetchSlow(),
+    fetchTab(CONFIG.quickTab,false), fetchTab(CONFIG.eventTab,false)]);
   var a=parseAnswers(r[0]);
-  return { people:a.people, recruits:a.recruits.concat(parseQuickRecruits(r[4])), info:r[1], settings:parseSettings(r[2]),
-           icons:parseIcons(r[3]), events:parseEvents(r[5]), at:Date.now() };
+  return { people:a.people, recruits:a.recruits.concat(parseQuickRecruits(r[3])), info:r[1], settings:r[2].settings,
+           icons:r[2].icons, events:parseEvents(r[4]), at:Date.now() };
 }
 function demoData(){
   var t0=today0();
@@ -1627,16 +1641,30 @@ function applyData(d){
   }
   // 送信直後でまだシートに載っていない分（仮表示）を重ねる
   // 送信に失敗した分（電波切れなど）がずっと残らないよう、2分たってもシートに載らない仮表示は取り下げる
-  var evs=d.events||[], now=Date.now(), PENDING_MS=120000;
-  STATE.pendingEvents=(STATE.pendingEvents||[]).filter(function(p){ return now-p.ts<PENDING_MS && !evs.some(function(e){ return e.id===p.id; }); });
+  var evs=d.events||[], now=Date.now(), PENDING_MS=120000, unsent=[];
+  STATE.pendingEvents=(STATE.pendingEvents||[]).filter(function(p){
+    if(evs.some(function(e){ return e.id===p.id; })) return false;
+    if(now-p.ts>=PENDING_MS){ unsent.push(eventLabel(p)); return false; }
+    return true;
+  });
   computeEvents(evs.concat(STATE.pendingEvents).map(function(e){ return Object.assign({}, e); }));
-  var pending=(STATE.pendingLocal||[]).filter(function(p){ return now-(p.ts||now)<PENDING_MS && !(d.recruits||[]).some(function(r){ return r.name===p.name && r.title===p.title; }); });
+  var pending=(STATE.pendingLocal||[]).filter(function(p){
+    if((d.recruits||[]).some(function(r){ return r.name===p.name && r.title===p.title; })) return false;
+    if(now-(p.ts||now)>=PENDING_MS){ unsent.push("「"+p.title+"」の卓募集"); return false; }
+    return true;
+  });
   STATE.pendingLocal=pending;
+  if(unsent.length) showToast("⚠ "+unsent.join("、")+"が送れなかったかも。時間をおいてもう一度押してね", null, 10000);
   setRecruits((d.recruits||[]).concat(pending).map(function(r){ return Object.assign({}, r); }));
   build(d.people||[]); buildEstablished(); render(); renderRecruits(); renderEst();
   if(!document.getElementById("monitor").hidden) buildSlides();
   if(STATE.pendingMonitor){ STATE.pendingMonitor=false; openMonitor(); }
   STATE.loadedOnce=true;
+}
+function eventLabel(e){
+  var t=e.title?"「"+e.title+"」":"";
+  return ({ "成立":t+"の成立", "決まった":t+"の決まった", "人数変更":t+"の募集人数の変更", "取り下げ":t+"の取り下げ",
+            "参加":t+"への参加", "取り消し":"取り消し" })[e.type] || (t+"の操作");
 }
 function hhmm(t){ return new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"}); }
 function notice(msg){ var n=document.getElementById("demo"); n.hidden=!msg; n.textContent=msg||""; }
@@ -1649,8 +1677,10 @@ async function load(){
   }
   try{
     var d=await fetchAll(); saveCache(d); applyData(d); notice(STATE.staffNote||"");
+    POLL.fails=0; POLL.lastAt=Date.now();
     st.textContent="最終更新 "+hhmm(d.at)+"（"+CONFIG.refreshMs/1000+"秒ごとに自動更新）";
   }catch(e){
+    POLL.fails++;
     var c=readCache();
     if(e.message==="offline" && c){
       if(!STATE.loadedOnce) applyData(c);
@@ -1853,12 +1883,12 @@ document.addEventListener("keydown", function(e){
 });
 
 var TOAST={ timer:null, undo:null };
-function showToast(msg, undoFn){
+function showToast(msg, undoFn, ms){
   var el=document.getElementById("toast"), u=document.getElementById("toastUndo");
   document.getElementById("toastMsg").textContent=msg;
   TOAST.undo=undoFn||null; u.hidden=!undoFn;
   el.hidden=false; clearTimeout(TOAST.timer);
-  TOAST.timer=setTimeout(function(){ el.hidden=true; TOAST.undo=null; }, undoFn?7000:3000);
+  TOAST.timer=setTimeout(function(){ el.hidden=true; TOAST.undo=null; }, ms || (undoFn?7000:3000));
 }
 document.getElementById("toastUndo").addEventListener("click", function(){
   var f=TOAST.undo; TOAST.undo=null; document.getElementById("toast").hidden=true; if(f) f();
@@ -1934,8 +1964,24 @@ document.addEventListener("keydown", function(e){
   if(e.key==="Escape" && document.getElementById("needOverlay").classList.contains("show")) closeNeed();
 });
 
+// 自動更新：30秒＋人ごとに0〜5秒ずらす。失敗が続いたら60秒→120秒に広げる。
+// 画面を見ていない間（別のアプリ・画面オフ）は止めて、戻ってきたらすぐ読み直す
+var POLL={ timer:null, fails:0, lastAt:0 };
+function schedulePoll(){
+  clearTimeout(POLL.timer);
+  var wait=CONFIG.refreshMs*Math.pow(2, Math.min(POLL.fails, 2)) + Math.random()*5000;
+  POLL.timer=setTimeout(async function(){
+    if(document.hidden) return;              // 見ていない間は止める（visibilitychangeで再開）
+    await load(); schedulePoll();
+  }, wait);
+}
+document.addEventListener("visibilitychange", function(){
+  if(document.hidden || !CONFIG.sheetId) return;
+  if(Date.now()-POLL.lastAt > 10000) load();
+  schedulePoll();
+});
 load();
-if(CONFIG.sheetId) setInterval(load, CONFIG.refreshMs);
+if(CONFIG.sheetId) schedulePoll();
 </script>
 </body>
 </html>
