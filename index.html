@@ -1156,12 +1156,12 @@ function joinBlock(r){
 }
 // 卓募集カードの「遊びたい人」の見せ方のA/Bテスト（名前が並ぶと卓のメンバーと誤解されるかもしれないため）
 //  A：名前を並べる　B：人数だけにして、遊びたいっタブのそのシナリオへのリンクにする
-// カードごとに交互に出す。URLに &ab=a / &ab=b を付けるとどちらかにそろえられる
+// いまはBで統一（2026-09-15）。URLに &ab=a を付けるとAで見られる。&ab=mix でカードごとに交互
 var AB_FORCE=(new URLSearchParams(location.search).get("ab")||"").toLowerCase();
 var AB_COUNT=0;   // 「遊びたい人」がいるカードだけで数えて、A→B→A…と交互にする
 function wantersBlock(r, w){
   if(!w.length) return "";
-  var v = AB_FORCE==="a" || AB_FORCE==="b" ? AB_FORCE : (AB_COUNT++ % 2 ? "b" : "a");
+  var v = AB_FORCE==="a" || AB_FORCE==="b" ? AB_FORCE : AB_FORCE==="mix" ? (AB_COUNT++ % 2 ? "b" : "a") : "b";
   var g=STATE.byKey && STATE.byKey[r.key];
   if(v==="b" && g) return '<div class="wanters"><button type="button" class="want-link" data-jump-want="'+cardId(g)+'">'
     +'<em>🙋 遊びたがってる人が <b>'+w.length+'人</b> います！</em><span aria-hidden="true">›</span></button></div>';
