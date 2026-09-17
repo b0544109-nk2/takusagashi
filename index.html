@@ -230,7 +230,9 @@
   .tab{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:.95rem;color:var(--ink);background:#fff;
     border:3px solid var(--ink);border-radius:14px;padding:10px 16px;box-shadow:3px 3px 0 var(--ink);cursor:pointer}
   .tab[aria-selected="true"]{background:var(--ink);color:var(--yellow);box-shadow:3px 3px 0 var(--pink)}
-  .tab.mon{background:var(--cyan);color:#fff}
+  .tab.mon{background:var(--cyan);color:#fff;display:none}
+  /* 船のモニターに映すのはPCから。スマホ・タブレットにはボタンを出さない（#monitor 直打ちは今まで通り） */
+  @media (min-width:700px) and (pointer:fine){ .tab.mon{display:inline-block} }
   .tab:focus-visible,.fchip:focus-visible,.rec-badge:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .tab b{font-weight:400;background:var(--yellow);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:0 7px;font-size:.72rem;margin-left:6px}
   .tab[aria-selected="true"] b{background:var(--pink);color:#fff}
@@ -520,7 +522,9 @@
     .seg{flex:1 1 auto}.seg button{flex:1;padding:9px 8px;white-space:nowrap}
     .only{white-space:nowrap;padding:9px 12px}
     .wrap{padding-left:12px;padding-right:12px}
-    .tabs{gap:8px}.tab{padding:9px 12px;font-size:.9rem}
+    .tabs{gap:5px;flex-wrap:nowrap}
+    .tab{flex:1 1 0;min-width:0;padding:9px 3px;font-size:clamp(.6rem,3.4vw,.82rem);white-space:nowrap;text-align:center}
+    .tab b{margin-left:3px;padding:0 4px;font-size:.62em}
   }
   @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash{animation:none}.tk{transition:none}}
 </style>
