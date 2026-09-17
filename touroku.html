@@ -499,7 +499,7 @@ function hl(text, q){
   return esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.trim().length))+"</mark>"+esc(text.slice(i+q.trim().length));
 }
 function sgState(input, typing){
-  var st=input.parentNode.querySelector(".sg-state"); if(!st) return;
+  var st=input.closest(".sg").querySelector(".sg-state"); if(!st) return;
   var v=input.value.trim(), e=lookup(v), isWant=input.dataset.kind==="want";
   st.className="sg-state";
   // 打っている途中は「一覧にない」を出さない（候補のほうを見てもらう）
@@ -516,7 +516,7 @@ function sgState(input, typing){
 }
 var SG={ input:null, items:[], idx:-1 };
 function sgOpen(input){
-  var list=input.parentNode.querySelector(".sg-list"), q=input.value;
+  var list=input.closest(".sg").querySelector(".sg-list"), q=input.value;
   var items=q.trim() ? suggest(q) : [];
   if(items.length===1 && norm(items[0].e.t)===norm(q)) items=[];
   SG={ input:input, items:items, idx:-1 };
@@ -536,7 +536,7 @@ function sgClose(){
 function sgMove(d){
   if(!SG.items.length) return;
   SG.idx=(SG.idx+d+SG.items.length)%SG.items.length;
-  var list=SG.input.parentNode.querySelector(".sg-list");
+  var list=SG.input.closest(".sg").querySelector(".sg-list");
   list.querySelectorAll("li").forEach(function(li,i){ li.setAttribute("aria-selected", String(i===SG.idx)); if(i===SG.idx) li.scrollIntoView({block:"nearest"}); });
   SG.input.setAttribute("aria-activedescendant", SG.input.id+"-o"+SG.idx);
 }
