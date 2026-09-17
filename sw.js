@@ -3,8 +3,8 @@
 // ・ページ本体（HTML・画像）：まずネットに取りに行き（4秒で見切る）、だめなら保存してある分を出す
 // ・フォント：一度取れたら保存したものを使う
 // ・スプレッドシートやGoogleフォームは触らない（データの保存はページ側の端末キャッシュが担当）
-const CACHE = 'takusagashi-v1';
-const SHELL = ['./', './index.html', './touroku.html', './favicon.png', './apple-touch-icon.png'];
+const CACHE = 'takusagashi-v2';
+const SHELL = ['./', './index.html', './touroku.html', './favicon.png', './apple-touch-icon.png', './board-qr.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

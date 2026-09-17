@@ -153,6 +153,7 @@
   .bug{margin:30px auto 0;max-width:560px;text-align:center;font-size:.86rem;font-weight:700;background:#fff;border:2.5px dashed var(--ink);
     border-radius:14px;padding:10px 14px;line-height:1.6}
   .bug a{color:#1a5fd6}
+  .more-note{margin-top:12px}
   .sum-help{margin:8px 0 0;font-size:.76rem;font-weight:700;color:var(--muted);line-height:1.55}
 
   /* だれの登録か */
@@ -227,6 +228,7 @@
     <h1><span class="main">事前登録</span><span class="sub">りったくしえんっ</span></h1>
     <p class="lead">卓募集（3件まで）と、遊びたいシナリオ（3つまで）を登録するページです。<br>クルーズ当日の立卓支援になればいいなっ</p>
     <p class="notice" id="notice" hidden></p>
+  <p class="row-c" id="backRow" hidden><a class="cta sub" id="backBoard" href="#">📋 卓さがしボードに戻る</a></p>
   </header>
 
   <!-- 1. お名前 -->
@@ -263,6 +265,7 @@
       <p class="sec-note sg-hint">🔍 シナリオ名は打つと候補が出ます。最近のシナリオなど候補に出てこないものも、そのまま登録できます。</p>
       <div id="recList"></div>
       <button type="button" class="add" id="addRec">＋ 卓募集を追加する</button>
+      <p class="sec-note more-note" id="moreNote" hidden>ここに登録できるのは3件までです。当日4件目以降の卓を立てるときは、卓さがしボードの「⚡ その場で卓を立てる」からどうぞ（件数の制限はありません）。成立した卓も、枠はそのまま残ります。</p>
     </section>
 
     <section class="card" aria-labelledby="hWant">
@@ -648,6 +651,7 @@ function renderEdit(reg){
   var rl=document.getElementById("recList");
   rl.innerHTML = reg.recruits.length ? reg.recruits.map(recCard).join("") : '<p class="empty-rec">卓募集はまだありません（なくても登録できます）</p>';
   document.getElementById("addRec").hidden = reg.recruits.length>=3;
+  document.getElementById("moreNote").hidden = reg.recruits.length<3;
   var ws=reg.wants.slice(0,3); while(ws.length<3) ws.push({ t:"", done:false });
   document.getElementById("wantList").innerHTML=ws.map(wantRow).join("");
   document.querySelectorAll(".sg-in").forEach(sgState);
@@ -725,6 +729,24 @@ async function fetchAnswers(){
   return await fetchTab(CONFIG.answerTab);
 }
 async function loadAnswers(){ return CONFIG.sheetId ? await fetchAnswers() : DEMO_ROWS; }
+// 成立ログ：ボードで「成立」を押した卓を拾う（取り消し済みは除く）
+async function fetchClosed(name){
+  if(!CONFIG.sheetId) return {};
+  var rows;
+  try{ rows=await fetchTab("成立ログ"); }catch(e){ return {}; }
+  var h=(rows[0]||[]).map(function(x){ return (x||"").trim(); }), ix=function(t){ return h.indexOf(t); };
+  var cT=ix("種類"), cId=ix("イベントID"), cTg=ix("対象イベントID"), cR=ix("募集者"), cS=ix("シナリオ名");
+  if(cT<0 || cId<0) return {};
+  var cancelled={}, out={};
+  rows.slice(1).forEach(function(r){ if((r[cT]||"").trim()==="取り消し" && (r[cTg]||"").trim()) cancelled[(r[cTg]||"").trim()]=1; });
+  rows.slice(1).forEach(function(r){
+    var type=(r[cT]||"").trim(), id=(r[cId]||"").trim();
+    if(type!=="成立" || cancelled[id]) return;
+    if(norm(r[cR])!==norm(name)) return;
+    out[norm(r[cS])]=true;
+  });
+  return out;
+}
 async function goNext(auto){
   var name=document.getElementById("fName").value.trim(), xin=document.getElementById("fXid").value.trim();
   var err=document.getElementById("nameErr"), btn=document.getElementById("goNext");
@@ -737,6 +759,7 @@ async function goNext(auto){
   try{ rows=await loadAnswers(); }
   catch(e){ btn.disabled=false; btn.textContent="つぎへ →"; fail(e.message==="offline" ? "📡 通信できませんでした。電波のいい場所でもう一度押してください。" : "⚠ "+e.message); return; }
   btn.disabled=false; btn.textContent="つぎへ →";
+  var closed=await fetchClosed(name);
   var mine=rowsFor(rows, name), last=mine[mine.length-1], sess=loadSession();
   var sameDevice = sess && norm(sess.name)===norm(name);
   var reg = last ? rowToReg(rows, last) : { name:name, xid:"", ts:"", recruits:[], wants:[] };
@@ -755,6 +778,8 @@ async function goNext(auto){
       return;
     }
   }
+  // ボードで成立を押した卓は、ここでも「成立ずみ」にしておく
+  reg.recruits.forEach(function(r){ if(closed[norm(r.title)]) r.done=true; });
   reg.name = last ? reg.name : name;
   if(!reg.xid && xin) reg.xid=xin.replace(/^@/,"");
   if(sameDevice && !reg.xid && sess.xid) reg.xid=sess.xid;
@@ -962,6 +987,17 @@ document.getElementById("editAgain").addEventListener("click", function(){
 
 /* ===== はじめに ===== */
 function notice(msg){ var n=document.getElementById("notice"); n.hidden=!msg; n.textContent=msg||""; }
+// ボードから来た人（または「ボード公開｜する」のとき）には、戻るボタンを出す
+function boardOpen(){ return /^(する|公開|はい|on|true|yes|○|〇)$/i.test(String(S.settings["ボード公開"]||"").trim()); }
+function showBackToBoard(){
+  if(!CONFIG.sheetId) return;
+  var fromBoard=false;
+  try{ fromBoard = document.referrer && new URL(document.referrer).origin===location.origin; }catch(e){}
+  if(!fromBoard && !boardOpen()) return;
+  var a=document.getElementById("backBoard");
+  a.href="./?id="+encodeURIComponent(CONFIG.sheetId);
+  document.getElementById("backRow").hidden=false;
+}
 async function init(){
   var sess=loadSession();
   if(sess){ document.getElementById("fName").value=sess.name||""; document.getElementById("fXid").value=sess.xid||""; }
@@ -979,6 +1015,7 @@ async function init(){
   S.icons=parseIcons(r[2]);
   try{ S.post=JSON.parse(S.settings["登録フォーム送信先"]||""); }catch(e){ S.post=null; }
   if(!S.post || !S.post.action || !S.post.rec) notice("登録の受付はまだ準備中です。幹事からの案内をお待ちください。");
+  showBackToBoard();
   if(sess && sess.name) goNext(true);
 }
 init();
