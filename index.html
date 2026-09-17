@@ -1220,7 +1220,7 @@ function renderRecruits(){
       +wantersBlock(r, w)
       +(STATE.eventPost && !r.local && canManage(r.name) ? '<div class="owner-menu"><p>🔑 募集している人用メニュー'+(isMe(r.name)?'':'（幹事として表示中）')+'</p><div class="rc-actions">'
         +'<button type="button" class="est-btn" data-est-rec="'+esc(r.id)+'"><i>🌸</i>人が集まった<br>（成立）</button>'
-        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'"><i>👥</i>募集人数<br>変更</button>'
+        +'<button type="button" class="need-btn" data-need-rec="'+esc(r.id)+'"><i>👥</i>募集人数<br>'+(r.need?'変更':'入力')+'</button>'
         +'<button type="button" class="need-btn wd-btn" data-withdraw-rec="'+esc(r.id)+'"><i>🙇</i>募集を<br>取り下げる</button></div></div>'
         : (STATE.eventPost && !r.local && !STATE.me ? '<p class="owner-hint">🔑 この募集をした人は、上の名前欄に登録した名前を入れると操作メニューが出ます</p>' : ''))
       +'</div></article>';
@@ -1982,6 +1982,7 @@ function needRender(){
 function openNeed(id){
   var r=findRecruit(id); if(!r) return;
   NEED={ id:id, val:r.need||0, orig:r.need||0 };
+  document.getElementById("needHeading").textContent="👥 募集人数"+(r.need?"変更":"入力");
   document.getElementById("needLead").textContent="「"+displayTitle(r)+"」（"+r.name+" さんの募集）";
   needRender();
   var ov=document.getElementById("needOverlay"); ov.hidden=false; ov.classList.add("show");
