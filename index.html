@@ -348,6 +348,8 @@
   .qr-chip[aria-pressed="true"]{background:var(--yellow)}
   .qr-chip:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .qr-err{margin:0 0 10px;font-size:.84rem;font-weight:700;color:var(--red)}
+  .ask .qr-lead{color:var(--ink);font-size:.9rem;margin-bottom:18px}
+  .qr-actions .btn.danger{background:var(--red);color:#fff}
   .qr-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
   .qr-actions .btn{font-size:.95rem;padding:10px 20px}
   .rc.local{box-shadow:6px 6px 0 var(--mint)}
@@ -726,6 +728,16 @@
     <div class="qr-actions">
       <button type="button" class="btn ghost" id="needCancel">やめる</button>
       <button type="button" class="btn" id="needSave">保存する</button>
+    </div>
+  </div>
+</div>
+<div class="qr-overlay" id="askOverlay" hidden>
+  <div class="qr-modal pm ask" role="dialog" aria-modal="true" aria-labelledby="askHeading">
+    <h2 id="askHeading" class="pop"></h2>
+    <p class="qr-lead" id="askLead"></p>
+    <div class="qr-actions">
+      <button type="button" class="btn ghost" id="askNo">やめる</button>
+      <button type="button" class="btn" id="askYes">はい</button>
     </div>
   </div>
 </div>
@@ -1997,16 +2009,25 @@ document.addEventListener("click", function(e){
   var t=e.target.closest("button"); if(!t) return;
   if(t.dataset.estRec){
     var r=findRecruit(t.dataset.estRec); if(!r) return;
-    if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）を成立にしますか？\n「🌸 成立っ」タブに移ります。")) return;
-    var ev=recordEvent({ type:"成立", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:"" });
-    if(ev){ setView("est"); var el=document.getElementById("est-"+r.id); if(el) flashEl(el); }
+    ask({ title:"🌸 人が集まった（成立）",
+      lines:["「"+displayTitle(r)+"」（"+r.name+" さんの募集）を成立にします。","「🌸 成立っ」タブに移ります。"],
+      ok:"成立にする" }, function(){
+      var ev=recordEvent({ type:"成立", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:"" });
+      if(ev){ setView("est"); var el=document.getElementById("est-"+r.id); if(el) flashEl(el); }
+    });
   } else if(t.dataset.doneTitle){
     var title=t.dataset.doneTitle, who=t.dataset.doneName||STATE.me;
-    if(!confirm("「"+title+"」の卓が決まったので、遊びたいの一覧から外しますか？")) return;
-    recordEvent({ type:"決まった", reporter:who, recruiter:"", title:title, note:"" });
+    ask({ title:"✓ このシナリオの卓が決まった",
+      lines:["「"+title+"」を、遊びたいの一覧から外します。"],
+      ok:"外す" }, function(){
+      recordEvent({ type:"決まった", reporter:who, recruiter:"", title:title, note:"" });
+    });
   } else if(t.dataset.undo){
-    if(!confirm((t.dataset.undoWhat||"この記録")+"を取り消しますか？（間違えて押したとき用）")) return;
-    recordEvent({ type:"取り消し", target:t.dataset.undo, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+    ask({ title:"取り消す",
+      lines:[(t.dataset.undoWhat||"この記録")+"を取り消します。","（間違えて押したとき用）"],
+      ok:"取り消す", danger:true }, function(){
+      recordEvent({ type:"取り消し", target:t.dataset.undo, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+    });
   } else if(t.dataset.wantRec!=null){
     openQuick(t.dataset.wantRec);
   }
@@ -2093,6 +2114,31 @@ function openNeed(id){
   document.getElementById("needPlus").focus();
 }
 function closeNeed(){ var ov=document.getElementById("needOverlay"); ov.classList.remove("show"); ov.hidden=true; }
+
+/* ===== 確認のポップアップ =====
+   ブラウザのconfirmだとサイトのアドレス（github.io）が出てびっくりするので、ボードの中で出す。
+   ask({title, lines:[…], ok, no, danger}, OKを押したときの処理) */
+var ASK={fn:null};
+function ask(o, onYes){
+  o=o||{};
+  var m=document.getElementById("askOverlay");
+  document.getElementById("askHeading").textContent=o.title||"確認";
+  document.getElementById("askLead").innerHTML=(o.lines||[]).map(function(x){ return esc(x); }).join("<br>");
+  var yes=document.getElementById("askYes");
+  yes.textContent=o.ok||"はい";
+  yes.classList.toggle("danger", !!o.danger);
+  document.getElementById("askNo").textContent=o.no||"やめる";
+  ASK.fn=onYes||null;
+  m.hidden=false; m.classList.add("show");
+  setTimeout(function(){ yes.focus(); },0);
+}
+function closeAsk(){ var m=document.getElementById("askOverlay"); m.classList.remove("show"); m.hidden=true; ASK.fn=null; }
+document.getElementById("askYes").addEventListener("click", function(){ var f=ASK.fn; closeAsk(); if(f) f(); });
+document.getElementById("askNo").addEventListener("click", closeAsk);
+document.getElementById("askOverlay").addEventListener("click", function(e){ if(e.target.id==="askOverlay") closeAsk(); });
+document.addEventListener("keydown", function(e){
+  if(e.key==="Escape" && document.getElementById("askOverlay").classList.contains("show")) closeAsk();
+});
 document.getElementById("needMinus").addEventListener("click", function(){ if(NEED.val>0){ NEED.val--; needRender(); } });
 document.getElementById("needPlus").addEventListener("click", function(){ if(NEED.val<99){ NEED.val++; needRender(); } });
 document.getElementById("needCancel").addEventListener("click", closeNeed);
@@ -2124,24 +2170,33 @@ document.addEventListener("click", function(e){
     showToast("先にあなたの名前を入れてね（登録したときと同じ名前）");
     return;
   }
-  if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）\n\n募集している "+r.name+" さんと、もう話しましたか？\n\nOK：話しました（同卓者に加わります）\nキャンセル：まだです（先に声をかけてみてね）")) return;
-  var ev=recordEvent({ type:"参加", reporter:STATE.me, recruiter:r.name, title:r.title, note:"" });
-  if(ev) showToast("🙋 「"+displayTitle(r)+"」（"+r.name+" さんの卓）に手を挙げました", function(){
-    recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
-    showToast("取り消しました");
+  ask({ title:"🙋 私もここにいます！",
+    lines:["「"+displayTitle(r)+"」（"+r.name+" さんの募集）","",
+      "募集している "+r.name+" さんと、もう話しましたか？",
+      "話がついていれば、同卓者に加わります。"],
+    ok:"話しました", no:"まだです" }, function(){
+    var ev=recordEvent({ type:"参加", reporter:STATE.me, recruiter:r.name, title:r.title, note:"" });
+    if(ev) showToast("🙋 「"+displayTitle(r)+"」（"+r.name+" さんの卓）に手を挙げました", function(){
+      recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+      showToast("取り消しました");
+    });
+    var el=document.getElementById(r.id); if(el) flashEl(el);
   });
-  var el=document.getElementById(r.id); if(el) flashEl(el);
 });
 
 /* ===== 募集の取り下げ（ほかの人の卓に合流するときなど） ===== */
 document.addEventListener("click", function(e){
   var t=e.target.closest("button[data-withdraw-rec]"); if(!t) return;
   var r=findRecruit(t.dataset.withdrawRec); if(!r) return;
-  if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）を取り下げますか？\n卓募集っの一覧から消えます（ほかの人の卓に合流するときなど）。")) return;
-  var ev=recordEvent({ type:"取り下げ", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:"" });
-  if(ev) showToast("🙇 「"+displayTitle(r)+"」の募集を取り下げました", function(){
-    recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
-    showToast("取り消しました");
+  ask({ title:"🙇 募集を取り下げる",
+    lines:["「"+displayTitle(r)+"」（"+r.name+" さんの募集）を取り下げます。",
+      "卓募集っの一覧から消えます（ほかの人の卓に合流するときなど）。"],
+    ok:"取り下げる", danger:true }, function(){
+    var ev=recordEvent({ type:"取り下げ", reporter:STATE.me||r.name, recruiter:r.name, title:r.title, note:"" });
+    if(ev) showToast("🙇 「"+displayTitle(r)+"」の募集を取り下げました", function(){
+      recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
+      showToast("取り消しました");
+    });
   });
 });
 document.addEventListener("keydown", function(e){
