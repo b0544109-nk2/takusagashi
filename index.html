@@ -2119,6 +2119,8 @@ function closeNeed(){ var ov=document.getElementById("needOverlay"); ov.classLis
    ブラウザのconfirmだとサイトのアドレス（github.io）が出てびっくりするので、ボードの中で出す。
    ask({title, lines:[…], ok, no, danger}, OKを押したときの処理) */
 var ASK={fn:null};
+function hideAsk(){ var m=document.getElementById("askOverlay"); m.classList.remove("show"); m.hidden=true; }
+function closeAsk(ok){ var f=ASK.fn; ASK.fn=null; hideAsk(); if(f) f(!!ok); }
 function ask(o, onYes){
   o=o||{};
   var m=document.getElementById("askOverlay");
@@ -2128,16 +2130,18 @@ function ask(o, onYes){
   yes.textContent=o.ok||"はい";
   yes.classList.toggle("danger", !!o.danger);
   document.getElementById("askNo").textContent=o.no||"やめる";
-  ASK.fn=onYes||null;
   m.hidden=false; m.classList.add("show");
   setTimeout(function(){ yes.focus(); },0);
+  // 「OKを押したか」を返すので、await ask(…) とも書ける
+  return new Promise(function(done){
+    ASK.fn=function(ok){ if(ok && onYes) onYes(); done(ok); };
+  });
 }
-function closeAsk(){ var m=document.getElementById("askOverlay"); m.classList.remove("show"); m.hidden=true; ASK.fn=null; }
-document.getElementById("askYes").addEventListener("click", function(){ var f=ASK.fn; closeAsk(); if(f) f(); });
-document.getElementById("askNo").addEventListener("click", closeAsk);
-document.getElementById("askOverlay").addEventListener("click", function(e){ if(e.target.id==="askOverlay") closeAsk(); });
+document.getElementById("askYes").addEventListener("click", function(){ closeAsk(true); });
+document.getElementById("askNo").addEventListener("click", function(){ closeAsk(false); });
+document.getElementById("askOverlay").addEventListener("click", function(e){ if(e.target.id==="askOverlay") closeAsk(false); });
 document.addEventListener("keydown", function(e){
-  if(e.key==="Escape" && document.getElementById("askOverlay").classList.contains("show")) closeAsk();
+  if(e.key==="Escape" && document.getElementById("askOverlay").classList.contains("show")) closeAsk(false);
 });
 document.getElementById("needMinus").addEventListener("click", function(){ if(NEED.val>0){ NEED.val--; needRender(); } });
 document.getElementById("needPlus").addEventListener("click", function(){ if(NEED.val<99){ NEED.val++; needRender(); } });

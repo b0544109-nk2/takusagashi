@@ -218,6 +218,20 @@
     .rec{padding:12px 11px 2px}
   }
   @media (prefers-reduced-motion:reduce){.sending::before{animation:none}}
+  /* 確認のポップアップ（ブラウザのconfirmだとサイトのアドレスが出てびっくりするので、ページの中で出す） */
+  .ask-ov{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;
+    padding:6vh 16px 40px;overflow-y:auto;background:rgba(29,34,66,.55)}
+  .ask-ov.show{display:flex}
+  .ask-box{background:#fff;border:4px solid var(--ink);border-radius:22px;box-shadow:8px 8px 0 var(--ink);
+    max-width:420px;width:100%;padding:22px 22px 18px}
+  .ask-box h2{margin:0 0 10px;font-size:1.1rem}
+  .ask-box p{margin:0 0 18px;font-size:.9rem;font-weight:700;line-height:1.7}
+  .ask-act{display:flex;justify-content:flex-end;gap:10px}
+  .ask-act button{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:.95rem;color:var(--ink);
+    background:var(--yellow);border:2.5px solid var(--ink);border-radius:12px;padding:10px 20px;cursor:pointer;box-shadow:var(--press)}
+  .ask-act button:active{transform:translateY(3px);box-shadow:var(--pressed)}
+  .ask-act .ghost{background:#f1efe6}
+  .ask-act .danger{background:var(--red);color:#fff}
 </style>
 </head>
 <body>
@@ -311,6 +325,33 @@ function norm(s){ return String(s||"").normalize("NFKC").toLowerCase().replace(/
 // 検索用：カタカナをひらがなにそろえる（「たんてい」でも「タンテイ」でも当たるように）
 function fold(s){ return norm(s).replace(/[ァ-ヶ]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); }); }
 function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+/* 確認のポップアップ： ask({title, lines:[…], ok, no, danger}) → OKを押したら true */
+var ASK={fn:null};
+function closeAsk(ok){
+  var f=ASK.fn; ASK.fn=null;
+  var m=document.getElementById("askOverlay"); m.classList.remove("show"); m.hidden=true;
+  if(f) f(!!ok);
+}
+function ask(o){
+  o=o||{};
+  var m=document.getElementById("askOverlay");
+  document.getElementById("askHeading").textContent=o.title||"確認";
+  document.getElementById("askLead").innerHTML=(o.lines||[]).map(function(x){ return esc(x); }).join("<br>");
+  var yes=document.getElementById("askYes");
+  yes.textContent=o.ok||"はい"; yes.classList.toggle("danger", !!o.danger);
+  document.getElementById("askNo").textContent=o.no||"やめる";
+  m.hidden=false; m.classList.add("show");
+  setTimeout(function(){ yes.focus(); },0);
+  return new Promise(function(done){ ASK.fn=done; });
+}
+document.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("askYes").addEventListener("click", function(){ closeAsk(true); });
+  document.getElementById("askNo").addEventListener("click", function(){ closeAsk(false); });
+  document.getElementById("askOverlay").addEventListener("click", function(e){ if(e.target.id==="askOverlay") closeAsk(false); });
+});
+document.addEventListener("keydown", function(e){
+  if(e.key==="Escape" && document.getElementById("askOverlay").classList.contains("show")) closeAsk(false);
+});
 function normX(s){
   s=String(s||"").normalize("NFKC").trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i,"").replace(/^@/,"").split(/[\/?#\s]/)[0];
   return /^[A-Za-z0-9_]{1,15}$/.test(s) ? s.toLowerCase() : "";
@@ -696,8 +737,13 @@ document.addEventListener("click", function(e){
   } else if(b.dataset.del){
     var v=collect(), cards=[].slice.call(document.querySelectorAll("#recList .rec")), idx=cards.indexOf(b.closest(".rec"));
     var r=v.recruits[idx];
-    if(r && !isBlankRec(r) && !confirm("卓募集"+SLOTS[idx]+(r.title?"「"+r.title+"」":"")+"を消しますか？\n（「登録する」を押すまではまだ保存されません）")) return;
-    v.recruits.splice(idx,1); S.reg.recruits=v.recruits; S.reg.wants=v.wants; renderEdit(S.reg);
+    var del=function(){ v.recruits.splice(idx,1); S.reg.recruits=v.recruits; S.reg.wants=v.wants; renderEdit(S.reg); };
+    if(r && !isBlankRec(r)){
+      ask({ title:"🗑 卓募集を消す",
+        lines:["卓募集"+SLOTS[idx]+(r.title?"「"+r.title+"」":"")+"を消します。",
+          "（「登録する」を押すまではまだ保存されません）"],
+        ok:"消す", danger:true }).then(function(ok){ if(ok) del(); });
+    } else del();
   }
 });
 document.getElementById("addRec").addEventListener("click", function(){
@@ -773,7 +819,12 @@ async function goNext(auto){
   var xidOk = normX(reg.xid) && normX(reg.xid)===normX(xin);
   if(last && !sameDevice && !xidOk && !auto){
     var what=[reg.recruits.length?"卓募集 "+reg.recruits.length+"件":"", reg.wants.length?"遊びたい "+reg.wants.length+"つ":""].filter(Boolean).join("・")||"内容なし";
-    if(!confirm("「"+name+"」さんの登録がすでにあります（"+(reg.ts?reg.ts+" 送信・":"")+what+"）。\nあなたの登録ですか？\n\n別の人の場合は「キャンセル」を押して、同じ名前の人と区別できるようにお名前を少し変えてください。")){
+    var yours=await ask({ title:"同じお名前の登録があります",
+      lines:["「"+name+"」さんの登録がすでにあります（"+(reg.ts?reg.ts+" 送信・":"")+what+"）。","",
+        "あなたの登録ですか？",
+        "別の人の場合は「別の人です」を押して、区別できるようにお名前を少し変えてください。"],
+      ok:"私の登録です", no:"別の人です" });
+    if(!yours){
       fail("同じお名前の登録がすでにあります。別の方は、区別できるようにお名前を少し変えてください（例：「"+name+"（"+"◯◯）」）。");
       return;
     }
@@ -803,10 +854,14 @@ async function goNext(auto){
 document.getElementById("nameForm").addEventListener("submit", function(e){ e.preventDefault(); goNext(false); });
 document.getElementById("eXid").addEventListener("input", renderAva);
 document.getElementById("changeWho").addEventListener("click", function(){
-  if(!confirm("別の人の登録に切りかえますか？（書きかけの内容は消えます）")) return;
-  saveSession(null); S.reg=null;
-  document.getElementById("fName").value=""; document.getElementById("fXid").value="";
-  showStep("name"); document.getElementById("fName").focus();
+  ask({ title:"別の人に切りかえる",
+    lines:["別の人の登録に切りかえます。","（書きかけの内容は消えます）"],
+    ok:"切りかえる" }).then(function(ok){
+    if(!ok) return;
+    saveSession(null); S.reg=null;
+    document.getElementById("fName").value=""; document.getElementById("fXid").value="";
+    showStep("name"); document.getElementById("fName").focus();
+  });
 });
 
 /* ===== 2. 送信（裏でGoogleフォームへ） ===== */
@@ -894,7 +949,9 @@ document.getElementById("send").addEventListener("click", async function(){
   err.hidden=true;
   var msg=validate(v);
   if(msg){ err.textContent=msg; err.hidden=false; return; }
-  if(!v.recruits.length && !v.wants.length && !confirm("卓募集も遊びたいシナリオも空のまま登録しますか？\n（前に登録した内容は消えます）")) return;
+  if(!v.recruits.length && !v.wants.length && !await ask({ title:"空のまま登録します",
+    lines:["卓募集も遊びたいシナリオも空のまま登録します。","（前に登録した内容は消えます）"],
+    ok:"このまま登録", danger:true })) return;
   if(CONFIG.sheetId && !S.post){ err.textContent="まだ登録の受付準備中です。少し待ってから開き直してください。"; err.hidden=false; return; }
   btn.disabled=true; sending.hidden=false;
   try{ var bad=await submitReg(v); showDone(v, bad); }
@@ -944,7 +1001,10 @@ var DONE_BTNS="[data-plan-now], [data-gather-now], [data-withdraw-now], #editAga
 async function withdrawNow(b){
   var i=+b.dataset.withdrawNow, r=S.reg.recruits[i]; if(!r) return;
   var name=(lookup(r.title)||{t:r.title}).t;
-  if(!confirm("「"+name+"」の募集を取り下げますか？\nボードの「卓募集っ」から消えます（ほかの人の卓に合流するときなど）。")) return;
+  if(!await ask({ title:"🙇 募集を取り下げる",
+    lines:["「"+name+"」の募集を取り下げます。",
+      "ボードの「卓募集っ」から消えます（ほかの人の卓に合流するときなど）。"],
+    ok:"取り下げる", danger:true })) return;
   var v={ name:S.reg.name, xid:S.reg.xid||"", recruits:S.reg.recruits.filter(function(x,j){ return j!==i; }).map(function(x){ return Object.assign({}, x); }),
           wants:S.reg.wants.map(function(x){ return Object.assign({}, x); }) };
   document.querySelectorAll(DONE_BTNS).forEach(function(x){ x.disabled=true; });
@@ -960,7 +1020,10 @@ document.getElementById("doneSum").addEventListener("click", async function(e){
   var isRec=b.dataset.gatherNow!=null, i=+(isRec ? b.dataset.gatherNow : b.dataset.planNow);
   var item=isRec ? S.reg.recruits[i] : S.reg.wants[i]; if(!item) return;
   var raw=isRec ? item.title : item.t, on=!item.done, name=(lookup(raw)||{t:raw}).t;
-  if(!on && !confirm(isRec ? "「"+name+"」の成立を取り消して、卓募集に戻しますか？" : "「"+name+"」の「予定立った」を取り消して、ボードの一覧に戻しますか？")) return;
+  if(!on && !await ask({ title:"取り消す",
+    lines:isRec ? ["「"+name+"」の成立を取り消して、卓募集に戻します。"]
+                : ["「"+name+"」の「予定立った」を取り消して、ボードの一覧に戻します。"],
+    ok:"取り消す", danger:true })) return;
   var v={ name:S.reg.name, xid:S.reg.xid||"",
           recruits:S.reg.recruits.map(function(x,j){ return Object.assign({}, x, isRec && j===i ? { done:on } : {}); }),
           wants:S.reg.wants.map(function(x,j){ return Object.assign({}, x, !isRec && j===i ? { done:on } : {}); }) };
@@ -1021,5 +1084,15 @@ async function init(){
 init();
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
+<div class="ask-ov" id="askOverlay" hidden>
+  <div class="ask-box" role="dialog" aria-modal="true" aria-labelledby="askHeading">
+    <h2 id="askHeading" class="pop"></h2>
+    <p id="askLead"></p>
+    <div class="ask-act">
+      <button type="button" class="ghost" id="askNo">やめる</button>
+      <button type="button" id="askYes">はい</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
