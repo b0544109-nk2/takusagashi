@@ -665,18 +665,12 @@
       </div>
       <div class="qr-when" id="qrWhenRough" hidden>
         <label class="qr-field">時期<input id="qrMonths" placeholder="例：10月〜12月"></label>
-        <div class="qr-field">曜日
-          <div class="qr-chips" id="qrDays">
-            <button type="button" class="qr-chip" data-v="平日">平日</button>
-            <button type="button" class="qr-chip" data-v="土日祝">土日祝</button>
-            <button type="button" class="qr-chip" data-v="どちらでも">どちらでも</button>
-          </div>
-        </div>
-        <div class="qr-field">時間帯
-          <div class="qr-chips" id="qrTime">
-            <button type="button" class="qr-chip" data-v="日中">☀ 日中</button>
-            <button type="button" class="qr-chip" data-v="夜">🌙 夜</button>
-            <button type="button" class="qr-chip" data-v="どちらでも">どちらでも</button>
+        <div class="qr-field">曜日・時間帯<span class="qr-help">あてはまるものを選んでください（複数えらべます）</span>
+          <div class="qr-chips" id="qrWhen">
+            <button type="button" class="qr-chip" data-v="平日日中" aria-pressed="false">☀ 平日日中</button>
+            <button type="button" class="qr-chip" data-v="平日夜" aria-pressed="false">🌙 平日夜</button>
+            <button type="button" class="qr-chip" data-v="土日祝日中" aria-pressed="false">☀ 土日祝日中</button>
+            <button type="button" class="qr-chip" data-v="土日祝夜" aria-pressed="false">🌙 土日祝夜</button>
           </div>
         </div>
       </div>
@@ -1094,6 +1088,7 @@ function setRecruits(list){
     r.key=groupKey(r.title); r.id=r.id||("r"+hash(r.name+"|"+r.title+"|"+i).toString(36));
     var nb=STATE.needBy && STATE.needBy[norm(r.name)+"|"+r.key];
     if(nb){ var nn=parseInt(String(nb.note).normalize("NFKC"),10); if(!isNaN(nn)) r.need=Math.max(0,nn); }
+    if(r.when4 && r.when4.length){ r.days=daysOf(r.when4); r.time=timeOf(r.when4); }
     r.d=parseDate(r.date);
     if(r.d){
       r.start=parseTime(r.start);
@@ -1144,8 +1139,12 @@ function whenChips(r){
     out+='<span class="date">📅 '+dateLabel(r.d)+(r.start?' '+esc(r.start)+'〜':'')+'</span>';
   } else {
     if(r.months) out+='<span>📅 '+esc(r.months)+'</span>';
-    if(r.days) out+='<span class="d">🗓 '+esc(r.days)+'</span>';
-    if(r.time) out+='<span class="t">'+(/夜/.test(r.time)&&!/日中/.test(r.time)?'🌙':/日中/.test(r.time)&&!/夜/.test(r.time)?'☀':'🕐')+' '+esc(r.time)+'</span>';
+    if(r.when4 && r.when4.length){
+      out+=r.when4.map(function(v){ return '<span class="d">'+(/夜$/.test(v)?'🌙':'☀')+' '+esc(v)+'</span>'; }).join("");
+    } else {
+      if(r.days) out+='<span class="d">🗓 '+esc(r.days)+'</span>';
+      if(r.time) out+='<span class="t">'+(/夜/.test(r.time)&&!/日中/.test(r.time)?'🌙':/日中/.test(r.time)&&!/夜/.test(r.time)?'☀':'🕐')+' '+esc(r.time)+'</span>';
+    }
   }
   if(r.venue) out+='<span class="v">'+(/オンライン|online|discord|ディスコ/i.test(r.venue)?'💻 ':'📍 ')+esc(r.venue)+'</span>';
   return out;
@@ -1457,7 +1456,20 @@ async function fetchTab(tab, required){
 // 「回答」タブ：1人1行。お名前｜アイコン｜遊びたいシナリオ①〜③（＋決まったチェック）｜募集①〜③の各項目
 var SLOTS=["①","②","③"];
 var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", months:"時期", days:"曜日",
-  time:"時間帯", venue:"会場", need:"人数", note:"ひとこと", done:"締め切" };
+  time:"時間帯", venue:"会場", need:"人数", note:"ひとこと", done:"締め切", when4:"曜日・時間帯" };
+var WHEN4=["平日日中","平日夜","土日祝日中","土日祝夜"];
+function splitList(s){ return String(s||"").split(/\s*,\s*|・/).map(function(x){ return x.trim(); }).filter(Boolean); }
+// 4択（平日日中など）から、絞り込み用に曜日と時間帯を取り出す
+function daysOf(w){ var o={}; w.forEach(function(x){ if(x.indexOf("平日")===0) o["平日"]=1; if(x.indexOf("土日祝")===0) o["土日祝"]=1; }); return Object.keys(o).join("・"); }
+function timeOf(w){ var o={}; w.forEach(function(x){ if(/夜$/.test(x)) o["夜"]=1; if(/日中$/.test(x)) o["日中"]=1; }); return Object.keys(o).join("・"); }
+function when4Of(days, time){
+  var ds=splitList(days), ts=splitList(time), out=[];
+  if(ds.indexOf("どちらでも")>=0) ds=["平日","土日祝"];
+  if(ts.indexOf("どちらでも")>=0) ts=["日中","夜"];
+  if(!ds.length || !ts.length) return [];
+  ds.forEach(function(d){ ts.forEach(function(t){ var v=d+t; if(WHEN4.indexOf(v)>=0) out.push(v); }); });
+  return out;
+}
 // タイムスタンプ（「9/13/2026 20:46:55」「2026/09/13 20:46:55」など）→数値。読めなければ0（いちばん古い扱い）
 function tsValue(s){
   s=String(s||"").normalize("NFKC").trim();
@@ -1476,6 +1488,7 @@ function parseAnswers(rows){
     d:find(function(x){ return x.indexOf(k)===0 && x.indexOf("決まった")>=0; }) }; });
   var rec=SLOTS.map(function(k){ var m={};
     Object.keys(RECRUIT_COLS).forEach(function(f){ m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); });
+    if(m.days===m.when4) m.days=-1;   // 「曜日・時間帯」を「曜日」と取り違えない
     return m; });
   var people=[], recruits=[];
   // Webの登録ページからは「送り直し」で行が増えていくので、同じ名前はタイムスタンプがいちばん新しい行だけを使う
@@ -1492,7 +1505,7 @@ function parseAnswers(rows){
       var fmt=get("format").normalize("NFKC");
       recruits.push({ id:"r"+hash(name+"|"+i).toString(36), name:name, xid:xid, title:get("title"),
         format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
-        months:get("months"), days:get("days").replace(/,\s*/g,"・"), time:get("time").replace(/,\s*/g,"・"),
+        months:get("months"), days:get("days").replace(/,\s*/g,"・"), time:get("time").replace(/,\s*/g,"・"), when4:splitList(get("when4")),
         need:parseInt(get("need").normalize("NFKC"),10)||0, note:get("note"), done:!!get("done"),
         date:get("date"), start:get("start"), venue:get("venue") });
     });
@@ -1565,14 +1578,16 @@ function parseSettings(rows){
 function parseQuickRecruits(rows){
   var h=rows[0]||[], col=colFinder(h);
   var c={ name:col("名前"), xid:col("XのID"), title:col("シナリオ名"), format:col("形式"), date:col("日付"), start:col("開始"),
-          months:col("時期"), days:col("曜日"), time:col("時間帯"), venue:col("会場"), need:col("人数"), note:col("ひとこと") };
+          months:col("時期"), days:col("曜日"), time:col("時間帯"), venue:col("会場"), need:col("人数"), note:col("ひとこと"),
+          when4:col("曜日・時間帯") };
+  if(c.days===c.when4) c.days=-1;
   if(c.name<0 || c.title<0) return [];
   var get=function(r,k){ return c[k]>=0 ? (r[c[k]]||"").trim() : ""; };
   return rows.slice(1).filter(function(r){ return get(r,"name") && get(r,"title"); }).map(function(r,i){
     var fmt=get(r,"format").normalize("NFKC");
     return { id:"q"+hash(get(r,"name")+"|"+get(r,"title")+"|"+i).toString(36), name:get(r,"name"), xid:get(r,"xid"), title:get(r,"title"),
       format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
-      months:get(r,"months"), days:get(r,"days"), time:get(r,"time"),
+      months:get(r,"months"), days:get(r,"days"), time:get(r,"time"), when4:splitList(get(r,"when4")),
       need:parseInt(get(r,"need").normalize("NFKC"),10)||0, note:get(r,"note"), done:false,
       date:get(r,"date"), start:get(r,"start"), venue:get(r,"venue") };
   });
@@ -1731,7 +1746,14 @@ document.querySelectorAll(".seg button").forEach(function(b){ b.addEventListener
   render(); }); });
 
 /* ===== ⚡その場で卓を立てる ===== */
-var QR = { format:"", mode:"date", days:"", time:"" };
+var QR = { format:"", mode:"date", when4:[] };
+// 4択は複数えらべる
+document.getElementById("qrWhen").addEventListener("click", function(e){
+  var b=e.target.closest(".qr-chip"); if(!b) return;
+  var on=b.getAttribute("aria-pressed")!=="true";
+  b.setAttribute("aria-pressed", String(on));
+  QR.when4 = [].map.call(document.querySelectorAll('#qrWhen .qr-chip[aria-pressed="true"]'), function(x){ return x.dataset.v; });
+});
 function qrChipGroup(id, onPick){
   document.querySelectorAll("#"+id+" .qr-chip").forEach(function(b){
     b.addEventListener("click",function(){
@@ -1742,8 +1764,6 @@ function qrChipGroup(id, onPick){
   });
 }
 qrChipGroup("qrFormat", function(v){ QR.format=v; });
-qrChipGroup("qrDays", function(v){ QR.days=v; });
-qrChipGroup("qrTime", function(v){ QR.time=v; });
 qrChipGroup("qrMode", function(v){
   QR.mode=v;
   document.getElementById("qrWhenDate").hidden = v!=="date";
@@ -1754,7 +1774,7 @@ function openQuick(prefillTitle){
   if(!STATE.quick){ return; }
   document.getElementById("qrForm").reset();
   if(typeof prefillTitle==="string") document.getElementById("qrTitle").value=prefillTitle;
-  QR = { format:"", mode:"date", days:"", time:"" };
+  QR = { format:"", mode:"date", when4:[] };
   document.querySelectorAll(".qr-chip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
   document.querySelector('#qrMode .qr-chip[data-v="date"]').setAttribute("aria-pressed","true");
   document.getElementById("qrWhenDate").hidden=false;
@@ -1773,7 +1793,7 @@ document.addEventListener("keydown", function(e){
 });
 
 function qrAdd(form, name, value){
-  if(value==null || value==="") return;
+  if(!name || value==null || value==="") return;   // 送信先がまだ無い項目は飛ばす
   var i=document.createElement("input"); i.type="hidden"; i.name=name; i.value=value; form.appendChild(i);
 }
 function qrSubmitToForm(fields, local){
@@ -1789,7 +1809,11 @@ function sendQuickNow(fields){
   qrAdd(form, q.title, fields.title); qrAdd(form, q.format, fields.format);
   if(fields.date){ var d=fields.date.split("-"); qrAdd(form, q.date.y, d[0]); qrAdd(form, q.date.m, String(+d[1])); qrAdd(form, q.date.d, String(+d[2])); }
   if(fields.start){ var t=fields.start.split(":"); qrAdd(form, q.start.h, String(+t[0])); qrAdd(form, q.start.mi, String(+t[1])); }
-  qrAdd(form, q.months, fields.months); qrAdd(form, q.days, fields.days); qrAdd(form, q.time, fields.time);
+  qrAdd(form, q.months, fields.months);
+  // 4択（平日日中など）と、前からある曜日・時間帯の両方に入れておく
+  (fields.when4||[]).forEach(function(v){ qrAdd(form, q.when, v); });
+  daysOf(fields.when4||[]).split("・").forEach(function(v){ qrAdd(form, q.days, v); });
+  timeOf(fields.when4||[]).split("・").forEach(function(v){ qrAdd(form, q.time, v); });
   qrAdd(form, q.venue, fields.venue); qrAdd(form, q.need, fields.need); qrAdd(form, q.note, fields.note);
   document.body.appendChild(form); form.submit();
   setTimeout(function(){ form.remove(); }, 4000);
@@ -1810,7 +1834,7 @@ document.getElementById("qrForm").addEventListener("submit", function(ev){
     note:document.getElementById("qrNote").value.trim()
   };
   if(QR.mode==="date") fields.date=document.getElementById("qrDate").value, fields.start=document.getElementById("qrStart").value;
-  else fields.months=document.getElementById("qrMonths").value.trim(), fields.days=QR.days, fields.time=QR.time;
+  else fields.months=document.getElementById("qrMonths").value.trim(), fields.when4=QR.when4;
 
   var local=Object.assign({ local:true, id:"l"+Date.now().toString(36), ts:Date.now() }, fields);
   qrSubmitToForm(fields, local);

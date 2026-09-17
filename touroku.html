@@ -426,7 +426,18 @@ function setMaster(list){
 }
 
 /* ===== 回答タブ：同じ人（名前）はいちばん下の行が最新 ===== */
-var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", months:"時期", days:"曜日",
+var WHEN4=["平日日中","平日夜","土日祝日中","土日祝夜"];
+function daysOf(w){ var o={}; w.forEach(function(x){ if(x.indexOf("平日")===0) o["平日"]=1; if(x.indexOf("土日祝")===0) o["土日祝"]=1; }); return Object.keys(o); }
+function timeOf(w){ var o={}; w.forEach(function(x){ if(/夜$/.test(x)) o["夜"]=1; if(/日中$/.test(x)) o["日中"]=1; }); return Object.keys(o); }
+// 前からある「曜日」「時間帯」しか入っていない行は、その組み合わせから4択を作る
+function when4Of(days, time){
+  var ds=days.slice(), ts=time.slice(), out=[];
+  if(ds.indexOf("どちらでも")>=0) ds=["平日","土日祝"];
+  if(ts.indexOf("どちらでも")>=0) ts=["日中","夜"];
+  ds.forEach(function(d){ ts.forEach(function(t){ if(WHEN4.indexOf(d+t)>=0) out.push(d+t); }); });
+  return out;
+}
+var RECRUIT_COLS={ title:"シナリオ名", format:"形式", date:"の日付", start:"開始", months:"時期", days:"曜日", when4:"曜日・時間帯",
   time:"時間帯", venue:"会場", need:"人数", note:"ひとこと", done:"締め切" };
 function answerCols(h){
   var col=colFinder(h), find=function(t){ return h.findIndex(t); };
@@ -434,7 +445,9 @@ function answerCols(h){
     want:SLOTS.map(function(k){ return { t:find(function(x){ return x.indexOf("遊びたいシナリオ"+k)>=0; }),
       d:find(function(x){ return x.indexOf(k)===0 && x.indexOf("決まった")>=0; }) }; }),
     rec:SLOTS.map(function(k){ var m={}; Object.keys(RECRUIT_COLS).forEach(function(f){
-      m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); }); return m; }) };
+      m[f]=find(function(x){ return x.indexOf("募集"+k)===0 && x.indexOf(RECRUIT_COLS[f])>=0; }); });
+      if(m.days===m.when4) m.days=-1;   // 「曜日・時間帯」を「曜日」と取り違えない
+      return m; }) };
 }
 // タイムスタンプ→数値。フォームの回答は「前の回答のすぐ下」に割り込むので、行の順番ではなく時刻で新しさを決める
 function tsValue(s){
@@ -462,6 +475,7 @@ function rowToReg(rows, r){
     var split=function(s){ return s.split(/\s*,\s*|・/).map(function(x){ return x.trim(); }).filter(Boolean); };
     reg.recruits.push({ title:title, format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
       date:d?ymd(d):"", start:parseTime(g(m.start)), months:g(m.months), days:split(g(m.days)), time:split(g(m.time)),
+      when4:split(g(m.when4)).length ? split(g(m.when4)) : when4Of(split(g(m.days)), split(g(m.time))),
       venue:g(m.venue), need:g(m.need), note:g(m.note), done:!!g(m.done), origTitle:title,
       mode: (d || !(g(m.months)||g(m.days)||g(m.time))) ? "date" : "rough" });
   });
@@ -588,8 +602,8 @@ function recCard(r, i){
     +'<label class="field">開始時刻<input type="time" data-f="start" value="'+esc(r.start)+'"></label></div>'
     +'<div data-when="rough"'+(r.mode==="rough"?'':' hidden')+'>'
     +'<label class="field">時期<input data-f="months" value="'+esc(r.months)+'" placeholder="例：10月〜12月"></label>'
-    +'<div class="field">曜日'+chipGroup("days",[["平日"],["土日祝"],["どちらでも"]],r.days||[],true)+'</div>'
-    +'<div class="field">時間帯'+chipGroup("time",[["日中","☀ 日中"],["夜","🌙 夜"],["どちらでも"]],r.time||[],true)+'</div></div>'
+    +'<div class="field">曜日・時間帯<span class="help">あてはまるものを選んでください（複数えらべます）</span>'
+    +chipGroup("when4",[["平日日中","☀ 平日日中"],["平日夜","🌙 平日夜"],["土日祝日中","☀ 土日祝日中"],["土日祝夜","🌙 土日祝夜"]],r.when4||[],true)+'</div></div>'
     +'<label class="field">会場<span class="opt">（任意・店舗名など）</span><input data-f="venue" value="'+esc(r.venue)+'"></label>'
     +'<label class="field">募集人数<span class="opt">（任意・あと何人）</span><input type="number" inputmode="numeric" min="1" max="99" data-f="need" value="'+esc(r.need)+'"></label>'
     +'<label class="field">ひとこと<span class="opt">（任意）</span><textarea rows="2" data-f="note">'+esc(r.note)+'</textarea></label>'
@@ -645,9 +659,9 @@ function collect(){
     var mode=picked("mode")[0]||"date", title=g("title");
     var r={ title:title, format:picked("format")[0]||"", mode:mode, venue:g("venue"), need:g("need").normalize("NFKC"), note:g("note"),
       done:!!title && el.querySelector("[data-gather]").getAttribute("aria-pressed")==="true",
-      date:"", start:"", months:"", days:[], time:[] };
+      date:"", start:"", months:"", days:[], time:[], when4:[] };
     if(mode==="date"){ r.date=g("date"); r.start=g("start"); }
-    else { r.months=g("months"); r.days=picked("days"); r.time=picked("time"); }
+    else { r.months=g("months"); r.when4=picked("when4"); r.days=daysOf(r.when4); r.time=timeOf(r.when4); }
     return r;
   });
   var wants=[].map.call(document.querySelectorAll("#wantList .want-row"), function(el){
@@ -656,7 +670,7 @@ function collect(){
   });
   return { name:S.reg.name, xid:document.getElementById("eXid").value.trim(), recruits:recs, wants:wants };
 }
-function isBlankRec(r){ return !r.title && !r.format && !r.venue && !r.need && !r.note && !r.date && !r.start && !r.months && !r.days.length && !r.time.length; }
+function isBlankRec(r){ return !r.title && !r.format && !r.venue && !r.need && !r.note && !r.date && !r.start && !r.months && !r.when4.length; }
 
 document.addEventListener("click", function(e){
   var b=e.target.closest("button"); if(!b) return;
@@ -684,7 +698,7 @@ document.addEventListener("click", function(e){
 });
 document.getElementById("addRec").addEventListener("click", function(){
   var v=collect(); if(v.recruits.length>=3) return;
-  v.recruits.push({ title:"", format:"", mode:"date", date:"", start:"", months:"", days:[], time:[], venue:"", need:"", note:"", done:false, origTitle:"" });
+  v.recruits.push({ title:"", format:"", mode:"date", date:"", start:"", months:"", days:[], time:[], when4:[], venue:"", need:"", note:"", done:false, origTitle:"" });
   S.reg.recruits=v.recruits; S.reg.wants=v.wants; renderEdit(S.reg);
   var cards=document.querySelectorAll("#recList .rec"); var last=cards[cards.length-1];
   if(last){ last.scrollIntoView({block:"center", behavior:"smooth"}); last.querySelector(".sg-in").focus({preventScroll:true}); }
@@ -787,6 +801,8 @@ function postRegistration(v){
     if(r.date){ var d=r.date.split("-"); addField(form, e.date.y, d[0]); addField(form, e.date.m, String(+d[1])); addField(form, e.date.d, String(+d[2])); }
     if(r.start){ var t=r.start.split(":"); addField(form, e.start.h, String(+t[0])); addField(form, e.start.mi, String(+t[1])); }
     addField(form, e.months, r.months);
+    // 4択（平日日中など）と、前からある曜日・時間帯の両方に入れておく
+    (r.when4||[]).forEach(function(x){ addField(form, e.when, x); });
     r.days.forEach(function(x){ addField(form, e.days, x); });
     r.time.forEach(function(x){ addField(form, e.time, x); });
     addField(form, e.venue, r.venue); addField(form, e.need, r.need); addField(form, e.note, r.note);
@@ -823,6 +839,7 @@ function compare(v, got){
       if(g.format!==r.format) bad.push(k+"の形式");
       if((r.date||"")!==(g.date||"")) bad.push(k+"の日付");
       if(norm(r.note)!==norm(g.note)) bad.push(k+"のひとこと");
+      if((r.when4||[]).join("・")!==(g.when4||[]).join("・")) bad.push(k+"の曜日・時間帯");
       if(!!r.done!==!!g.done) bad.push(k+"の「集まった」");
     }
   });
@@ -863,7 +880,7 @@ document.getElementById("send").addEventListener("click", async function(){
 /* ===== 3. できた ===== */
 function recLine(r, i){
   var e=lookup(r.title), when=r.date ? r.date.replace(/^\d{4}-0?(\d+)-0?(\d+)$/,"$1/$2")+(r.start?" "+r.start+"〜":"")
-    : [r.months, r.days.join("・"), r.time.join("・")].filter(Boolean).join("　");
+    : [r.months, (r.when4||[]).join("・")].filter(Boolean).join("　");
   return '<li class="want-li'+(r.done?' done':'')+'"><span>'+esc(e?e.t:r.title)
     +'<small>'+(r.done?'🌸 成立：ボードの「成立っ」に移っています':esc([r.format==="オフライン"?"店舗":r.format, when, r.venue, r.need?"あと"+r.need+"人":""].filter(Boolean).join("　")))+'</small></span>'
     +'<span class="li-btns"><button type="button" class="plan-btn" data-gather-now="'+i+'" aria-pressed="'+!!r.done+'">'+(r.done?'↩ 戻す':gatherLabel(false))+'</button>'
