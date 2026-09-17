@@ -977,7 +977,7 @@ function ticket(g, q, small){
     +'<div class="tk-body">'
     // このシナリオの卓募集があれば、卓募集っタブへのリンクを目立たせる
     +(function(){ var rs=recruitsFor(g.key); return rs.length ? '<button type="button" class="want-link rec-link" data-rec-key="'+esc(g.key)+'">'
-      +'<em>📣 募集が <b>'+rs.length+'件</b> あります！'+(rs.length>=2?'見くらべる':'')+'</em><span aria-hidden="true">›</span></button>' : ''; })()
+      +'<em>📣 募集が <b>'+rs.length+'件</b> あります！</em><span aria-hidden="true">›</span></button>' : ''; })()
     +'<div class="chips">'+g.people.map(function(p){return personChip(p,q,g);}).join("")+'</div>'
     +'<div class="tk-foot">'+foot+'</div></div></article>';
 }
@@ -2124,6 +2124,7 @@ document.addEventListener("click", function(e){
     showToast("先にあなたの名前を入れてね（登録したときと同じ名前）");
     return;
   }
+  if(!confirm("「"+displayTitle(r)+"」（"+r.name+" さんの募集）\n\n募集している "+r.name+" さんと、もう話しましたか？\n\nOK：話しました（同卓者に加わります）\nキャンセル：まだです（先に声をかけてみてね）")) return;
   var ev=recordEvent({ type:"参加", reporter:STATE.me, recruiter:r.name, title:r.title, note:"" });
   if(ev) showToast("🙋 「"+displayTitle(r)+"」（"+r.name+" さんの卓）に手を挙げました", function(){
     recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
