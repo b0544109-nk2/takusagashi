@@ -580,7 +580,7 @@
 
   <div class="tools">
     <label class="search"><span aria-hidden="true">🔍</span>
-      <input id="q" type="search" placeholder="シナリオ名 or 自分の名前でさがす" autocomplete="off" aria-label="シナリオ名か名前で検索">
+      <input id="q" type="search" placeholder="シナリオ名 or 名前でさがす（ほかの人でもOK）" autocomplete="off" aria-label="シナリオ名か名前で検索">
       <button class="clear" id="clear" type="button" hidden>クリア</button>
     </label>
     <div class="seg" role="group" aria-label="並び替え">
@@ -613,6 +613,13 @@
   </div>
 
   <div id="viewRecruit" role="tabpanel" aria-labelledby="tabRecruit">
+    <div class="tools">
+      <label class="search"><span aria-hidden="true">🔍</span>
+        <input id="rq" type="search" placeholder="シナリオ名 or 名前でさがす" autocomplete="off" aria-label="シナリオ名か名前で募集をさがす">
+        <button class="clear" id="rclear" type="button" hidden>クリア</button>
+      </label>
+      <div class="hits" id="rhits" aria-live="polite"></div>
+    </div>
     <div class="filters" role="group" aria-label="日程で絞り込み">
       <span>しぼりこみ</span>
       <button class="fchip" type="button" data-f="mine" aria-pressed="false" hidden>★ 自分の募集</button>
@@ -970,7 +977,7 @@ function ticket(g, q, small){
     +'<div class="tk-body">'
     // このシナリオの卓募集があれば、卓募集っタブへのリンクを目立たせる
     +(function(){ var rs=recruitsFor(g.key); return rs.length ? '<button type="button" class="want-link rec-link" data-rec-key="'+esc(g.key)+'">'
-      +'<em>📣 募集が <b>'+rs.length+'件</b> あります！</em><span aria-hidden="true">›</span></button>' : ''; })()
+      +'<em>📣 募集が <b>'+rs.length+'件</b> あります！'+(rs.length>=2?'見くらべる':'')+'</em><span aria-hidden="true">›</span></button>' : ''; })()
     +'<div class="chips">'+g.people.map(function(p){return personChip(p,q,g);}).join("")+'</div>'
     +'<div class="tk-foot">'+foot+'</div></div></article>';
 }
@@ -1178,6 +1185,18 @@ function combosOf(r){
   if(r.when4 && r.when4.length) return r.when4;
   return when4Of(r.days, r.time);
 }
+// 検索：シナリオ名・募集している人・同卓者の名前のどれかに当てはまるか
+function recMatch(r){
+  var q=norm(STATE.rq||""); if(!q) return true;
+  if(norm(displayTitle(r)).indexOf(q)>=0 || norm(r.title).indexOf(q)>=0) return true;
+  if(norm(r.name).indexOf(q)>=0) return true;
+  return joinersOf(r).some(function(e){ return norm(e.reporter).indexOf(q)>=0; });
+}
+// 検索欄に文字を入れて（からっぽなら消して）、卓募集っを出し直す
+function setRecSearch(text){
+  STATE.rq=String(text||"").trim();
+  var el=document.getElementById("rq"); if(el) el.value=STATE.rq;
+}
 function passFilter(r){
   var f=STATE.rFilter||{};
   if(f.mine && !isMe(r.name)) return false;
@@ -1223,17 +1242,28 @@ function wantersBlock(r, w){
 document.addEventListener("click", function(e){
   var t=e.target.closest("button[data-jump-want]"); if(t) jumpTo(t.dataset.jumpWant);
 });
-// 遊びたいっのカード →「卓募集っ」タブの、そのシナリオの募集（何件あっても全部光らせる）
+// しぼりこみのチップを全部もどす（検索は search で入れ直す）
+function resetRecFilters(search){
+  STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  setRecSearch(search||"");
+}
+// 遊びたいっのカード →「卓募集っ」タブを、そのシナリオ名で検索した状態にする
+//（同じシナリオの募集が並ぶので、同卓者や日程を見くらべられる）
 document.addEventListener("click", function(e){
   var t=e.target.closest("button[data-rec-key]"); if(!t) return;
   var rs=recruitsFor(t.dataset.recKey); if(!rs.length) return;
-  STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  var g=STATE.byKey && STATE.byKey[t.dataset.recKey];
+  resetRecFilters(g ? g.title : displayTitle(rs[0]));
   renderRecruits(); setView("recruit");
+  // 検索でその卓が消えてしまうとき（表記ゆれなど）は、検索なしに戻す
+  if(rs.some(function(r){ return !document.getElementById(r.id); })){ resetRecFilters(""); renderRecruits(); }
   rs.forEach(function(r,i){ var el=document.getElementById(r.id); if(el){ if(i===0) el.scrollIntoView({block:"center", behavior:"smooth"}); flashEl(el); } });
 });
 function renderRecruits(){
-  var list=(STATE.recruits||[]).filter(passFilter);
+  var list=(STATE.recruits||[]).filter(passFilter).filter(recMatch);
   document.getElementById("recCount").textContent=(STATE.recruits||[]).length;
+  document.getElementById("rhits").textContent = STATE.rq ? ("「"+STATE.rq+"」で "+list.length+"件") : "";
+  document.getElementById("rclear").hidden = !STATE.rq;
   AB_COUNT=0;
   document.getElementById("recruits").innerHTML = list.length ? list.map(function(r){
     var bg=PALETTE[hash(r.key)%PALETTE.length], fg=textOn(bg), w=wantersOf(r), mine=isMe(r.name);
@@ -1254,7 +1284,7 @@ function renderRecruits(){
         +'<button type="button" class="need-btn wd-btn" data-withdraw-rec="'+esc(r.id)+'"><i>🙇</i>募集を<br>取り下げる</button></div></div>'
         : (STATE.eventPost && !r.local && !STATE.me ? '<p class="owner-hint">🔑 この募集をした人は、上の名前欄に登録した名前を入れると操作メニューが出ます</p>' : ''))
       +'</div></article>';
-  }).join("") : '<div class="empty">この条件の募集はまだありません</div>';
+  }).join("") : '<div class="empty">'+(STATE.rq?'「'+esc(STATE.rq)+'」に当てはまる募集はありません':'この条件の募集はまだありません')+'</div>';
 }
 
 /* ===== 成立（当日Webで記録する追記ログ） ===== */
@@ -1441,7 +1471,7 @@ document.querySelectorAll(".fchip").forEach(function(b){ b.addEventListener("cli
   b.setAttribute("aria-pressed", String(!!STATE.rFilter[b.dataset.f])); renderRecruits(); }); });
 document.getElementById("viewWant").addEventListener("click",function(e){
   var b=e.target.closest(".rec-badge"); if(!b) return;
-  STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  resetRecFilters("");
   renderRecruits(); setView("recruit");
   var el=document.getElementById(b.dataset.rec); if(el) flashEl(el);
 });
@@ -1469,7 +1499,7 @@ document.getElementById("meBar").addEventListener("click",function(ev){
   else if(t.dataset.jumpEst){ setView("est"); var el=document.getElementById(t.dataset.jumpEst); if(el) flashEl(el); }
 });
 function jumpToRecruit(id){
-  STATE.rFilter={}; document.querySelectorAll(".fchip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+  resetRecFilters("");
   renderRecruits(); setView("recruit");
   var el=document.getElementById(id); if(el) flashEl(el);
 }
@@ -1787,6 +1817,9 @@ STATE.view="recruit";
 var qEl=document.getElementById("q"), tmr=null;
 qEl.addEventListener("input",function(){ clearTimeout(tmr); tmr=setTimeout(function(){ STATE.q=qEl.value.trim(); render(); },120); });
 document.getElementById("clear").addEventListener("click",function(){ qEl.value=""; STATE.q=""; render(); qEl.focus(); });
+var rqEl=document.getElementById("rq"), rtmr;
+rqEl.addEventListener("input",function(){ clearTimeout(rtmr); rtmr=setTimeout(function(){ STATE.rq=rqEl.value.trim(); renderRecruits(); },120); });
+document.getElementById("rclear").addEventListener("click",function(){ setRecSearch(""); renderRecruits(); rqEl.focus(); });
 document.querySelectorAll(".seg button").forEach(function(b){ b.addEventListener("click",function(){
   STATE.sort=b.dataset.sort;
   document.querySelectorAll(".seg button").forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
