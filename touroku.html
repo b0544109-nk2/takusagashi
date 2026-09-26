@@ -239,6 +239,8 @@
   .pay-qr{display:block;margin:12px auto 0;width:170px;height:auto;border:3px solid var(--ink);border-radius:14px;background:#fff}
   .paid-note{margin:0;font-size:.88rem;font-weight:700;line-height:1.7;background:#e9fbf1;border:2.5px solid var(--ink);
     border-radius:12px;padding:9px 12px}
+  .pay-note.cash{margin-top:14px;color:var(--ink);background:var(--hl);border:2.5px solid var(--ink);
+    border-radius:12px;padding:9px 12px;font-size:.84rem}
   #payDone{margin-top:16px}
   /* 確認のポップアップ（ブラウザのconfirmだとサイトのアドレスが出てびっくりするので、ページの中で出す） */
   .ask-ov{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;
@@ -540,6 +542,7 @@ function payHTML(){
   if(pid) h+='<li>PayPayアプリの「送る」で <span class="pay-id">'+esc(pid)+'</span> を探して送ってもOKです'
     +'<button type="button" class="copy-btn" data-copy="'+esc(pid)+'">IDをコピー</button></li>';
   h+='</ul></div>';
+  h+='<p class="pay-note cash">💵 現金希望の方は、個別もしくはノートにコメントしてね！</p>';
   if(qr) h+='<div class="pay-qr-box"><p class="pay-note">パソコンで見ている人は、PayPayアプリのスキャンでどうぞ。</p>'
     +'<img class="pay-qr" src="'+esc(qr)+'" alt="PayPayのQRコード" referrerpolicy="no-referrer" onerror="this.remove()"></div>';
   if(note) h+='<p class="pay-note">'+esc(note)+'</p>';
