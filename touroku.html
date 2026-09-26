@@ -84,9 +84,10 @@
   .half-row{display:flex;flex-wrap:wrap;gap:0 14px}
   .half-row .field{flex:1 1 150px}
 
-  .chips{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:7px}
-  .chip{font:inherit;font-weight:700;font-size:.86rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
-    border-radius:999px;padding:7px 14px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+  .chips{display:flex;flex-wrap:nowrap;gap:6px;margin-top:7px}
+  .chip{flex:1 1 0;min-width:0;text-align:center;font:inherit;font-weight:700;font-size:clamp(.62rem,2.7vw,.86rem);
+    line-height:1.35;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
+    border-radius:999px;padding:7px 6px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
   .chip[aria-pressed="true"]{background:var(--yellow)}
   .chip:focus-visible,.btn:focus-visible,.cta:focus-visible,.add:focus-visible,.link:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
 
@@ -750,7 +751,7 @@ function recCard(r, i){
     +'<div data-when="rough"'+(r.mode==="rough"?'':' hidden')+'>'
     +'<label class="field">時期<input data-f="months" value="'+esc(r.months)+'" placeholder="例：10月〜12月"></label>'
     +'<div class="field">曜日・時間帯<span class="help">あてはまるものを選んでください（複数えらべます）</span>'
-    +chipGroup("when4",[["平日日中","☀ 平日日中"],["平日夜","🌙 平日夜"],["土日祝日中","☀ 土日祝日中"],["土日祝夜","🌙 土日祝夜"]],r.when4||[],true)+'</div></div>'
+    +chipGroup("when4",[["平日日中","☀ 平日 日中"],["平日夜","🌙 平日 夜"],["土日祝日中","☀ 土日祝 日中"],["土日祝夜","🌙 土日祝 夜"]],r.when4||[],true)+'</div></div>'
     +'<label class="field">会場<span class="opt">（任意・店舗名など）</span><input data-f="venue" value="'+esc(r.venue)+'"></label>'
     +'<label class="field">募集人数<span class="opt">（任意・あと何人）</span><input type="number" inputmode="numeric" min="1" max="99" data-f="need" value="'+esc(r.need)+'"></label>'
     +'<label class="field">ひとこと<span class="opt">（任意）</span><textarea rows="2" data-f="note">'+esc(r.note)+'</textarea></label>'
