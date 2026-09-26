@@ -1171,7 +1171,7 @@ async function init(){
   else { try{ var me=localStorage.getItem(ME_KEY); if(me) document.getElementById("fName").value=me; }catch(e){} }
   if(!CONFIG.sheetId){
     setMaster(DEMO_TITLES.map(function(x){ return { t:x[0], p:x[1], m:x[2], u:"", a:[] }; }));
-    S.settings={ "参加費":"6,000円", "PayPayリンク":"https://www.paypay.ne.jp/", "PayPayID":"nk2della",
+    S.settings={ "参加費":"6,000円", "PayPayリンク":"https://www.paypay.ne.jp/", "PayPayID":"madamis_cruise",
       "PayPayQR":"board-qr.png", "支払い案内":"（ここはデモ表示です。QRもリンクも本物ではありません）" };
     S.paid={ names:{}, xids:{} }; S.paid.names[norm("うみねこ")]=true;   // 支払いずみの見え方の例
     notice("見た目の確認用のデモです（送信はしません）。「うみねこ」で登録ずみ・参加費お支払いずみの例を呼び出せます。");
