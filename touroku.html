@@ -218,6 +218,27 @@
     .rec{padding:12px 11px 2px}
   }
   @media (prefers-reduced-motion:reduce){.sending::before{animation:none}}
+  /* 参加費のお支払い */
+  .pay .amount{margin:0 0 14px;font-size:1.02rem;font-weight:700;line-height:1.6}
+  .pay .amount b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1.5rem;
+    background:linear-gradient(transparent 62%, var(--hl) 62%);padding:0 2px}
+  .pay .cta{width:100%;max-width:340px}
+  .pay-note{margin:14px 0 0;font-size:.82rem;font-weight:700;line-height:1.7;color:var(--muted)}
+  .pay-fallback{margin:14px 0 0;border-top:2px dashed var(--line);padding-top:12px}
+  .pay-fallback h3{margin:0 0 8px;font-size:.86rem}
+  .pay-fallback ul{margin:0;padding-left:1.1em;font-size:.84rem;font-weight:700;line-height:1.9}
+  .pay-fallback li{margin-bottom:4px}
+  .pay-id{display:inline-block;background:var(--hl);border:2px solid var(--ink);border-radius:8px;padding:1px 8px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9rem}
+  .copy-btn{font:inherit;font-size:.8rem;font-weight:700;background:#fff;color:var(--ink);border:2.5px solid var(--ink);
+    border-radius:10px;padding:4px 12px;cursor:pointer;box-shadow:var(--press-sm);margin-left:2px}
+  .copy-btn:active{transform:translateY(2px);box-shadow:var(--pressed)}
+  .pay-qr-box{display:none}
+  @media (min-width:700px){ .pay-qr-box{display:block} }
+  .pay-qr{display:block;margin:12px auto 0;width:170px;height:auto;border:3px solid var(--ink);border-radius:14px;background:#fff}
+  .paid-note{margin:0;font-size:.88rem;font-weight:700;line-height:1.7;background:#e9fbf1;border:2.5px solid var(--ink);
+    border-radius:12px;padding:9px 12px}
+  #payDone{margin-top:16px}
   /* 確認のポップアップ（ブラウザのconfirmだとサイトのアドレスが出てびっくりするので、ページの中で出す） */
   .ask-ov{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;
     padding:6vh 16px 40px;overflow-y:auto;background:rgba(29,34,66,.55)}
@@ -273,6 +294,8 @@
       </label>
     </section>
 
+    <div id="payEdit"></div>
+
     <section class="card" aria-labelledby="hRec">
       <h2 class="sec-h pink" id="hRec">📣 卓募集（3件まで・任意）</h2>
       <p class="sec-note">自分で卓を立てて、メンバーを集めたいシナリオ。日付が決まっていなくても「10月〜12月の土日」みたいなざっくりでOKです。当日その場で立てることもできます。</p>
@@ -300,6 +323,7 @@
     <p class="done-sub" id="doneSub"></p>
     <div id="doneWarn"></div>
     <div id="doneSum"></div>
+    <div id="payDone"></div>
     <div class="row-c"><button type="button" class="cta sub" id="editAgain">✏️ 内容を直す</button></div>
     <div class="next-box" id="doneNext"></div>
   </section>
@@ -313,13 +337,13 @@
 // スプレッドシートIDはコードに書かず、URLの ?id=... で渡す（なければ見た目の確認用のデモ）
 var CONFIG = {
   sheetId: new URLSearchParams(location.search).get("id") || "",
-  answerTab: "回答", infoTab: "シナリオ情報", settingsTab: "設定",
+  answerTab: "回答", infoTab: "シナリオ情報", settingsTab: "設定", payTab: "支払い",
   verifyMs: 45000
 };
 var SLOTS = ["①","②","③"];
 var DEMO_TITLES = [["立方館","6","240"],["アイザック・エバンスの探究","8","600"],["告別詩","6","300"],["透きとおる青の証明","4","150"],
   ["悪魔は月時雨の下で","5","300"],["BOOROOM","20","270"],["ミリオンダラー急行の殺人事件","8","270"],["パンドラの箱の再開","6","270"]];
-var S = { master:[], alias:{}, info:{}, settings:{}, icons:{}, post:null, reg:null, gids:null };
+var S = { master:[], alias:{}, info:{}, settings:{}, icons:{}, post:null, reg:null, gids:null, paid:null };
 
 function norm(s){ return String(s||"").normalize("NFKC").toLowerCase().replace(/[\s・:：!！?？\-‐－―ー〜~()（）「」『』【】.、。,]/g,""); }
 // 検索用：カタカナをひらがなにそろえる（「たんてい」でも「タンテイ」でも当たるように）
@@ -461,6 +485,85 @@ function renderAva(){
 function parseSettings(rows){
   var out={}; rows.slice(1).forEach(function(r){ if((r[0]||"").trim()) out[r[0].trim()]=(r[1]||"").trim(); }); return out;
 }
+/* ===== 参加費のお支払い =====
+   設定タブに「PayPayリンク」か「PayPayID」を入れると出る（両方カラなら何も出ない）。
+   使う設定：参加費／PayPayリンク／PayPayID／PayPayQR（画像URL・任意）／支払い案内（一言・任意）／支払い済み表示（「消す」で非表示）
+   「支払い」タブに名前（かXのID）が載っている人には出さない。タブが読めないときは全員に出す。 */
+function parsePaid(rows){
+  if(!rows || rows.length<2) return null;
+  var head=(rows[0]||[]).map(function(x){ return String(x||"").trim(); });
+  var iName=-1, iXid=-1, iState=-1;
+  head.forEach(function(h,i){
+    var k=h.replace(/\s/g,"");
+    if(iXid<0 && /x.*id|ID/i.test(k) && !/名前/.test(k)) iXid=i;
+    else if(iName<0 && /名前|なまえ|氏名/.test(k)) iName=i;
+    if(iState<0 && /支払|入金|状態|ステータス/.test(k)) iState=i;
+  });
+  if(iName<0 && iXid<0) iName=0;   // 見出しがなければ1列目を名前とみなす
+  var names={}, xids={};
+  rows.slice(1).forEach(function(r){
+    if(iState>=0){
+      var st=String(r[iState]||"").trim();
+      if(st && !/済|完了|✓|✔|✅|ok|はい|○|〇|支払/i.test(st)) return;   // 「未」などは未払いとして飛ばす
+    }
+    var n=iName>=0 ? norm(r[iName]) : "";
+    var x=iXid>=0 ? normX(r[iXid]) : "";
+    if(n) names[n]=true;
+    if(x) xids[x]=true;
+  });
+  return { names:names, xids:xids };
+}
+function hasPaid(name, xid){
+  if(!S.paid) return false;                      // 名簿が読めないときは全員に出す（未払い扱い）
+  var n=norm(name), x=normX(xid);
+  return !!((n && S.paid.names[n]) || (x && S.paid.xids[x]));
+}
+function payHTML(){
+  var g=function(k){ return String(S.settings[k]||"").trim(); };
+  var url=g("PayPayリンク"), pid=g("PayPayID").replace(/^@/,""), fee=g("参加費"), qr=g("PayPayQR"), note=g("支払い案内");
+  if(!url && !pid) return "";
+  var paid=S.reg ? hasPaid(S.reg.name, S.reg.xid||document.getElementById("eXid").value) : false;
+  if(paid){
+    if(/^(消す|出さない|なし|no|off)$/i.test(g("支払い済み表示"))) return "";
+    return '<section class="card pay"><p class="paid-note">✅ 参加費はお支払いずみです。ありがとうございますっ</p></section>';
+  }
+  var h='<section class="card pay" aria-labelledby="hPay">'
+    +'<h2 class="sec-h" id="hPay">💴 参加費のお支払い</h2>';
+  if(fee) h+='<p class="amount">参加費は <b>'+esc(fee)+'</b> です。PayPayでお願いしますっ</p>';
+  else h+='<p class="amount">参加費は PayPay でお願いしますっ</p>';
+  if(url) h+='<div class="row-c"><a class="cta" href="'+esc(url)+'" target="_blank" rel="noopener">💸 PayPayを開いて払う</a></div>';
+  h+='<div class="pay-fallback"><h3>アプリが開かないときは</h3><ul>';
+  if(url) h+='<li>リンクをコピーして、Safariのアドレス欄に貼ってください'
+    +'<button type="button" class="copy-btn" data-copy="'+esc(url)+'">リンクをコピー</button>'
+    +'<br><small>XやLINEの中のブラウザから開くと、アプリに移らないことがあります。</small></li>';
+  if(pid) h+='<li>PayPayアプリの「送る」で <span class="pay-id">'+esc(pid)+'</span> を探して送ってもOKです'
+    +'<button type="button" class="copy-btn" data-copy="'+esc(pid)+'">IDをコピー</button></li>';
+  h+='</ul></div>';
+  if(qr) h+='<div class="pay-qr-box"><p class="pay-note">パソコンで見ている人は、PayPayアプリのスキャンでどうぞ。</p>'
+    +'<img class="pay-qr" src="'+esc(qr)+'" alt="PayPayのQRコード" referrerpolicy="no-referrer" onerror="this.remove()"></div>';
+  if(note) h+='<p class="pay-note">'+esc(note)+'</p>';
+  h+='</section>';
+  return h;
+}
+function renderPay(){
+  var h=payHTML();
+  ["payEdit","payDone"].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.innerHTML=h;
+  });
+}
+document.addEventListener("click", function(e){
+  var b=e.target.closest("[data-copy]"); if(!b) return;
+  var text=b.dataset.copy, old=b.textContent;
+  var done=function(){ b.textContent="コピーしました！"; setTimeout(function(){ b.textContent=old; }, 1800); };
+  var fallback=function(){
+    var ta=document.createElement("textarea"); ta.value=text;
+    ta.style.position="fixed"; ta.style.top="-1000px"; document.body.appendChild(ta);
+    ta.select(); try{ document.execCommand("copy"); done(); }catch(err){} ta.remove();
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+  else fallback();
+});
+
 function setMaster(list){
   S.master=list.map(function(x){
     var e={ t:x.t, k:norm(x.t), f:fold(x.t), p:x.p, m:x.m, u:x.u, a:x.a.map(function(a){ return { raw:a, k:norm(a), f:fold(a) }; }) };
@@ -758,6 +861,7 @@ document.getElementById("addRec").addEventListener("click", function(){
 var DEMO_ROWS = [["タイムスタンプ","お名前（名札と同じ表記で）","XのID（任意・@なしでOK）","卓募集をしますか？","募集①のシナリオ名","募集①の形式","募集①の日付（決まっていれば）","募集①の開始時刻","募集①の時期（日付が未定なら 例：10月〜12月）","募集①の曜日（日付が未定なら）","募集①の時間帯（日付が未定なら）","募集①の会場（店舗名など）","募集①の募集人数（あと何人）","募集①のひとこと","遊びたいシナリオ①","遊びたいシナリオ②"],
   ["2026/09/13 12:00:00","うみねこ","","する","立方館","オフライン","","","10月〜11月","土日祝","日中","都内の店舗","3","初見の方歓迎です！","アイザック・エバンスの探究","告別詩"]];
 function showStep(which){
+  if(which!=="name") renderPay();
   document.getElementById("stepName").hidden = which!=="name";
   document.getElementById("stepEdit").hidden = which!=="edit";
   document.getElementById("stepDone").hidden = which!=="done";
@@ -852,7 +956,7 @@ async function goNext(auto){
   if(!auto) window.scrollTo({ top:0, behavior:"smooth" });
 }
 document.getElementById("nameForm").addEventListener("submit", function(e){ e.preventDefault(); goNext(false); });
-document.getElementById("eXid").addEventListener("input", renderAva);
+document.getElementById("eXid").addEventListener("input", function(){ renderAva(); renderPay(); });
 document.getElementById("changeWho").addEventListener("click", function(){
   ask({ title:"別の人に切りかえる",
     lines:["別の人の登録に切りかえます。","（書きかけの内容は消えます）"],
@@ -1067,15 +1171,23 @@ async function init(){
   else { try{ var me=localStorage.getItem(ME_KEY); if(me) document.getElementById("fName").value=me; }catch(e){} }
   if(!CONFIG.sheetId){
     setMaster(DEMO_TITLES.map(function(x){ return { t:x[0], p:x[1], m:x[2], u:"", a:[] }; }));
-    notice("見た目の確認用のデモです（送信はしません）。「うみねこ」で登録ずみの例を呼び出せます。");
+    S.settings={ "参加費":"6,000円", "PayPayリンク":"https://www.paypay.ne.jp/", "PayPayID":"nk2della",
+      "PayPayQR":"board-qr.png", "支払い案内":"（ここはデモ表示です。QRもリンクも本物ではありません）" };
+    S.paid={ names:{}, xids:{} }; S.paid.names[norm("うみねこ")]=true;   // 支払いずみの見え方の例
+    notice("見た目の確認用のデモです（送信はしません）。「うみねこ」で登録ずみ・参加費お支払いずみの例を呼び出せます。");
     if(sess && sess.name) goNext(true);
     return;
   }
   var r=await Promise.all([fetchInfo().catch(function(){ return []; }), fetchTab(CONFIG.settingsTab).catch(function(){ return []; }),
-    fetchTab("アイコン").catch(function(){ return []; })]);
+    fetchTab("アイコン").catch(function(){ return []; }), fetchTab(CONFIG.payTab).catch(function(){ return []; })]);
   setMaster(r[0]);
   S.settings=parseSettings(r[1]);
   S.icons=parseIcons(r[2]);
+  S.paid=parsePaid(r[3]);
+  var payTab=String(S.settings["支払いタブ"]||"").trim();   // 別のタブ名にしたいとき
+  if(payTab && payTab!==CONFIG.payTab){
+    try{ S.paid=parsePaid(await fetchTab(payTab)); }catch(e){}
+  }
   try{ S.post=JSON.parse(S.settings["登録フォーム送信先"]||""); }catch(e){ S.post=null; }
   if(!S.post || !S.post.action || !S.post.rec) notice("登録の受付はまだ準備中です。幹事からの案内をお待ちください。");
   showBackToBoard();
