@@ -84,7 +84,7 @@
   .half-row{display:flex;flex-wrap:wrap;gap:0 14px}
   .half-row .field{flex:1 1 150px}
 
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}
+  .chips{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:7px}
   .chip{font:inherit;font-weight:700;font-size:.86rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
     border-radius:999px;padding:7px 14px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
   .chip[aria-pressed="true"]{background:var(--yellow)}
@@ -307,7 +307,7 @@
 
     <section class="card" aria-labelledby="hWant">
       <h2 class="sec-h cyan" id="hWant">🙋 遊びたいシナリオ（3つまで・任意）</h2>
-      <p class="sec-note">だれかが卓を立てたら入りたいシナリオ。同じシナリオを選んだ人どうしがボードに並びます。予定が立ったら「📅 予定立った！」を押すと、ボードの一覧から外れます。</p>
+      <p class="sec-note">だれかが卓を立てたら入りたいシナリオ。同じシナリオを選んだ人どうしがボードに並びます。</p>
       <p class="sec-note sg-hint">🔍 シナリオ名は打つと候補が出ます。最近のシナリオなど候補に出てこないものも、そのまま登録できます。</p>
       <div id="wantList"></div>
     </section>
