@@ -729,7 +729,7 @@ document.addEventListener("pointerdown", function(e){
 function chipGroup(group, opts, picked, multi){
   return '<div class="chips" data-g="'+group+'"'+(multi?' data-multi="1"':'')+' role="group">'+opts.map(function(o){
     var v=o[0], label=o[1]||o[0];
-    return '<button type="button" class="chip" data-v="'+esc(v)+'" aria-pressed="'+(picked.indexOf(v)>=0)+'">'+esc(label)+'</button>';
+    return '<button type="button" class="chip" data-v="'+esc(v)+'" aria-pressed="'+(picked.indexOf(v)>=0)+'">'+esc(label).replace(/\n/g,"<br>")+'</button>';
   }).join("")+'</div>';
 }
 var uid=0;
@@ -751,7 +751,7 @@ function recCard(r, i){
     +'<div data-when="rough"'+(r.mode==="rough"?'':' hidden')+'>'
     +'<label class="field">時期<input data-f="months" value="'+esc(r.months)+'" placeholder="例：10月〜12月"></label>'
     +'<div class="field">曜日・時間帯<span class="help">あてはまるものを選んでください（複数えらべます）</span>'
-    +chipGroup("when4",[["平日日中","☀ 平日 日中"],["平日夜","🌙 平日 夜"],["土日祝日中","☀ 土日祝 日中"],["土日祝夜","🌙 土日祝 夜"]],r.when4||[],true)+'</div></div>'
+    +chipGroup("when4",[["平日日中","☀ 平日\n日中"],["平日夜","🌙 平日\n夜"],["土日祝日中","☀ 土日祝\n日中"],["土日祝夜","🌙 土日祝\n夜"]],r.when4||[],true)+'</div></div>'
     +'<label class="field">会場<span class="opt">（任意・店舗名など）</span><input data-f="venue" value="'+esc(r.venue)+'"></label>'
     +'<label class="field">募集人数<span class="opt">（任意・あと何人）</span><input type="number" inputmode="numeric" min="1" max="99" data-f="need" value="'+esc(r.need)+'"></label>'
     +'<label class="field">ひとこと<span class="opt">（任意）</span><textarea rows="2" data-f="note">'+esc(r.note)+'</textarea></label>'
