@@ -66,9 +66,6 @@
   .notice{margin:10px auto 0;max-width:600px;background:#fff;border:2.5px dashed var(--ink);border-radius:14px;
     padding:8px 13px;font-size:.8rem;font-weight:700;color:var(--muted);text-align:center;line-height:1.55}
 
-  #stepEdit>.row-c{position:sticky;bottom:0;z-index:30;margin-top:20px;padding:12px 0 14px;
-    background:linear-gradient(to bottom, rgba(255,244,207,0) 0%, var(--paper) 45%)}
-  #stepEdit>.row-c .cta{box-shadow:5px 5px 0 var(--ink), 0 6px 16px rgba(29,34,66,.28)}
   .card{background:#fff;border:3.5px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--ink);padding:18px 18px 16px;margin-top:28px}
   #stepName{margin-top:14px}
   #payName .pay{margin-top:14px}
@@ -794,14 +791,14 @@ function wantRow(w, i){
   var id="w"+i, on=!!(w.done && w.t);
   return '<div class="want-row'+(on?' done':'')+'" data-done-t="'+esc(on?w.t:"")+'"><span class="num" aria-hidden="true">'+SLOTS[i]+'</span>'
     +'<div class="sg"><div class="want-line"><input class="sg-in" id="'+id+'" data-f="want" data-kind="want" value="'+esc(w.t)+'" placeholder="打つと候補が出ます" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="遊びたいシナリオ'+SLOTS[i]+'">'
-    +'<button type="button" class="plan-btn" data-plan="1" aria-pressed="'+on+'" aria-label="遊びたいシナリオ'+SLOTS[i]+'の予定が立った">'+planLabel(on)+'</button></div>'
+    +'</div>'
     +'<ul class="sg-list" role="listbox" hidden></ul><span class="sg-state"></span>'
-    +'<span class="plan-note"'+(on?'':' hidden')+'>予定が立ったので、登録するとボードの「遊びたい」一覧から外れます（もう一度押すと戻せます）</span></div></div>';
+    +'<span class="plan-note"'+(on?'':' hidden')+'>予定が立ったので、登録するとボードの「遊びたい」一覧から外れます</span></div></div>';
 }
 function setPlan(row, on){
   var b=row.querySelector(".plan-btn"), t=row.querySelector("input").value.trim();
   if(on && !t) return;
-  b.setAttribute("aria-pressed", String(on)); b.textContent=planLabel(on);
+  if(b){ b.setAttribute("aria-pressed", String(on)); b.textContent=planLabel(on); }
   row.classList.toggle("done", on); row.dataset.doneT = on ? t : "";
   row.querySelector(".plan-note").hidden=!on;
 }
