@@ -243,10 +243,16 @@
     border-radius:12px;padding:7px 10px;font-size:.8rem;line-height:1.55}
   .pay-note.x-name b{background:linear-gradient(transparent 60%, var(--hl) 60%)}
   .pay .cta{width:100%;max-width:340px;margin-top:10px}
-  .pay-fallback h3{margin:0 0 6px;font-size:.86rem}
+  .pay-fallback>summary{display:inline-flex;align-items:center;gap:6px;cursor:pointer;list-style:none;
+    font-size:.84rem;font-weight:700;color:var(--ink);background:#fff;border:2.5px solid var(--ink);
+    border-radius:12px;padding:6px 13px;box-shadow:var(--press-sm)}
+  .pay-fallback>summary::-webkit-details-marker{display:none}
+  .pay-fallback>summary::after{content:"▼";font-size:.7em;margin-left:2px}
+  .pay-fallback[open]>summary::after{content:"▲"}
+  .pay-fallback>summary:active{transform:translateY(2px);box-shadow:var(--pressed)}
   .pay-note{margin:14px 0 0;font-size:.82rem;font-weight:700;line-height:1.7;color:var(--muted)}
   .pay-fallback{margin:12px 0 0;border-top:2px dashed var(--line);padding-top:10px}
-  .pay-fallback ul{margin:0;padding-left:1.1em;font-size:.84rem;font-weight:700;line-height:1.9}
+  .pay-fallback ul{margin:10px 0 0;padding-left:1.1em;font-size:.84rem;font-weight:700;line-height:1.9}
   .pay-fallback li{margin-bottom:4px}
   .pay-id{display:inline-block;background:var(--hl);border:2px solid var(--ink);border-radius:8px;padding:1px 8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9rem}
@@ -581,13 +587,13 @@ function payHTML(mini){
     if(!url && pid) h+='<p class="pay-note">PayPayアプリの「送る」で <span class="pay-id">'+esc(pid)+'</span> を探して送ってください。</p>';
     return h+'</section>';
   }
-  h+='<div class="pay-fallback"><h3>アプリが開かないときは</h3><ul>';
+  h+='<details class="pay-fallback"><summary><span>📱 アプリが開かないときは</span></summary><ul>';
   if(url) h+='<li>リンクをコピーして、Safariのアドレス欄に貼ってください'
     +'<button type="button" class="copy-btn" data-copy="'+esc(url)+'">リンクをコピー</button>'
     +'<br><small>XやLINEの中のブラウザから開くと、アプリに移らないことがあります。</small></li>';
   if(pid) h+='<li>PayPayアプリの「送る」で <span class="pay-id">'+esc(pid)+'</span> を探して送ってもOKです'
     +'<button type="button" class="copy-btn" data-copy="'+esc(pid)+'">IDをコピー</button></li>';
-  h+='</ul></div>';
+  h+='</ul></details>';
   h+='<p class="pay-note cash">💵 現金希望の方は、個別もしくはノートにコメントしてね！</p>';
   if(qr) h+='<div class="pay-qr-box"><p class="pay-note">パソコンで見ている人は、PayPayアプリのスキャンでどうぞ。</p>'
     +'<img class="pay-qr" src="'+esc(qr)+'" alt="PayPayのQRコード" referrerpolicy="no-referrer" onerror="this.remove()"></div>';
