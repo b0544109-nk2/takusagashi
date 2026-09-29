@@ -68,8 +68,8 @@
 
   .card{background:#fff;border:3.5px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--ink);padding:18px 18px 16px;margin-top:28px}
   #stepName{margin-top:14px}
-  #payName .pay{margin-top:14px}
-  .pay.mini{padding:12px 14px 11px}
+  #payName .pay{margin-top:10px}
+  .pay.mini{padding:11px 14px 10px}
   .pay.mini .sec-h{font-size:.96rem;margin-bottom:2px}
   .pay.mini .cta{margin-top:8px}
   .pay.mini .cash{margin-top:10px;font-size:.78rem;padding:7px 10px}
@@ -228,6 +228,12 @@
   /* 参加費のお支払い */
   .pay{margin-top:16px;padding:14px 16px 13px}
   .pay .sec-h{font-size:1.02rem}
+  .pay .amount{margin:9px 0 0;font-size:.9rem;font-weight:700;line-height:1.55}
+  .pay .amount b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1.32rem;
+    background:linear-gradient(transparent 62%, var(--hl) 62%);padding:0 2px}
+  .pay-note.x-name{margin-top:9px;color:var(--ink);background:#eaf6ff;border:2.5px solid var(--ink);
+    border-radius:12px;padding:7px 10px;font-size:.8rem;line-height:1.55}
+  .pay-note.x-name b{background:linear-gradient(transparent 60%, var(--hl) 60%)}
   .pay .cta{width:100%;max-width:340px;margin-top:10px}
   .pay-fallback>summary{cursor:pointer;font-size:.82rem;font-weight:700;color:var(--muted);padding:2px 0;list-style:none}
   .pay-fallback>summary::-webkit-details-marker{display:none}
@@ -247,8 +253,8 @@
   .pay-qr{display:block;margin:12px auto 0;width:170px;height:auto;border:3px solid var(--ink);border-radius:14px;background:#fff}
   .paid-note{margin:0;font-size:.88rem;font-weight:700;line-height:1.7;background:#e9fbf1;border:2.5px solid var(--ink);
     border-radius:12px;padding:9px 12px}
-  .pay-note.cash{margin-top:12px;color:var(--ink);background:var(--hl);border:2.5px solid var(--ink);
-    border-radius:12px;padding:8px 11px;font-size:.82rem;line-height:1.6}
+  .pay-note.cash{margin-top:9px;color:var(--ink);background:var(--hl);border:2.5px solid var(--ink);
+    border-radius:12px;padding:7px 10px;font-size:.8rem;line-height:1.55}
   #payDone{margin-top:16px}
   /* 確認のポップアップ（ブラウザのconfirmだとサイトのアドレスが出てびっくりするので、ページの中で出す） */
   .ask-ov{position:fixed;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;
@@ -285,11 +291,11 @@
     <form id="nameForm" novalidate>
       <label class="field">お名前<span class="req">*</span>
         <input id="fName" autocomplete="nickname" placeholder="名札と同じ表記で" required>
-        <small class="help">同じお名前の人がいるときは、区別できるように少し変えてください（例：名前のあとに色や絵文字をつける）。</small>
+        <small class="help">同じ名前の人がいるときは、色や絵文字をつけて区別してください。</small>
       </label>
       <label class="field">XのID<span class="opt">（任意）</span>
         <input id="fXid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@のあとの英数字（例：madamis_cruise）">
-        <small class="help">入れると、卓募集のカードにXのアイコンが出ます。あとで別のスマホなどから内容を直すときの本人確認にも使います。</small>
+        <small class="help">卓募集のカードにXのアイコンが出ます。別の端末で直すときの本人確認にも使います。</small>
       </label>
       <p class="err" id="nameErr" hidden></p>
       <div class="row-c"><button type="submit" class="cta" id="goNext">つぎへ →</button></div>
@@ -541,8 +547,12 @@ function payHTML(mini){
     return '<section class="card pay"><p class="paid-note">✅ 参加費はお支払いずみです。ありがとうございますっ</p></section>';
   }
   var h='<section class="card pay'+(mini?' mini':'')+'">'
-    +'<h2 class="sec-h">💴 参加費'+(fee?' '+esc(fee):'のお支払い')+'</h2>';
+    +'<h2 class="sec-h">💴 参加費のお支払い</h2>';
+  if(fee) h+='<p class="amount">参加費は <b>'+esc(fee)+'</b> です。PayPayでお願いしますっ</p>';
+  else h+='<p class="amount">参加費は PayPay でお願いしますっ</p>';
   if(url) h+='<div class="row-c"><a class="cta" href="'+esc(url)+'" target="_blank" rel="noopener">💸 PayPayで払う</a></div>';
+  h+='<p class="pay-note x-name">✍️ 送るときのコメント欄に、<b>Xでのお名前</b>を入れてね！'
+    +(mini?'':'（だれからのお支払いか、わかるように）')+'</p>';
   if(mini){
     h+='<p class="pay-note cash">💵 現金希望の方は、個別もしくはノートにコメントしてね！</p>';
     if(!url && pid) h+='<p class="pay-note">PayPayアプリの「送る」で <span class="pay-id">'+esc(pid)+'</span> を探して送ってください。</p>';
