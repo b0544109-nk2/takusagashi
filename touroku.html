@@ -173,6 +173,14 @@
   .loaded{margin:12px 0 0;font-size:.84rem;font-weight:700;line-height:1.65;background:var(--hl);border:2px solid var(--ink);border-radius:12px;padding:8px 12px}
   .loaded.new{background:#e8f7ff}
   .who-x{margin:14px 0 0}
+  .xid-view{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:.86rem;font-weight:700}
+  .xid-view .xid-key{color:var(--muted)}
+  .xid-view b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92rem;
+    background:var(--hl);border:2px solid var(--ink);border-radius:8px;padding:1px 8px}
+  .xid-view b.none{background:#f1efe6;font-family:inherit;font-weight:700;font-size:.82rem;color:var(--muted)}
+  .xid-view .btn{margin-left:auto}
+  #xidField{position:relative}
+  #xidDone{position:absolute;right:0;bottom:0}
 
   .sending{margin:14px 0 0;font-size:.9rem;font-weight:700;color:var(--muted);text-align:center;line-height:1.6}
   .sending::before{content:"";display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:3px solid var(--ink);
@@ -308,9 +316,17 @@
       <div class="who"><span class="ava" id="whoAva" aria-hidden="true"></span><b id="whoName"></b><span>さん</span>
         <button type="button" class="btn ghost" id="changeWho">別の人で登録する</button></div>
       <p class="loaded" id="loadedNote"></p>
-      <label class="field who-x">XのID<span class="opt">（任意）</span>
-        <input id="eXid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@のあとの英数字">
-      </label>
+      <div class="who-x">
+        <div class="xid-view" id="xidView">
+          <span class="xid-key">XのID</span><b id="xidText"></b>
+          <button type="button" class="btn ghost" id="xidEdit">直す</button>
+        </div>
+        <label class="field" id="xidField" hidden>XのID<span class="opt">（任意）</span>
+          <input id="eXid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@のあとの英数字">
+          <small class="help">登録するときに一緒に送ります。</small>
+          <button type="button" class="btn ghost" id="xidDone">OK</button>
+        </label>
+      </div>
     </section>
 
     <div id="payEdit"></div>
@@ -494,6 +510,17 @@ function parseIcons(rows){
     if(k && /^https:\/\/[^\s"'<>]+$/.test(u)){ out[k]=u; out["~"+k.replace(/_/g,"")]=u; }
   });
   return out;
+}
+function renderXid(editing){
+  var v=document.getElementById("eXid").value.trim().replace(/^@/,"");
+  var view=document.getElementById("xidView"), field=document.getElementById("xidField");
+  if(!view || !field) return;
+  if(editing){ view.hidden=true; field.hidden=false; return; }
+  var t=document.getElementById("xidText");
+  t.textContent = v ? "@"+v : "入れていません（任意）";
+  t.className = v ? "" : "none";
+  document.getElementById("xidEdit").textContent = v ? "直す" : "入れる";
+  view.hidden=false; field.hidden=true;
 }
 function renderAva(){
   var el=document.getElementById("whoAva"), name=S.reg?S.reg.name:"", k=normX(document.getElementById("eXid").value);
@@ -844,7 +871,8 @@ function collect(){
   });
   var wants=[].map.call(document.querySelectorAll("#wantList .want-row"), function(el){
     var t=el.querySelector("input").value.trim();
-    return { t:t, done:!!t && el.querySelector(".plan-btn").getAttribute("aria-pressed")==="true" };
+    // 「予定立った」は行の状態から見る（入力画面にボタンが無くても動くように）
+    return { t:t, done:!!t && !!el.dataset.doneT && norm(el.dataset.doneT)===norm(t) };
   });
   return { name:S.reg.name, xid:document.getElementById("eXid").value.trim(), recruits:recs, wants:wants };
 }
@@ -974,6 +1002,7 @@ async function goNext(auto){
   saveSession({ name:reg.name, xid:reg.xid });
   document.getElementById("whoName").textContent=reg.name;
   document.getElementById("eXid").value=reg.xid||"";
+  renderXid(false);
   renderAva();
   var note=document.getElementById("loadedNote");
   if(last){
@@ -989,6 +1018,13 @@ async function goNext(auto){
 }
 document.getElementById("nameForm").addEventListener("submit", function(e){ e.preventDefault(); goNext(false); });
 document.getElementById("eXid").addEventListener("input", function(){ renderAva(); renderPay(); });
+document.getElementById("xidEdit").addEventListener("click", function(){
+  renderXid(true);
+  var i=document.getElementById("eXid"); i.focus(); i.select();
+});
+// 入力欄から出たら、また文字の見せ方に戻す
+document.getElementById("eXid").addEventListener("blur", function(){ renderXid(false); });
+document.getElementById("xidDone").addEventListener("click", function(){ renderXid(false); });
 document.getElementById("changeWho").addEventListener("click", function(){
   ask({ title:"別の人に切りかえる",
     lines:["別の人の登録に切りかえます。","（書きかけの内容は消えます）"],
@@ -1179,6 +1215,7 @@ document.getElementById("doneSum").addEventListener("click", async function(e){
 document.getElementById("editAgain").addEventListener("click", function(){
   document.getElementById("whoName").textContent=S.reg.name;
   document.getElementById("eXid").value=S.reg.xid||"";
+  renderXid(false);
   renderAva();
   var note=document.getElementById("loadedNote"); note.className="loaded"; note.textContent="📂 さっき登録した内容です。直したいところを書きかえて、もう一度「登録する」を押してください。";
   renderEdit(S.reg); showStep("edit"); window.scrollTo({ top:0, behavior:"smooth" });
