@@ -243,13 +243,10 @@
     border-radius:12px;padding:7px 10px;font-size:.8rem;line-height:1.55}
   .pay-note.x-name b{background:linear-gradient(transparent 60%, var(--hl) 60%)}
   .pay .cta{width:100%;max-width:340px;margin-top:10px}
-  .pay-fallback>summary{cursor:pointer;font-size:.82rem;font-weight:700;color:var(--muted);padding:2px 0;list-style:none}
-  .pay-fallback>summary::-webkit-details-marker{display:none}
-  .pay-fallback>summary::before{content:"▸ ";font-size:.9em}
-  .pay-fallback[open]>summary::before{content:"▾ "}
+  .pay-fallback h3{margin:0 0 6px;font-size:.86rem}
   .pay-note{margin:14px 0 0;font-size:.82rem;font-weight:700;line-height:1.7;color:var(--muted)}
   .pay-fallback{margin:12px 0 0;border-top:2px dashed var(--line);padding-top:10px}
-  .pay-fallback ul{margin:8px 0 0;padding-left:1.1em;font-size:.84rem;font-weight:700;line-height:1.9}
+  .pay-fallback ul{margin:0;padding-left:1.1em;font-size:.84rem;font-weight:700;line-height:1.9}
   .pay-fallback li{margin-bottom:4px}
   .pay-id{display:inline-block;background:var(--hl);border:2px solid var(--ink);border-radius:8px;padding:1px 8px;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9rem}
@@ -578,20 +575,19 @@ function payHTML(mini){
   if(fee) h+='<p class="amount">参加費は <b>'+esc(fee)+'</b> です。PayPayでお願いしますっ</p>';
   else h+='<p class="amount">参加費は PayPay でお願いしますっ</p>';
   if(url) h+='<div class="row-c"><a class="cta" href="'+esc(url)+'" target="_blank" rel="noopener">💸 PayPayで払う</a></div>';
-  h+='<p class="pay-note x-name">✍️ 送るときのコメント欄に、<b>Xでのお名前</b>を入れてね！'
-    +(mini?'':'（だれからのお支払いか、わかるように）')+'</p>';
+  h+='<p class="pay-note x-name">✍️ 送るときのコメント欄に、<b>Xでのお名前</b>を入れてね！</p>';
   if(mini){
     h+='<p class="pay-note cash">💵 現金希望の方は、個別もしくはノートにコメントしてね！</p>';
     if(!url && pid) h+='<p class="pay-note">PayPayアプリの「送る」で <span class="pay-id">'+esc(pid)+'</span> を探して送ってください。</p>';
     return h+'</section>';
   }
-  h+='<details class="pay-fallback"><summary>アプリが開かないときは</summary><ul>';
+  h+='<div class="pay-fallback"><h3>アプリが開かないときは</h3><ul>';
   if(url) h+='<li>リンクをコピーして、Safariのアドレス欄に貼ってください'
     +'<button type="button" class="copy-btn" data-copy="'+esc(url)+'">リンクをコピー</button>'
     +'<br><small>XやLINEの中のブラウザから開くと、アプリに移らないことがあります。</small></li>';
   if(pid) h+='<li>PayPayアプリの「送る」で <span class="pay-id">'+esc(pid)+'</span> を探して送ってもOKです'
     +'<button type="button" class="copy-btn" data-copy="'+esc(pid)+'">IDをコピー</button></li>';
-  h+='</ul></details>';
+  h+='</ul></div>';
   h+='<p class="pay-note cash">💵 現金希望の方は、個別もしくはノートにコメントしてね！</p>';
   if(qr) h+='<div class="pay-qr-box"><p class="pay-note">パソコンで見ている人は、PayPayアプリのスキャンでどうぞ。</p>'
     +'<img class="pay-qr" src="'+esc(qr)+'" alt="PayPayのQRコード" referrerpolicy="no-referrer" onerror="this.remove()"></div>';
