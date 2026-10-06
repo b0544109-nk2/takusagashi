@@ -243,6 +243,14 @@
   .fchip{font:inherit;font-weight:700;font-size:.84rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:999px;
     padding:6px 13px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .fchip[aria-pressed="true"]{background:var(--ink);color:var(--yellow)}
+  /* スマホでは3列ぴったりに並べる（チップの幅がばらばらだと4段に散らばるため） */
+  @media (max-width:720px){
+    #viewRecruit .filters{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:20px 0 16px;align-items:stretch}
+    #viewRecruit .filters span{grid-column:1/-1;margin:0}
+    #viewRecruit .fchip{width:100%;padding:6px 5px;font-size:clamp(.6rem,2.7vw,.8rem);
+      line-height:1.35;text-align:center;border-radius:14px;
+      display:flex;align-items:center;justify-content:center}
+  }
   .rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:22px;align-items:start}
   .rc{background:#fff;border:3.5px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink)}
   .rc-grid > .rc:nth-child(odd){rotate:-.5deg}
@@ -607,7 +615,7 @@
 
   <section class="sec free">
     <h2 class="sec-h">🎲 なんでもOK・おすすめ募集</h2>
-    <p class="sec-note">特定のシナリオではなく「おまかせ」の人たち。誘うとよろこびます。</p>
+    <p class="sec-note">特定のシナリオではなく「おまかせ」の人たち。</p>
     <div id="free"></div>
   </section>
 
