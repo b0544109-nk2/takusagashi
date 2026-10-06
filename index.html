@@ -243,11 +243,14 @@
   .fchip{font:inherit;font-weight:700;font-size:.84rem;color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:999px;
     padding:6px 13px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .fchip[aria-pressed="true"]{background:var(--ink);color:var(--yellow)}
-  /* スマホでは3列ぴったりに並べる（チップの幅がばらばらだと4段に散らばるため） */
+  /* しぼりこみは「自分/日付」「曜日・時間帯」「形式」の3段に分けて並べる */
+  #viewRecruit .filters{display:flex;flex-direction:column;align-items:stretch;gap:7px}
+  #viewRecruit .filters span{margin:0 0 1px}
+  .frow{display:flex;gap:7px;flex-wrap:wrap}
   @media (max-width:720px){
-    #viewRecruit .filters{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:20px 0 16px;align-items:stretch}
-    #viewRecruit .filters span{grid-column:1/-1;margin:0}
-    #viewRecruit .fchip{width:100%;padding:6px 5px;font-size:clamp(.6rem,2.7vw,.8rem);
+    #viewRecruit .filters{margin:20px 0 16px}
+    .frow{flex-wrap:nowrap}
+    .frow .fchip{flex:1 1 0;min-width:0;padding:6px 4px;font-size:clamp(.58rem,2.6vw,.8rem);
       line-height:1.35;text-align:center;border-radius:14px;
       display:flex;align-items:center;justify-content:center}
   }
@@ -632,15 +635,21 @@
     </div>
     <div class="filters" role="group" aria-label="日程で絞り込み">
       <span>しぼりこみ</span>
-      <button class="fchip" type="button" data-f="mine" aria-pressed="false" hidden>★ 自分の募集</button>
-      <button class="fchip" type="button" data-f="dated" aria-pressed="false">📅 日付が決まってる</button>
-      <button class="fchip" type="button" data-f="オフライン" aria-pressed="false">🏪 店舗</button>
-      <button class="fchip" type="button" data-f="パッケージ" aria-pressed="false">📦 パッケージ</button>
-      <button class="fchip" type="button" data-f="オンライン" aria-pressed="false">💻 オンライン</button>
-      <button class="fchip" type="button" data-f="平日日中" aria-pressed="false">☀ 平日日中</button>
-      <button class="fchip" type="button" data-f="平日夜" aria-pressed="false">🌙 平日夜</button>
-      <button class="fchip" type="button" data-f="土日祝日中" aria-pressed="false">☀ 土日祝日中</button>
-      <button class="fchip" type="button" data-f="土日祝夜" aria-pressed="false">🌙 土日祝夜</button>
+      <div class="frow">
+        <button class="fchip" type="button" data-f="mine" aria-pressed="false" hidden>★ 自分の募集</button>
+        <button class="fchip" type="button" data-f="dated" aria-pressed="false">📅 日付が決まってる</button>
+      </div>
+      <div class="frow">
+        <button class="fchip" type="button" data-f="平日日中" aria-pressed="false">☀ 平日日中</button>
+        <button class="fchip" type="button" data-f="平日夜" aria-pressed="false">🌙 平日夜</button>
+        <button class="fchip" type="button" data-f="土日祝日中" aria-pressed="false">☀ 土日祝日中</button>
+        <button class="fchip" type="button" data-f="土日祝夜" aria-pressed="false">🌙 土日祝夜</button>
+      </div>
+      <div class="frow">
+        <button class="fchip" type="button" data-f="オフライン" aria-pressed="false">🏪 店舗</button>
+        <button class="fchip" type="button" data-f="パッケージ" aria-pressed="false">📦 パッケージ</button>
+        <button class="fchip" type="button" data-f="オンライン" aria-pressed="false">💻 オンライン</button>
+      </div>
     </div>
     <div class="rc-grid" id="recruits"></div>
   </div>
