@@ -553,7 +553,7 @@ function parsePaid(rows){
     if(iState<0 && /支払|入金|状態|ステータス/.test(k)) iState=i;
   });
   if(iName<0 && iXid<0) iName=0;   // 見出しがなければ1列目を名前とみなす
-  var names={}, xids={};
+  var names={}, xids={}, byName={};
   rows.slice(1).forEach(function(r){
     if(iState>=0){
       var st=String(r[iState]||"").trim();
@@ -563,13 +563,20 @@ function parsePaid(rows){
     var x=iXid>=0 ? normX(r[iXid]) : "";
     if(n) names[n]=true;
     if(x) xids[x]=true;
+    if(n){ (byName[n]=byName[n]||{})[x||"-"]=true; }
+  });
+  // 同じ名前で別のXのIDが複数あるときは、名前での照合をやめる
+  // （「さっちゃん」が2人いるようなとき、払っていない方を払った扱いにしないため）
+  Object.keys(byName).forEach(function(n){
+    if(Object.keys(byName[n]).length > 1) delete names[n];
   });
   return { names:names, xids:xids };
 }
 function hasPaid(name, xid){
   if(!S.paid) return false;                      // 名簿が読めないときは全員に出す（未払い扱い）
   var n=norm(name), x=normX(xid);
-  return !!((n && S.paid.names[n]) || (x && S.paid.xids[x]));
+  if(x && S.paid.xids[x]) return true;           // XのIDが合えば確実
+  return !!(n && S.paid.names[n]);               // IDが無い人は名前で（同名が複数いる名前は上で外してある）
 }
 function payHTML(mini){
   var g=function(k){ return String(S.settings[k]||"").trim(); };

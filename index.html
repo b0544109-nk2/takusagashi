@@ -1770,7 +1770,14 @@ function applyData(d){
   if(gated){ STATE.pendingMonitor=false; STATE.loadedOnce=true; return; }
   STATE.icons=d.icons||{};
   STATE.nameToXid={};
-  (d.people||[]).concat(d.recruits||[]).forEach(function(p){ var k=normX(p.xid); if(k) STATE.nameToXid[norm(p.name)]=k; });
+  // 同じ名前で別のXのIDの人がいたら、その名前からはアイコンを引かない（取り違え防止。頭文字が出る）
+  var xidSeen={};
+  (d.people||[]).concat(d.recruits||[]).forEach(function(p){
+    var k=normX(p.xid); if(!k) return;
+    var n=norm(p.name); if(!n) return;
+    if(xidSeen[n] && xidSeen[n]!==k){ STATE.nameToXid[n]=""; return; }
+    xidSeen[n]=k; STATE.nameToXid[n]=k;
+  });
   try{ STATE.quick=JSON.parse(s["その場で卓を立てるフォーム送信先"]||""); }catch(e){ STATE.quick=null; }
   try{ STATE.eventPost=JSON.parse(s["成立報告フォーム送信先"]||""); }catch(e){ STATE.eventPost=null; }
   document.getElementById("openQuick").hidden=!STATE.quick;
