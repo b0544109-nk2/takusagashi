@@ -226,6 +226,11 @@
   .status{text-align:center;color:var(--muted);font-size:.74rem;margin-top:26px;font-weight:700}
 
   /* タブ */
+  .tabs-hint{display:none;margin:22px 0 -6px;text-align:center;font-size:.8rem;font-weight:700;color:var(--ink)}
+  /* まだ一度もタブを押していない人にだけ出す案内。押したら body から class が外れて消える */
+  body.tabs-new .tabs-hint{display:block}
+  .tabs-hint b{font-weight:400;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;
+    background:var(--yellow);border:2.5px solid var(--ink);border-radius:999px;padding:2px 11px;box-shadow:2px 2px 0 var(--ink)}
   .tabs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:24px 0 0}
   .tab{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:.95rem;color:var(--ink);background:#fff;
     border:3px solid var(--ink);border-radius:14px;padding:10px 16px;box-shadow:3px 3px 0 var(--ink);cursor:pointer}
@@ -236,6 +241,11 @@
   .tab:focus-visible,.fchip:focus-visible,.rec-badge:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .tab b{font-weight:400;background:var(--yellow);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:0 7px;font-size:.72rem;margin-left:6px}
   .tab[aria-selected="true"] b{background:var(--pink);color:#fff}
+  /* 初見のうちは、まだ押していないタブがゆっくり上下して「押せる」と伝える */
+  @keyframes tabnudge{0%,72%,100%{translate:0 0}80%{translate:0 -4px}88%{translate:0 -1px}}
+  body.tabs-new .tab[aria-selected="false"]{animation:tabnudge 2.6s ease-in-out infinite}
+  body.tabs-new #tabWant{animation-delay:.18s}
+  body.tabs-new #tabEst{animation-delay:.36s}
 
   /* 卓募集 */
   .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:26px 0 18px}
@@ -246,6 +256,9 @@
   /* しぼりこみは「自分/日付」「曜日・時間帯」「形式」の3段に分けて並べる */
   #viewRecruit .filters{display:flex;flex-direction:column;align-items:stretch;gap:7px}
   #viewRecruit .filters span{margin:0 0 1px}
+  /* 並びかえは絞り込みのすぐ下。ランダムのときだけ「混ぜ直せる」と見せる */
+  #viewRecruit .filters.sorts{margin-top:-8px}
+  .sorts .fchip[aria-pressed="true"][data-s="random"]::after{content:" 🔀"}
   .frow{display:flex;gap:7px;flex-wrap:wrap}
   @media (max-width:720px){
     #viewRecruit .filters{margin:20px 0 16px}
@@ -539,7 +552,8 @@
     .tab{flex:1 1 0;min-width:0;padding:9px 3px;font-size:clamp(.6rem,3.4vw,.82rem);white-space:nowrap;text-align:center}
     .tab b{margin-left:3px;padding:0 4px;font-size:.62em}
   }
-  @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash{animation:none}.tk{transition:none}}
+  @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash,
+    body.tabs-new .tab[aria-selected="false"]{animation:none}.tk{transition:none}}
 </style>
 </head>
 <body class="booting">
@@ -549,7 +563,7 @@
 
 <div class="wrap">
   <header>
-    <div class="kicker">#マダミス好きクルーズ交流会2026</div>
+    <div class="kicker">#マダミス好きクルーズ2026</div>
     <h1><span class="main">卓さがしボード</span><span class="sub">卓メンバー募集中</span></h1>
     <p class="demo" id="demo" hidden></p>
   </header>
@@ -562,6 +576,7 @@
   </section>
 
   <div id="boardMain">
+  <p class="tabs-hint" aria-hidden="true"><b>👆 この3つは押して切りかえられるよっ</b></p>
   <nav class="tabs" role="tablist" aria-label="表示の切り替え">
     <button class="tab" role="tab" id="tabRecruit" data-view="recruit" aria-selected="true" aria-controls="viewRecruit">📣 卓募集っ<b id="recCount">0</b></button>
     <button class="tab" role="tab" id="tabWant" data-view="want" aria-selected="false" aria-controls="viewWant">🙋 遊びたいっ</button>
@@ -649,6 +664,15 @@
         <button class="fchip" type="button" data-f="オフライン" aria-pressed="false">🏪 店舗</button>
         <button class="fchip" type="button" data-f="パッケージ" aria-pressed="false">📦 パッケージ</button>
         <button class="fchip" type="button" data-f="オンライン" aria-pressed="false">💻 オンライン</button>
+      </div>
+    </div>
+    <div class="filters sorts" role="group" aria-label="並びかえ">
+      <span>ならびかえ</span>
+      <div class="frow">
+        <button class="fchip" type="button" data-s="random" aria-pressed="true" title="もう一度押すと混ぜ直します">🎲 ランダム</button>
+        <button class="fchip" type="button" data-s="left" aria-pressed="false">🔥 あと少し</button>
+        <button class="fchip" type="button" data-s="new" aria-pressed="false">🆕 あたらしい</button>
+        <button class="fchip" type="button" data-s="want" aria-pressed="false">🙋 遊びたい人</button>
       </div>
     </div>
     <div class="rc-grid" id="recruits"></div>
@@ -919,6 +943,29 @@ function saveMe(v){ try{ if(v) localStorage.setItem(ME_KEY,v); else localStorage
 
 var STATE = { groups:[], free:[], doneTitles:[], entries:[], stats:{}, sort:"count", q:"", me:loadMe(), onlyMe:false, editingMe:false };
 
+/* ===== 卓募集の並びかえ ===== */
+var RSORT_KEY = "takusagashi.rsort", RSORTS = { random:1, left:1, "new":1, want:1 };
+function loadRSort(){ try{ var v=localStorage.getItem(RSORT_KEY); return RSORTS[v] ? v : "random"; }catch(e){ return "random"; } }
+function saveRSort(v){ try{ localStorage.setItem(RSORT_KEY, v); }catch(e){} }
+STATE.rSort = loadRSort();
+// ランダムは「種」から決める。30秒ごとの自動更新や絞り込みで並びが飛ばないように、
+// 混ぜ直すのは🎲をもう一度押したときだけ。
+STATE.rSeed = String(Math.floor(Math.random()*1e9));
+function rndKey(r){ return hash(String(r.id)+"|"+STATE.rSeed); }
+function leftOf(r){ return r.need>0 ? r.need : 999; }   // 募集人数が未記入の募集は後ろへ
+function dateKey(r){ return r.d ? r.d.getTime() : 8e15; }
+function sortRecruits(list){
+  var s = RSORTS[STATE.rSort] ? STATE.rSort : "random";
+  if(s==="want") list.forEach(function(r){ r.wn=wantersOf(r).length; });
+  list.sort(function(a,b){
+    if(s==="left") return leftOf(a)-leftOf(b) || dateKey(a)-dateKey(b) || rndKey(a)-rndKey(b);
+    if(s==="new")  return (b.ts||0)-(a.ts||0) || rndKey(a)-rndKey(b);
+    if(s==="want") return b.wn-a.wn || rndKey(a)-rndKey(b);
+    return rndKey(a)-rndKey(b);
+  });
+  return list;
+}
+
 // 名前が完全に同じときだけ自分とみなす（部分一致だと「まる」さんが「まるさら」さんの募集まで自分のものとして扱ってしまう）
 function isMe(name){
   var m=norm(STATE.me); if(!m) return false;
@@ -1162,9 +1209,7 @@ function setRecruits(list){
     else if(r.done || ev){ r.closedEvent=ev||null; closed.push(r); }
     else if(!r.d || r.left>=0) open.push(r);   // 日付を過ぎた募集は自動で消す
   });
-  var left=function(r){ return r.need>0 ? r.need : 999; };
-  open.sort(function(a,b){ return left(a)-left(b) || (a.d&&b.d ? a.d-b.d : a.d ? -1 : b.d ? 1 : 0); });
-  STATE.recruits=open; STATE.closedRecruits=closed; STATE.withdrawnRecruits=withdrawn;
+  STATE.recruits=open;   // 並びは renderRecruits() の sortRecruits() で決める STATE.closedRecruits=closed; STATE.withdrawnRecruits=withdrawn;
 }
 // XのIDの表記ゆれ（@付き・URL・大文字）をそろえる
 function normX(s){
@@ -1289,7 +1334,7 @@ document.addEventListener("click", function(e){
   rs.forEach(function(r,i){ var el=document.getElementById(r.id); if(el){ if(i===0) el.scrollIntoView({block:"center", behavior:"smooth"}); flashEl(el); } });
 });
 function renderRecruits(){
-  var list=(STATE.recruits||[]).filter(passFilter).filter(recMatch);
+  var list=sortRecruits((STATE.recruits||[]).filter(passFilter).filter(recMatch));
   document.getElementById("recCount").textContent=(STATE.recruits||[]).length;
   document.getElementById("rhits").textContent = STATE.rq ? ("「"+STATE.rq+"」で "+list.length+"件") : "";
   document.getElementById("rclear").hidden = !STATE.rq;
@@ -1494,7 +1539,14 @@ document.addEventListener("keydown",function(e){
   else if(e.key==="Escape" && !document.fullscreenElement){ closeMonitor(); }
 });
 
-document.querySelectorAll(".tab[data-view]").forEach(function(t){ t.addEventListener("click",function(){ setView(t.dataset.view); }); });
+var TABS_SEEN="takusagashi.tabsSeen";
+try{ if(!localStorage.getItem(TABS_SEEN)) document.body.classList.add("tabs-new"); }catch(e){}
+function tabsSeen(){
+  if(!document.body.classList.contains("tabs-new")) return;
+  document.body.classList.remove("tabs-new");
+  try{ localStorage.setItem(TABS_SEEN,"1"); }catch(e){}
+}
+document.querySelectorAll(".tab[data-view]").forEach(function(t){ t.addEventListener("click",function(){ tabsSeen(); setView(t.dataset.view); }); });
 document.querySelectorAll(".fchip").forEach(function(b){ b.addEventListener("click",function(){
   STATE.rFilter=STATE.rFilter||{}; STATE.rFilter[b.dataset.f]=!STATE.rFilter[b.dataset.f];
   b.setAttribute("aria-pressed", String(!!STATE.rFilter[b.dataset.f])); renderRecruits(); }); });
@@ -1609,7 +1661,7 @@ function parseAnswers(rows){
       var get=function(f){ return m[f]>=0 ? (r[m[f]]||"").trim() : ""; };
       if(!get("title")) return;
       var fmt=get("format").normalize("NFKC");
-      recruits.push({ id:"r"+hash(name+"|"+i).toString(36), name:name, xid:xid, title:get("title"),
+      recruits.push({ id:"r"+hash(name+"|"+i).toString(36), name:name, xid:xid, title:get("title"), ts:lastT[norm(name)]||0,
         format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
         months:get("months"), days:get("days").replace(/,\s*/g,"・"), time:get("time").replace(/,\s*/g,"・"), when4:splitList(get("when4")),
         need:parseInt(get("need").normalize("NFKC"),10)||0, note:get("note"), done:!!get("done"),
@@ -1691,7 +1743,7 @@ function parseQuickRecruits(rows){
   var get=function(r,k){ return c[k]>=0 ? (r[c[k]]||"").trim() : ""; };
   return rows.slice(1).filter(function(r){ return get(r,"name") && get(r,"title"); }).map(function(r,i){
     var fmt=get(r,"format").normalize("NFKC");
-    return { id:"q"+hash(get(r,"name")+"|"+get(r,"title")+"|"+i).toString(36), name:get(r,"name"), xid:get(r,"xid"), title:get(r,"title"),
+    return { id:"q"+hash(get(r,"name")+"|"+get(r,"title")+"|"+i).toString(36), name:get(r,"name"), xid:get(r,"xid"), title:get(r,"title"), ts:tsValue(r[0]),
       format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
       months:get(r,"months"), days:get(r,"days"), time:get(r,"time"), when4:splitList(get(r,"when4")),
       need:parseInt(get(r,"need").normalize("NFKC"),10)||0, note:get(r,"note"), done:false,
@@ -1723,7 +1775,8 @@ function demoData(){
   return {
     // 卓決定フラグは動作イメージとして一部にだけ付ける（決定的な疑似ランダム）
     people: DEMO.map(function(r){ return { name:r[0], slots:[r[1],r[2],r[3]].map(function(t,i){ return { text:t||"", done:!!t && hash(r[0]+"|"+i)%100<13 }; }) }; }),
-    recruits: DEMO_RECRUITS.map(function(r){ var x=Object.assign({}, r);
+    recruits: DEMO_RECRUITS.map(function(r,i){ var x=Object.assign({}, r);
+      x.ts=Date.now()-(hash(r.name+"|"+r.title)%(14*86400000));   // デモは「あたらしい順」も動くように仮の時刻を入れる
       if(/^\+\d+$/.test(x.date||"")){ var d=new Date(t0); d.setDate(d.getDate()+parseInt(x.date,10)); x.date=ymd(d); } return x; }),
     // 当日Webで成立した例（架空）
     events: [
@@ -1856,6 +1909,16 @@ document.getElementById("clear").addEventListener("click",function(){ qEl.value=
 var rqEl=document.getElementById("rq"), rtmr;
 rqEl.addEventListener("input",function(){ clearTimeout(rtmr); rtmr=setTimeout(function(){ STATE.rq=rqEl.value.trim(); renderRecruits(); },120); });
 document.getElementById("rclear").addEventListener("click",function(){ setRecSearch(""); renderRecruits(); rqEl.focus(); });
+// 並びかえ：1つだけ選ぶ。ランダムをもう一度押したら混ぜ直す
+document.querySelectorAll(".sorts .fchip[data-s]").forEach(function(b){ b.addEventListener("click",function(){
+  var again = STATE.rSort===b.dataset.s;
+  STATE.rSort=b.dataset.s; saveRSort(STATE.rSort);
+  if(again && STATE.rSort==="random"){ STATE.rSeed=String(Math.floor(Math.random()*1e9)); showToast("🔀 混ぜ直したよっ"); }
+  document.querySelectorAll(".sorts .fchip[data-s]").forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
+  renderRecruits(); }); });
+document.querySelectorAll(".sorts .fchip[data-s]").forEach(function(b){
+  b.setAttribute("aria-pressed", String(b.dataset.s===STATE.rSort)); });
+
 document.querySelectorAll(".seg button").forEach(function(b){ b.addEventListener("click",function(){
   STATE.sort=b.dataset.sort;
   document.querySelectorAll(".seg button").forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
