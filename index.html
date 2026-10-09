@@ -1209,7 +1209,8 @@ function setRecruits(list){
     else if(r.done || ev){ r.closedEvent=ev||null; closed.push(r); }
     else if(!r.d || r.left>=0) open.push(r);   // 日付を過ぎた募集は自動で消す
   });
-  STATE.recruits=open;   // 並びは renderRecruits() の sortRecruits() で決める STATE.closedRecruits=closed; STATE.withdrawnRecruits=withdrawn;
+  // 並びは renderRecruits() の sortRecruits() で決める
+  STATE.recruits=open; STATE.closedRecruits=closed; STATE.withdrawnRecruits=withdrawn;
 }
 // XのIDの表記ゆれ（@付き・URL・大文字）をそろえる
 function normX(s){
