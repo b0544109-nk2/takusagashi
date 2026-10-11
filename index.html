@@ -70,6 +70,26 @@
   .kicker{display:inline-block;background:var(--cyan);color:#fff;border:3px solid var(--ink);border-radius:999px;
     padding:5px 16px;font-weight:700;font-size:.78rem;letter-spacing:.08em;box-shadow:3px 3px 0 var(--ink);rotate:-2deg;margin-bottom:16px}
   h1{margin:0;line-height:1.15;display:flex;flex-direction:column;align-items:center;gap:14px}
+  /* 乾杯スタンプ：見出しの右に、紙に押したみたいに少し重ねて置く */
+  header{position:relative}
+  body.stamped header h1{translate:-9% 0}                 /* 印のぶん、ロゴを少し左へ寄せる */
+  body.stamped .kicker{translate:-9% 0}
+  /* 傾けているぶん見た目の箱が1割ほど広がるので、右端に余白をとる（横スクロール防止） */
+  .boarding-stamp{position:absolute;right:4px;top:50%;width:132px;height:132px;translate:0 -46%;
+    rotate:-9deg;pointer-events:none;z-index:2;opacity:0}
+  .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
+  .boarding-stamp.on{animation:stampDrop .46s cubic-bezier(.2,1.5,.42,1) forwards}
+  @keyframes stampDrop{
+    0%{opacity:0;scale:2.4;rotate:-26deg;filter:blur(1.4px)}
+    60%{opacity:.95;scale:.94;rotate:-7deg;filter:blur(0)}
+    100%{opacity:.92;scale:1;rotate:-9deg;filter:blur(0)}
+  }
+  @media (max-width:720px){
+    .boarding-stamp{width:96px;height:96px;right:2px}
+    body.stamped header h1{translate:-12% 0}
+    body.stamped .kicker{translate:-12% 0}
+  }
+  @media (max-width:420px){ .boarding-stamp{width:86px;height:86px;right:0} }
   h1 .main{display:inline-block;background:var(--pink);color:#fff;border:4px solid var(--ink);border-radius:18px;
     padding:10px 22px;font-size:clamp(1.6rem,6.4vw,2.5rem);box-shadow:6px 6px 0 var(--ink);rotate:-1.5deg;
     text-shadow:2px 2px 0 rgba(0,0,0,.18);text-wrap:balance}
@@ -558,7 +578,8 @@
     .tab b{margin-left:3px;padding:0 4px;font-size:.62em}
   }
   @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash,
-    body.tabs-new .tab[aria-selected="false"]{animation:none}.tk{transition:none}}
+    body.tabs-new .tab[aria-selected="false"]{animation:none}.tk{transition:none}
+    .boarding-stamp.on{animation:none;opacity:.92}}
 </style>
 </head>
 <body class="booting">
@@ -570,6 +591,7 @@
   <header>
     <div class="kicker">#マダミス好きクルーズ2026</div>
     <h1><span class="main">卓さがしボード</span><span class="sub">卓メンバー募集中</span></h1>
+    <div class="boarding-stamp" id="boardingStamp" aria-hidden="true" hidden></div>
     <p class="demo" id="demo" hidden></p>
   </header>
 
@@ -934,6 +956,77 @@ function playersLabel(i){ return i.max&&i.max!==i.min ? i.min+"〜"+i.max+"人" 
 function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function hash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 function textOn(hex){ var r=parseInt(hex.substr(1,2),16),g=parseInt(hex.substr(3,2),16),b=parseInt(hex.substr(5,2),16); return (0.299*r+0.587*g+0.114*b)/255>0.62?"#1d2242":"#ffffff"; }
+
+/* ===== 乾杯スタンプ =====
+   乾杯のあとに押される記念印。全12色で、どの色になるかは名前から決まる（上下は無い）。
+   いまは ?stamp=preview のときだけ出す。本番は乾杯のログを受けて出す予定。 */
+var STAMP_INK=["#c63b32","#245886","#17766f","#386c3d","#754d86","#9b4938",
+               "#70543d","#a16a16","#24738f","#5a5795","#3f5567","#963e61"];
+// 同じ版でも押すたびに出る、かすれ・濃さ・傾きの癖
+var STAMP_WEAR=[
+  {d:"245 4 92 3 180",o:0,w:5.2,r:-2},   {d:"118 3 54 9 162 4 90",o:9,w:5.8,r:4},
+  {d:"205 13 38 4 126 7 88",o:-15,w:4.8,r:-7}, {d:"72 3 148 5 44 11 173",o:21,w:5.4,r:8},
+  {d:"154 4 31 3 92 14 134",o:-26,w:5.9,r:-4}, {d:"260 10 46 3 64 5 120",o:13,w:4.7,r:6},
+  {d:"88 8 196 3 74 12 106",o:-8,w:5.6,r:-9},  {d:"132 3 70 4 35 16 159",o:29,w:5.0,r:3},
+  {d:"224 5 28 12 104 3 91",o:-34,w:5.7,r:10}, {d:"61 4 181 8 53 4 144",o:17,w:4.9,r:-5},
+  {d:"176 11 42 3 188 5 67",o:-19,w:5.5,r:7},  {d:"101 3 124 14 38 4 163",o:32,w:5.1,r:-10}
+];
+function stampShip(){
+  return '<g transform="translate(12 -1) scale(.88)" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'
+   +'<path d="M30 117h139l-9 18q-4 9-17 10H57q-13-1-20-11z" fill="currentColor" stroke-width="4"/>'
+   +'<path d="M45 91h101l17 26H35z" fill="#fffdfa" stroke-width="5"/>'
+   +'<path d="M64 68h66l15 23H52z" fill="#fffdfa" stroke-width="5"/>'
+   +'<path d="M78 68V55h39l10 13M96 55V46m-9 0h18" fill="none" stroke-width="5"/>'
+   +'<path d="M51 87h88M60 65h70M38 111h119" fill="none" stroke-width="3"/>'
+   +'<g fill="currentColor" stroke="none">'
+   +'<rect x="54" y="98" width="17" height="10" rx="3"/><rect x="77" y="98" width="17" height="10" rx="3"/>'
+   +'<rect x="100" y="98" width="17" height="10" rx="3"/><rect x="123" y="98" width="17" height="10" rx="3"/>'
+   +'<rect x="68" y="75" width="15" height="9" rx="3"/><rect x="90" y="75" width="15" height="9" rx="3"/>'
+   +'<rect x="112" y="75" width="15" height="9" rx="3"/></g>'
+   +'<g fill="#fffdfa" stroke="none"><circle cx="63" cy="128" r="4"/><circle cx="145" cy="128" r="4"/></g>'
+   +'<path d="M35 153q14-10 28 0t28 0 28 0 28 0 28 0" fill="none" stroke-width="6"/>'
+   +'<path d="M54 161q11-7 22 0t22 0 22 0 22 0" fill="none" stroke-width="3"/></g>';
+}
+function stampSvg(i){
+  var w=STAMP_WEAR[i], ink=STAMP_INK[i], id="bs"+i;
+  return '<svg viewBox="0 0 200 200" role="img" aria-label="乗船記念印" style="color:'+ink+'">'
+   +'<defs><path id="a'+id+'" d="M28 104a72 72 0 1 1 144 0"/>'
+   +'<filter id="f'+id+'"><feTurbulence baseFrequency=".028" numOctaves="2" seed="'+(i+3)+'" result="n"/>'
+   +'<feDisplacementMap in="SourceGraphic" in2="n" scale="1.35"/></filter>'
+   +'<mask id="m'+id+'"><rect width="200" height="200" fill="white"/><g fill="black" opacity=".7">'
+   +'<circle cx="'+(38+i*3)+'" cy="31" r="1.5"/><circle cx="151" cy="'+(49+i*2)+'" r="1.1"/>'
+   +'<circle cx="86" cy="118" r="1.8"/><circle cx="123" cy="164" r="1.3"/>'
+   +'<path d="M20 '+(92+i)+'h17v1.5H20zM145 '+(126-i)+'h22v1.3h-22zM67 '+(43+i)+'h11v1.1H67z"/></g></mask></defs>'
+   +'<g filter="url(#f'+id+')" mask="url(#m'+id+')">'
+   +'<circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="'+Math.max(4.2,w.w-0.7)+'" opacity=".78"/>'
+   +'<circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="'+(w.w+1.1)+'" opacity=".34"'
+   +' stroke-dasharray="'+w.d+'" stroke-dashoffset="'+w.o+'" transform="rotate('+w.r+' 100 100)"/>'
+   +'<circle cx="100" cy="100" r="84" fill="none" stroke="currentColor" stroke-width="2.6" stroke-dasharray="150 3 72 2 170"/>'
+   +'<text fill="currentColor" font-family="sans-serif" font-size="11.5" font-weight="900" letter-spacing=".15">'
+   +'<textPath href="#a'+id+'" startOffset="50%" text-anchor="middle">#マダミス好きクルーズ2026</textPath></text>'
+   +stampShip()
+   +'<rect x="70" y="145" width="60" height="17" rx="3" fill="#fffdfa" stroke="currentColor" stroke-width="2"/>'
+   +'<text x="100" y="157" text-anchor="middle" fill="currentColor" font-family="monospace" font-size="9" font-weight="800">2026.10.15</text>'
+   +'<g transform="translate(100 172.5) scale(.50)" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">'
+   +'<g transform="rotate(-12 -18 2)"><path d="M-29-7h19v19q0 5-5 5h-9q-5 0-5-5z"/><path d="M-29-1h-5q-6 0-6 6t6 6h5"/>'
+   +'<path d="M-27-7q2-6 6 0q3-7 7 0"/><path d="M-26 2h13"/></g>'
+   +'<g transform="rotate(12 18 2)"><path d="M10-7h19v19q0 5-5 5h-9q-5 0-5-5z"/><path d="M29-1h5q6 0 6 6t-6 6h-5"/>'
+   +'<path d="M12-7q2-6 6 0q3-7 7 0"/><path d="M13 2h13"/></g>'
+   +'<path d="M-3-14 0-20l3 6M-8-13l-5-5M8-13l5-5"/></g></g></svg>';
+}
+// 名前が無い端末でも色が決まるように、端末ごとの種をひとつ覚えておく
+function stampIndex(){
+  var nm=norm(STATE.me||"");
+  if(!nm){ try{ nm=localStorage.getItem("takusagashi.stampSeed")||""; }catch(e){}
+    if(!nm){ nm="s"+Math.floor(Math.random()*1e9); try{ localStorage.setItem("takusagashi.stampSeed",nm); }catch(e){} } }
+  return hash(nm)%STAMP_INK.length;
+}
+function showBoardingStamp(){
+  var el=document.getElementById("boardingStamp"); if(!el) return;
+  el.innerHTML=stampSvg(stampIndex()); el.hidden=false;
+  document.body.classList.add("stamped");
+  void el.offsetWidth; el.classList.add("on");
+}
 
 var ME_KEY = "takusagashi.myName";
 function loadMe(){
@@ -2325,6 +2418,8 @@ document.addEventListener("visibilitychange", function(){
 });
 load();
 if(CONFIG.sheetId) schedulePoll();
+// 乾杯スタンプ：いまは確認用。?stamp=preview を付けたときだけ押す
+if(/(^|[?&])stamp=preview(&|$)/.test(location.search)) setTimeout(showBoardingStamp, 700);
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
 </body>
