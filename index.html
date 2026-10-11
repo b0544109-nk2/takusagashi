@@ -1039,19 +1039,30 @@ var STAMPED_KEY="takusagashi.stamped";
 function alreadyStamped(){ try{ return localStorage.getItem(STAMPED_KEY)==="1"; }catch(e){ return false; } }
 function markStamped(){ try{ localStorage.setItem(STAMPED_KEY,"1"); }catch(e){} }
 // 乾杯の合図が出ているか。幹事の「乾杯」ログか、保険の時刻を過ぎたか
-function kanpaiDone(evs){
+// 合図を出している行そのものを返す（あとから取り消せるように）
+function kanpaiEvent(evs){
   var cancelled={};
   (evs||[]).forEach(function(e){ if(e.type==="取り消し" && e.target) cancelled[e.target]=1; });
-  if((evs||[]).some(function(e){ return e.type==="乾杯" && !cancelled[e.id]; })) return true;
+  var hit=(evs||[]).filter(function(e){ return e.type==="乾杯" && !cancelled[e.id]; });
+  return hit.length ? hit[hit.length-1] : null;
+}
+function kanpaiByTime(){
   var t=Date.parse(CONFIG.kanpaiAuto||"");
   return !isNaN(t) && Date.now()>=t;
 }
+function kanpaiDone(evs){ return !!kanpaiEvent(evs) || kanpaiByTime(); }
 function checkKanpai(evs){
-  var on=kanpaiDone(evs);
-  // 幹事には、まだ押していないときだけボタンを出す
-  var row=document.getElementById("kanpaiRow");
-  if(row) row.hidden = !(CONFIG.staff && STATE.eventPost && !on);
-  if(!on) return;
+  var ev=kanpaiEvent(evs), on=!!ev || kanpaiByTime();
+  STATE.kanpaiEv=ev;
+  // 幹事には出す前も出したあともボタンを置く（押し間違えても戻せるように）。
+  // 時刻で自動的に出ているときは取り消しようがないので引っ込める
+  var row=document.getElementById("kanpaiRow"), btn=document.getElementById("kanpaiBtn");
+  if(row && btn){
+    row.hidden = !(CONFIG.staff && STATE.eventPost) || (on && !ev);
+    btn.textContent = ev ? "🥂 乾杯の合図を取り消す" : "🥂 乾杯した（全員にスタンプ）";
+    btn.classList.toggle("ghost", !!ev);
+  }
+  if(!on || STATE.noStampThisLoad) return;
   if(alreadyStamped()) showBoardingStamp(false);   // もう押してある
   else { showBoardingStamp(true); markStamped(); } // この人にとっての初回
 }
@@ -2186,16 +2197,24 @@ function findRecruit(id){ return (STATE.recruits||[]).filter(function(r){ return
 
 /* ===== 電波がないときに押した操作は、端末に取っておいて、つながったら自動で送る ===== */
 document.getElementById("kanpaiBtn").addEventListener("click", function(){
+  var cur=STATE.kanpaiEv;
+  if(cur){   // すでに出ているので取り消す
+    ask({ title:"🥂 乾杯の合図を取り消す",
+          lines:["スタンプが押されるのをやめます。",
+                 "すでに押された人の画面からは消えませんが、まだ開いていない人には押されません。"],
+          ok:"取り消す", no:"やめる", danger:true }, function(){
+      var ev=recordEvent({ type:"取り消し", target:cur.id, reporter:STATE.me||"幹事", recruiter:"", title:"", note:"" });
+      showToast(ev ? "合図を取り消しました" : "⚠ 送れませんでした。電波のいい場所でもう一度押してね");
+    });
+    return;
+  }
   ask({ title:"🥂 乾杯の合図を出す",
         lines:["参加者がボードを開いたときに、乗船スタンプが押されるようになります。",
                "画面を開いたままの人には1分ほどで伝わります。"],
         ok:"合図を出す", no:"まだ" }, function(){
     var ev=recordEvent({ type:"乾杯", reporter:STATE.me||"幹事", recruiter:"", title:"", note:"" });
     if(!ev){ showToast("⚠ 送れませんでした。電波のいい場所でもう一度押してね"); return; }
-    showToast("🥂 乾杯の合図を出しました", function(){
-      recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"幹事", recruiter:"", title:"", note:"" });
-      showToast("合図を取り消しました");
-    });
+    showToast("🥂 乾杯の合図を出しました。もう一度ボタンを押せば取り消せます", null, 8000);
   });
 });
 
@@ -2462,6 +2481,11 @@ document.addEventListener("visibilitychange", function(){
 load();
 if(CONFIG.sheetId) schedulePoll();
 // 乾杯スタンプ：いまは確認用。?stamp=preview を付けたときだけ押す
+if(/(^|[?&])stamp=reset(&|$)/.test(location.search)){
+  try{ localStorage.removeItem(STAMPED_KEY); }catch(e){}
+  STATE.noStampThisLoad=true;   // この表示のあいだは押し直さない（消したそばから戻らないように）
+  showToast("この端末の「もう押した」を消しました。開き直すと最初から落ちてきます", null, 6000);
+}
 if(/(^|[?&])stamp=preview(&|$)/.test(location.search)) setTimeout(function(){ showBoardingStamp(true); }, 700);
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
