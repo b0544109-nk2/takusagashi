@@ -80,6 +80,7 @@
   .boarding-stamp{position:absolute;right:4px;top:50%;width:172px;height:172px;translate:0 -43%;
     rotate:-9deg;pointer-events:none;z-index:2;opacity:0}
   .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
+  .kanpai-row{margin:16px 0 0;text-align:center;position:relative;z-index:3}
   .boarding-stamp.on{animation:stampDrop .46s cubic-bezier(.2,1.5,.42,1) forwards}
   @keyframes stampDrop{
     0%{opacity:0;scale:2.4;rotate:-26deg;filter:blur(1.4px)}
@@ -594,6 +595,7 @@
     <h1><span class="main">マダミスボード</span></h1>
     <div class="boarding-stamp" id="boardingStamp" aria-hidden="true" hidden></div>
     <p class="demo" id="demo" hidden></p>
+    <p class="kanpai-row" id="kanpaiRow" hidden><button class="btn" type="button" id="kanpaiBtn">🥂 乾杯した（全員にスタンプ）</button></p>
   </header>
 
   <section class="gate" id="gate" hidden>
@@ -849,7 +851,9 @@ var CONFIG = {
   slideMs: 10000,
   refreshMs: 45000,        // 船の上で引くデータを減らす。手に取った瞬間は別途すぐ読み直す
   infoRefreshMs: 600000,    // マスタ（シナリオ情報）は10分に1回
-  slowRefreshMs: 600000     // 設定・アイコンもめったに変わらないので10分に1回
+  slowRefreshMs: 600000,    // 設定・アイコンもめったに変わらないので10分に1回
+  // 乾杯スタンプの保険。幹事が押せなかった（圏外など）ときは、この時刻になったら自動で押す
+  kanpaiAuto: "2026-10-15T20:15:00+09:00"
 };
 
 // 卓募集のサンプル（架空の募集者）。date があれば日付指定、なければ「時期・曜日・時間帯」のざっくり指定
@@ -1022,11 +1026,34 @@ function stampIndex(){
     if(!nm){ nm="s"+Math.floor(Math.random()*1e9); try{ localStorage.setItem("takusagashi.stampSeed",nm); }catch(e){} } }
   return hash(nm)%STAMP_INK.length;
 }
-function showBoardingStamp(){
-  var el=document.getElementById("boardingStamp"); if(!el) return;
+// animate=false なら、もう押してある状態で出す（2回目以降はドンとやらない）
+function showBoardingStamp(animate){
+  var el=document.getElementById("boardingStamp"); if(!el || STATE.stamped) return;
+  STATE.stamped=true;
   el.innerHTML=stampSvg(stampIndex()); el.hidden=false;
   document.body.classList.add("stamped");
-  void el.offsetWidth; el.classList.add("on");
+  if(animate){ void el.offsetWidth; el.classList.add("on"); }
+  else { el.style.opacity=".92"; }
+}
+var STAMPED_KEY="takusagashi.stamped";
+function alreadyStamped(){ try{ return localStorage.getItem(STAMPED_KEY)==="1"; }catch(e){ return false; } }
+function markStamped(){ try{ localStorage.setItem(STAMPED_KEY,"1"); }catch(e){} }
+// 乾杯の合図が出ているか。幹事の「乾杯」ログか、保険の時刻を過ぎたか
+function kanpaiDone(evs){
+  var cancelled={};
+  (evs||[]).forEach(function(e){ if(e.type==="取り消し" && e.target) cancelled[e.target]=1; });
+  if((evs||[]).some(function(e){ return e.type==="乾杯" && !cancelled[e.id]; })) return true;
+  var t=Date.parse(CONFIG.kanpaiAuto||"");
+  return !isNaN(t) && Date.now()>=t;
+}
+function checkKanpai(evs){
+  var on=kanpaiDone(evs);
+  // 幹事には、まだ押していないときだけボタンを出す
+  var row=document.getElementById("kanpaiRow");
+  if(row) row.hidden = !(CONFIG.staff && STATE.eventPost && !on);
+  if(!on) return;
+  if(alreadyStamped()) showBoardingStamp(false);   // もう押してある
+  else { showBoardingStamp(true); markStamped(); } // この人にとっての初回
 }
 
 var ME_KEY = "takusagashi.myName";
@@ -1961,6 +1988,7 @@ function applyData(d){
   if(unsent.length) showToast("⚠ "+unsent.join("、")+"が送れなかったかも。時間をおいてもう一度押してね", null, 10000);
   setRecruits((d.recruits||[]).concat(pending).map(function(r){ return Object.assign({}, r); }));
   build(d.people||[]); buildEstablished(); render();   // render() の中で renderRecruits()・renderEst() まで走る
+  checkKanpai(d.events||[]);
   if(!document.getElementById("monitor").hidden) buildSlides();
   if(STATE.pendingMonitor){ STATE.pendingMonitor=false; openMonitor(); }
   STATE.loadedOnce=true;
@@ -1968,7 +1996,7 @@ function applyData(d){
 function eventLabel(e){
   var t=e.title?"「"+e.title+"」":"";
   return ({ "成立":t+"の成立", "決まった":t+"の決まった", "人数変更":t+"の募集人数の変更", "取り下げ":t+"の取り下げ",
-            "参加":t+"への参加", "取り消し":"取り消し" })[e.type] || (t+"の操作");
+            "参加":t+"への参加", "取り消し":"取り消し", "乾杯":"乾杯の合図" })[e.type] || (t+"の操作");
 }
 function hhmm(t){ return new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"}); }
 function notice(msg){ var n=document.getElementById("demo"); n.hidden=!msg; n.textContent=msg||""; }
@@ -2157,6 +2185,20 @@ function recordEvent(ev){
 function findRecruit(id){ return (STATE.recruits||[]).filter(function(r){ return r.id===id; })[0]; }
 
 /* ===== 電波がないときに押した操作は、端末に取っておいて、つながったら自動で送る ===== */
+document.getElementById("kanpaiBtn").addEventListener("click", function(){
+  ask({ title:"🥂 乾杯の合図を出す",
+        lines:["参加者がボードを開いたときに、乗船スタンプが押されるようになります。",
+               "画面を開いたままの人には1分ほどで伝わります。"],
+        ok:"合図を出す", no:"まだ" }, function(){
+    var ev=recordEvent({ type:"乾杯", reporter:STATE.me||"幹事", recruiter:"", title:"", note:"" });
+    if(!ev){ showToast("⚠ 送れませんでした。電波のいい場所でもう一度押してね"); return; }
+    showToast("🥂 乾杯の合図を出しました", function(){
+      recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"幹事", recruiter:"", title:"", note:"" });
+      showToast("合図を取り消しました");
+    });
+  });
+});
+
 var OUTBOX_KEY="takusagashi.outbox."+CONFIG.sheetId;
 function isOffline(){ return navigator.onLine===false; }
 function readOutbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY)||"[]"); }catch(e){ return []; } }
@@ -2420,7 +2462,7 @@ document.addEventListener("visibilitychange", function(){
 load();
 if(CONFIG.sheetId) schedulePoll();
 // 乾杯スタンプ：いまは確認用。?stamp=preview を付けたときだけ押す
-if(/(^|[?&])stamp=preview(&|$)/.test(location.search)) setTimeout(showBoardingStamp, 700);
+if(/(^|[?&])stamp=preview(&|$)/.test(location.search)) setTimeout(function(){ showBoardingStamp(true); }, 700);
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
 </body>
