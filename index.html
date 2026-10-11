@@ -72,11 +72,9 @@
   h1{margin:0;line-height:1.15;display:flex;flex-direction:column;align-items:center;gap:14px}
   /* 乾杯スタンプ：見出しの右に、紙に押したみたいに少し重ねて置く */
   header{position:relative}
-  /* 印が来る場所をはじめから空けておく。押された瞬間にロゴが動かないように */
-  header h1{translate:-9% 0}
-  .kicker{translate:-9% 0}
+  /* 見出しは中央のまま。印は右上の角に重ねる（押されても何も動かない） */
   /* 傾けているぶん見た目の箱が1割ほど広がるので、右端に余白をとる（横スクロール防止） */
-  .boarding-stamp{position:absolute;right:4px;top:50%;width:132px;height:132px;translate:0 -46%;
+  .boarding-stamp{position:absolute;right:4px;top:50%;width:132px;height:132px;translate:0 -74%;
     rotate:-9deg;pointer-events:none;z-index:2;opacity:0}
   .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
   .boarding-stamp.on{animation:stampDrop .46s cubic-bezier(.2,1.5,.42,1) forwards}
@@ -87,8 +85,6 @@
   }
   @media (max-width:720px){
     .boarding-stamp{width:96px;height:96px;right:2px}
-    header h1{translate:-12% 0}
-    .kicker{translate:-12% 0}
   }
   @media (max-width:420px){ .boarding-stamp{width:86px;height:86px;right:0} }
   h1 .main{display:inline-block;background:var(--pink);color:#fff;border:4px solid var(--ink);border-radius:18px;
@@ -598,7 +594,7 @@
 
   <section class="gate" id="gate" hidden>
     <p class="gate-ship" aria-hidden="true">🚢</p>
-    <h2 class="pop">卓さがしボードは<br>クルーズ当日に公開します！</h2>
+    <h2 class="pop">マダミスボードは<br>クルーズ当日に公開します！</h2>
     <p>いまは事前登録を受け付けています。登録した卓募集と遊びたいシナリオは、当日このボードと船のモニターに並びます。</p>
     <a class="cta" id="gateReg" href="#" hidden>✍️ 事前登録ページへ</a>
   </section>
@@ -816,12 +812,12 @@
 <div class="monitor" id="monitor" hidden aria-label="モニター表示">
   <div class="m-head">
     <div class="m-title">📣 卓メンバー募集中！</div>
-    <div class="m-sub">マダミスクルーズ 卓さがしボード</div>
+    <div class="m-sub">#マダミス好きクルーズ2026</div>
     <div class="m-clock" id="mClock">--:--</div>
   </div>
   <div class="m-grid" id="mGrid"></div>
   <div class="m-bottom">
-    <div class="m-qr"><img src="board-qr.png" alt="卓さがしボードのQRコード"><span>スマホで<br>卓さがしボード</span></div>
+    <div class="m-qr"><img src="board-qr.png" alt="マダミスボードのQRコード"><span>スマホで<br>マダミスボード</span></div>
     <div class="m-hint">気になる卓は、名前の人に声をかけよう！</div>
     <div class="m-prog"><i id="mProg"></i></div>
     <div class="m-page" id="mPage"></div>
@@ -1598,7 +1594,7 @@ function monHot(g){
 }
 function showSlide(){
   var grid=document.getElementById("mGrid"), total=MON.slides.length;
-  if(!total){ grid.innerHTML='<div class="m-empty">まだ募集はありません<br>スマホの「卓さがしボード」から募集してみよう！</div>'; document.getElementById("mPage").textContent=""; return; }
+  if(!total){ grid.innerHTML='<div class="m-empty">まだ募集はありません<br>スマホの「マダミスボード」から募集してみよう！</div>'; document.getElementById("mPage").textContent=""; return; }
   MON.idx=(MON.idx%total+total)%total;
   var s=MON.slides[MON.idx];
   grid.innerHTML=s.items.map(s.type==="hot"?monHot:s.type==="est"?monEst:monCard).join("");
