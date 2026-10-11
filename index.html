@@ -819,7 +819,7 @@ var CONFIG = {
   quickTab: "即時卓募集",    // 「⚡その場で卓を立てる」の送信先タブ
   eventTab: "成立ログ",      // 当日の成立・消し込み・取り消しの記録（追記のみ）
   slideMs: 10000,
-  refreshMs: 30000,
+  refreshMs: 45000,        // 船の上で引くデータを減らす。手に取った瞬間は別途すぐ読み直す
   infoRefreshMs: 600000,    // マスタ（シナリオ情報）は10分に1回
   slowRefreshMs: 600000     // 設定・アイコンもめったに変わらないので10分に1回
 };
@@ -1861,7 +1861,7 @@ function applyData(d){
   STATE.pendingLocal=pending;
   if(unsent.length) showToast("⚠ "+unsent.join("、")+"が送れなかったかも。時間をおいてもう一度押してね", null, 10000);
   setRecruits((d.recruits||[]).concat(pending).map(function(r){ return Object.assign({}, r); }));
-  build(d.people||[]); buildEstablished(); render(); renderRecruits(); renderEst();
+  build(d.people||[]); buildEstablished(); render();   // render() の中で renderRecruits()・renderEst() まで走る
   if(!document.getElementById("monitor").hidden) buildSlides();
   if(STATE.pendingMonitor){ STATE.pendingMonitor=false; openMonitor(); }
   STATE.loadedOnce=true;
@@ -1892,11 +1892,15 @@ async function load(){
   }catch(e){
     POLL.fails++;
     var c=readCache();
-    if(e.message==="offline" && c){
+    // 圏外だけでなく、読み込みに失敗したとき全般で前回の一覧を出す
+    // （船の上では「つながっているのに返ってこない」ほうが多い。真っ白にしない）
+    if(c){
       if(!STATE.loadedOnce) applyData(c);
-      updateNotice("📡 電波が不安定なため、"+hhmm(c.at)+" 時点の一覧を表示しています。つながったら自動で更新します。");
+      updateNotice("📡 いま読み込めなかったので、"+hhmm(c.at)+" 時点の一覧を表示しています。つながったら自動で更新します。");
     } else {
-      updateNotice(e.message==="offline" ? "📡 通信できませんでした。電波のいい場所で開き直してください。" : "⚠ "+e.message);
+      document.body.classList.remove("booting");   // 出せる一覧が無くても、盤面は隠したままにしない
+      updateNotice(e.message==="offline" ? "📡 通信できませんでした。電波のいい場所で開き直してください。"
+                                         : "⚠ まだ読み込めていません。自動で読み直しています。（"+e.message+"）");
     }
   }
 }
@@ -2295,12 +2299,13 @@ document.addEventListener("keydown", function(e){
   if(e.key==="Escape" && document.getElementById("needOverlay").classList.contains("show")) closeNeed();
 });
 
-// 自動更新：30秒＋人ごとに0〜5秒ずらす。失敗が続いたら60秒→120秒に広げる。
+// 自動更新：45秒＋人ごとに0〜20秒ずらす。失敗が続いたら90秒→180秒に広げる。
+// 全員が同時に開くと読みに行く瞬間が揃ってしまうので、ずらし幅は広めにとる。
 // 画面を見ていない間（別のアプリ・画面オフ）は止めて、戻ってきたらすぐ読み直す
 var POLL={ timer:null, fails:0, lastAt:0 };
 function schedulePoll(){
   clearTimeout(POLL.timer);
-  var wait=CONFIG.refreshMs*Math.pow(2, Math.min(POLL.fails, 2)) + Math.random()*5000;
+  var wait=CONFIG.refreshMs*Math.pow(2, Math.min(POLL.fails, 2)) + Math.random()*20000;
   POLL.timer=setTimeout(async function(){
     if(document.hidden) return;              // 見ていない間は止める（visibilitychangeで再開）
     await load(); schedulePoll();
