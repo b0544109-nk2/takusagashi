@@ -259,6 +259,8 @@
   /* 並びかえは絞り込みのすぐ下。ランダムのときだけ「混ぜ直せる」と見せる */
   #viewRecruit .filters.sorts{margin-top:-8px}
   .sorts .fchip[aria-pressed="true"][data-s="random"]::after{content:" 🔀"}
+  /* 「ランダ／ム」のように単語の途中で折れないようにする（入りきらないときだけ折る） */
+  .sorts .fchip{word-break:keep-all;overflow-wrap:anywhere}
   .frow{display:flex;gap:7px;flex-wrap:wrap}
   @media (max-width:720px){
     #viewRecruit .filters{margin:20px 0 16px}
@@ -543,7 +545,8 @@
     .stats{grid-template-columns:repeat(2,1fr)}
     .cta-row{flex-wrap:nowrap;gap:10px}
     .cta-row .cta{flex:1 1 0;min-width:0;justify-content:center;text-align:center;font-size:.8rem;line-height:1.35;padding:10px 8px;text-wrap:balance}
-    .tools{position:static;margin-top:20px}
+    /* .wrap の横余白は12px。はみ出して横スクロールが出ないよう、引き出す幅を合わせる */
+    .tools{position:static;margin:20px -12px 0;padding-left:12px;padding-right:12px}
     .tools .search{flex:1 1 100%}
     .seg{flex:1 1 auto}.seg button{flex:1;padding:9px 8px;white-space:nowrap}
     .only{white-space:nowrap;padding:9px 12px}
@@ -601,7 +604,7 @@
   <div class="stats">
     <div class="stat"><b id="sPeople">–</b><span>登録した人</span></div>
     <div class="stat"><b id="sTitles">–</b><span>シナリオ数</span></div>
-    <div class="stat"><b id="sActive">–</b><span>募集中の希望</span></div>
+    <div class="stat"><b id="sActive">–</b><span>希望数</span></div>
     <div class="stat"><b id="sDone">–</b><span>卓決定 🎉</span></div>
   </div>
 
@@ -672,7 +675,7 @@
         <button class="fchip" type="button" data-s="random" aria-pressed="true" title="もう一度押すと混ぜ直します">🎲 ランダム</button>
         <button class="fchip" type="button" data-s="left" aria-pressed="false">🔥 あと少し</button>
         <button class="fchip" type="button" data-s="new" aria-pressed="false">🆕 あたらしい</button>
-        <button class="fchip" type="button" data-s="want" aria-pressed="false">🙋 遊びたい人</button>
+        <button class="fchip" type="button" data-s="want" aria-pressed="false">🙋 遊びたいが多い</button>
       </div>
     </div>
     <div class="rc-grid" id="recruits"></div>
