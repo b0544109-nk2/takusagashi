@@ -258,7 +258,9 @@
   #viewRecruit .filters span{margin:0 0 1px}
   /* 並びかえは絞り込みのすぐ下。ランダムのときだけ「混ぜ直せる」と見せる */
   #viewRecruit .filters.sorts{margin-top:-8px}
-  .sorts .fchip[aria-pressed="true"][data-s="random"]::after{content:" 🔀"}
+  /* 🔀 は選んだときだけ見せるが、場所は常に確保しておく（出し入れで行の高さが変わらないように） */
+  .sorts .fchip[data-s="random"]::after{content:" 🔀";opacity:0}
+  .sorts .fchip[aria-pressed="true"][data-s="random"]::after{opacity:1}
   /* 「ランダ／ム」のように単語の途中で折れないようにする（入りきらないときだけ折る） */
   .sorts .fchip{word-break:keep-all;overflow-wrap:anywhere}
   .frow{display:flex;gap:7px;flex-wrap:wrap}
