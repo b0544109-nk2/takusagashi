@@ -2147,7 +2147,9 @@ function openPerson(name, key){
     return '<button type="button" class="my-item rec" data-pm-rec="'+esc(r.id)+'">📣 '+esc(displayTitle(r))+' <b>'+(r.need?'あと'+r.need+'人':'募集中')+'</b></button>';
   }).join("");
   document.getElementById("pmBody").innerHTML=
-    (STATE.eventPost && title ? '<button type="button" class="pm-done" data-pm-done="1">🎉 '+esc(name)+' さんの「'+esc(title)+'」が決まった！</button>' : '')
+    // 「決まった」は本人（と幹事）だけ。他の人のぶんを勝手に消し込めないようにする
+    (STATE.eventPost && title && canManage(name)
+      ? '<button type="button" class="pm-done" data-pm-done="1">🎉 '+(isMe(name)?'この「'+esc(title)+'」が決まった！':esc(name)+' さんの「'+esc(title)+'」が決まった！（幹事）')+'</button>' : '')
     +'<p class="pm-sub">📣 この人が募集している卓</p>'
     +(recs ? '<div class="my-list pm-recs">'+recs+'</div>' : '<p class="pm-none pm-recs">いま募集している卓はありません</p>')
     +'<p class="pm-sub">🔍 この人が気になってる他のシナリオ</p>'
