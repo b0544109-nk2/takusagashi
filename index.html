@@ -81,12 +81,32 @@
     rotate:-9deg;pointer-events:none;z-index:2;opacity:0}
   .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
   .kanpai-row{margin:16px 0 0;text-align:center;position:relative;z-index:3}
-  .boarding-stamp.on{animation:stampDrop .46s cubic-bezier(.2,1.5,.42,1) forwards}
+  .boarding-stamp.on{animation:stampDrop .44s cubic-bezier(.17,1.5,.4,1) forwards}
   @keyframes stampDrop{
-    0%{opacity:0;scale:2.4;rotate:-26deg;filter:blur(1.4px)}
-    60%{opacity:.95;scale:.94;rotate:-7deg;filter:blur(0)}
+    0%{opacity:0;scale:3.1;rotate:-30deg;filter:blur(2.2px)}
+    52%{opacity:1;scale:.88;rotate:-6deg;filter:blur(0)}      /* ここで紙を叩く */
+    70%{scale:1.06;rotate:-10.5deg}
+    85%{scale:.98;rotate:-8.4deg}
     100%{opacity:.92;scale:1;rotate:-9deg;filter:blur(0)}
   }
+  /* 叩いた瞬間に広がる衝撃の輪 */
+  .boarding-stamp::before{
+    content:"";position:absolute;inset:4%;border-radius:50%;
+    border:3.5px solid var(--ring,var(--ink));opacity:0;pointer-events:none}
+  .boarding-stamp.on::before{animation:stampRing .52s ease-out .22s forwards}
+  @keyframes stampRing{
+    0%{opacity:.5;scale:.78}
+    100%{opacity:0;scale:1.6}
+  }
+  /* 紙ごとビクッと揺れる */
+  @keyframes headJolt{
+    0%,100%{translate:0 0}
+    18%{translate:-3px 3px}
+    42%{translate:3px -2px}
+    68%{translate:-2px 1px}
+    86%{translate:1px 0}
+  }
+  header.jolt{animation:headJolt .3s ease-out .2s}
   @media (max-width:720px){
     .boarding-stamp{width:122px;height:122px;right:0}
     header{--title-shift:-30px}
@@ -581,7 +601,8 @@
   }
   @media (prefers-reduced-motion:reduce){.deco span,.chip.hit,.m-grid.anim,.tk.flash,.rc.flash,
     body.tabs-new .tab[aria-selected="false"]{animation:none}.tk{transition:none}
-    .boarding-stamp.on{animation:none;opacity:.92}}
+    .boarding-stamp.on{animation:none;opacity:.92}
+    .boarding-stamp.on::before,header.jolt{animation:none}}
 </style>
 </head>
 <body class="booting">
@@ -1030,10 +1051,16 @@ function stampIndex(){
 function showBoardingStamp(animate){
   var el=document.getElementById("boardingStamp"); if(!el || STATE.stamped) return;
   STATE.stamped=true;
-  el.innerHTML=stampSvg(stampIndex()); el.hidden=false;
+  var i=stampIndex();
+  el.innerHTML=stampSvg(i); el.hidden=false;
+  el.style.setProperty("--ring", STAMP_INK[i]);   // 衝撃の輪もインクと同じ色に
   document.body.classList.add("stamped");
-  if(animate){ void el.offsetWidth; el.classList.add("on"); }
-  else { el.style.opacity=".92"; }
+  if(animate){
+    void el.offsetWidth; el.classList.add("on");
+    var hd=document.querySelector("header");
+    if(hd){ hd.classList.remove("jolt"); void hd.offsetWidth; hd.classList.add("jolt");
+      setTimeout(function(){ hd.classList.remove("jolt"); }, 700); }
+  } else { el.style.opacity=".92"; }
 }
 var STAMPED_KEY="takusagashi.stamped";
 function alreadyStamped(){ try{ return localStorage.getItem(STAMPED_KEY)==="1"; }catch(e){ return false; } }
