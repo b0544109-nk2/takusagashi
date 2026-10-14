@@ -378,11 +378,13 @@
     border:2px solid var(--ink);border-radius:999px;padding:2px 10px;cursor:pointer}
 
   /* モニター（スライドショー） */
-  .monitor{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:2vmin;padding:2.4vmin 2.8vmin;color:var(--ink);
+  /* --u は高さと幅の両方を見る寸法。横長なら vmin と同じ、横がせまいと小さくなる */
+  .monitor{position:fixed;inset:0;z-index:100;--u:min(1vmin,.6vw);
+    display:flex;flex-direction:column;gap:2vmin;padding:2.4vmin 2.8vmin;color:var(--ink);
     background-color:var(--paper);
     background-image:radial-gradient(rgba(255,111,174,.15) 3px, transparent 3.1px),radial-gradient(rgba(51,196,255,.16) 3px, transparent 3.1px);
     background-size:44px 44px,44px 44px;background-position:0 0,22px 22px}
-  .m-head{display:flex;align-items:center;gap:2vmin;flex-wrap:wrap}
+  .m-head{flex:none;display:flex;align-items:center;gap:2vmin;flex-wrap:wrap}
   .m-title{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1.1rem,3.6vmin,3.2rem);background:var(--pink);color:#fff;
     border:.45vmin solid var(--ink);border-radius:1.6vmin;padding:.7vmin 2.2vmin;box-shadow:.7vmin .7vmin 0 var(--ink);rotate:-1deg;
     text-shadow:.25vmin .25vmin 0 rgba(0,0,0,.2)}
@@ -393,25 +395,28 @@
   .m-grid.anim{animation:mIn .55s ease-out}
   @keyframes mIn{from{opacity:.2;translate:0 2vmin}to{opacity:1;translate:0 0}}
   .mc{min-height:0;display:flex;flex-direction:column;overflow:hidden;background:#fff;border:.5vmin solid var(--ink);border-radius:2.4vmin;box-shadow:.9vmin .9vmin 0 var(--ink)}
-  .mc-top{display:flex;align-items:center;gap:1.8vmin;padding:1.4vmin 2.2vmin;border-bottom:.45vmin solid var(--ink)}
-  .mc .ava{width:8.5vmin;height:8.5vmin;font-size:5vmin;border-width:.45vmin;box-shadow:.4vmin .4vmin 0 var(--ink)}
-  .mc .ava.letter{font-size:3.8vmin}
-  .mc-name{min-width:0;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1rem,3vmin,2.6rem);line-height:1.15;overflow-wrap:anywhere}
-  .mc-name small{display:block;font-family:"Kosugi Maru",sans-serif;font-weight:700;font-size:clamp(.65rem,1.6vmin,1.3rem)}
+  /* 縮むと文字の下（ーや濁点）が削られるので、中身は縮ませない */
+  .mc h3,.mc .when,.mc .chips,.mc-foot,.mc-top{flex:none}
+  .mc-top{display:flex;align-items:center;gap:1.6vmin;padding:1.15vmin 2vmin;border-bottom:.45vmin solid var(--ink)}
+  .mc .ava{width:calc(var(--u)*7.2);height:calc(var(--u)*7.2);font-size:calc(var(--u)*4.3);border-width:.45vmin;box-shadow:.4vmin .4vmin 0 var(--ink)}
+  .mc .ava.letter{font-size:calc(var(--u)*3.3)}
+  .mc-name{min-width:0;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(.92rem,calc(var(--u)*2.65),2.25rem);line-height:1.32;overflow-wrap:anywhere;padding-bottom:.2vmin}
+  .mc-name small{display:block;font-family:"Kosugi Maru",sans-serif;font-weight:700;font-size:clamp(.62rem,calc(var(--u)*1.6),1.3rem)}
   .mc-need{margin-left:auto;flex:none;background:#fff;color:var(--ink);border:.4vmin solid var(--ink);border-radius:1.4vmin;padding:.6vmin 1.6vmin;
-    text-align:center;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1rem,3.8vmin,3.4rem);line-height:1}
+    text-align:center;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(.95rem,calc(var(--u)*3.3),3rem);line-height:1}
   .mc-need small{display:block;font-family:"Kosugi Maru",sans-serif;font-weight:700;font-size:clamp(.6rem,1.5vmin,1.2rem)}
-  .mc-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:1.5vmin;padding:1.6vmin 2.4vmin}
-  .mc h3{margin:0;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:clamp(1.2rem,4.6vmin,4rem);line-height:1.22;
-    overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .mc-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:calc(var(--u)*1.15);padding:1.35vmin 2.2vmin}
+  .mc h3{margin:0;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:clamp(1rem,calc(var(--u)*3.75),3.3rem);line-height:1.4;
+    overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-bottom:.2vmin}
   .mc .when{gap:1vmin}
-  .mc .when span{font-size:clamp(.8rem,2.3vmin,2rem);border-width:.35vmin;padding:.4vmin 1.5vmin}
-  .mc-foot{font-weight:700;font-size:clamp(.75rem,2vmin,1.7rem);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mc .when span{font-size:clamp(.72rem,calc(var(--u)*2.05),1.75rem);border-width:.35vmin;padding:.4vmin 1.5vmin}
+  .mc-foot{font-weight:700;font-size:clamp(.7rem,calc(var(--u)*1.8),1.55rem);color:var(--muted);line-height:1.45;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
   .mc-foot b{color:var(--red)}
   .mc .chips{gap:.9vmin}
-  .mc .chip{font-size:clamp(.7rem,1.9vmin,1.6rem);padding:.4vmin 1.3vmin;border-width:.3vmin}
+  .mc .chip{font-size:clamp(.66rem,calc(var(--u)*1.9),1.6rem);padding:.4vmin 1.3vmin;border-width:.3vmin}
   .m-empty{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;text-align:center;font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:clamp(1.2rem,4vmin,3rem)}
-  .m-bottom{display:flex;align-items:center;gap:2vmin;flex-wrap:wrap}
+  .m-bottom{flex:none;display:flex;align-items:center;gap:2vmin;flex-wrap:wrap}
   .m-hint{font-weight:700;font-size:clamp(.75rem,2vmin,1.6rem)}
   .m-qr{display:flex;align-items:center;gap:1.2vmin}
   .m-qr img{width:11vmin;height:11vmin;background:#fff;border:.4vmin solid var(--ink);border-radius:1.2vmin;padding:.5vmin}
