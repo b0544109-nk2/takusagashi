@@ -704,6 +704,7 @@
     <div class="filters" role="group" aria-label="日程で絞り込み">
       <span>しぼりこみ</span>
       <div class="frow">
+        <button class="fchip" type="button" data-f="マダミス以外" aria-pressed="false">🎲 マダミス以外</button>
         <button class="fchip" type="button" data-f="mine" aria-pressed="false" hidden>★ 自分の募集</button>
         <button class="fchip" type="button" data-f="dated" aria-pressed="false">📅 日付が決まってる</button>
       </div>
@@ -766,6 +767,7 @@
           <button type="button" class="qr-chip" data-v="オフライン">🏪 店舗</button>
           <button type="button" class="qr-chip" data-v="パッケージ">📦 パッケージ</button>
           <button type="button" class="qr-chip" data-v="オンライン">💻 オンライン</button>
+          <button type="button" class="qr-chip" data-v="マダミス以外">🎲 マダミス以外</button>
         </div>
       </div>
 
@@ -1397,7 +1399,7 @@ function avatar(r){
   return '<span class="ava letter" aria-hidden="true" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(Array.from(r.name)[0]||"?")
     +(url?'<img src="'+esc(url)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</span>';
 }
-var FMT_ICON = {"オフライン":"🏪","パッケージ":"📦","オンライン":"💻"};
+var FMT_ICON = {"オフライン":"🏪","パッケージ":"📦","オンライン":"💻","マダミス以外":"🎲"};
 var FMT_LABEL = {"オフライン":"店舗"};   // 表示だけ「店舗」にそろえる（フォームの選択肢の値はオフラインのまま）
 function whenChips(r){
   var out="";
@@ -1443,7 +1445,8 @@ function passFilter(r){
   var f=STATE.rFilter||{};
   if(f.mine && !isMe(r.name)) return false;
   if(f.dated && !r.d) return false;
-  if((f["オフライン"] && r.format!=="オフライン") || (f["パッケージ"] && r.format!=="パッケージ") || (f["オンライン"] && r.format!=="オンライン")) return false;
+  var fmts=["オフライン","パッケージ","オンライン","マダミス以外"].filter(function(v){ return f[v]; });
+  if(fmts.length && fmts.indexOf(r.format)<0) return false;
   var picked=WHEN4.filter(function(v){ return f[v]; });
   if(picked.length){
     var mine=combosOf(r);
@@ -1830,7 +1833,7 @@ function parseAnswers(rows){
       if(!get("title")) return;
       var fmt=get("format").normalize("NFKC");
       recruits.push({ id:"r"+hash(name+"|"+i).toString(36), name:name, xid:xid, title:get("title"), ts:lastT[norm(name)]||0,
-        format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
+        format:/以外/.test(fmt)?"マダミス以外":/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
         months:get("months"), days:get("days").replace(/,\s*/g,"・"), time:get("time").replace(/,\s*/g,"・"), when4:splitList(get("when4")),
         need:parseInt(get("need").normalize("NFKC"),10)||0, note:get("note"), done:!!get("done"),
         date:get("date"), start:get("start"), venue:get("venue") });
@@ -1912,7 +1915,7 @@ function parseQuickRecruits(rows){
   return rows.slice(1).filter(function(r){ return get(r,"name") && get(r,"title"); }).map(function(r,i){
     var fmt=get(r,"format").normalize("NFKC");
     return { id:"q"+hash(get(r,"name")+"|"+get(r,"title")+"|"+i).toString(36), name:get(r,"name"), xid:get(r,"xid"), title:get(r,"title"), ts:tsValue(r[0]),
-      format:/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
+      format:/以外/.test(fmt)?"マダミス以外":/オフ/.test(fmt)?"オフライン":/パッケ/.test(fmt)?"パッケージ":/オン/.test(fmt)?"オンライン":"",
       months:get(r,"months"), days:get(r,"days"), time:get(r,"time"), when4:splitList(get(r,"when4")),
       need:parseInt(get(r,"need").normalize("NFKC"),10)||0, note:get(r,"note"), done:false,
       date:get(r,"date"), start:get(r,"start"), venue:get(r,"venue") };
