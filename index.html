@@ -307,7 +307,8 @@
   .tab[aria-selected="true"]{background:var(--ink);color:var(--yellow);box-shadow:3px 3px 0 var(--pink)}
   .tab.mon{background:var(--cyan);color:#fff;display:none}
   /* 船のモニターに映すのはPCから。スマホ・タブレットにはボタンを出さない（#monitor 直打ちは今まで通り） */
-  @media (min-width:700px) and (pointer:fine){ .tab.mon{display:inline-block} }
+  /* タッチ画面付きのPCやiPadでも出すよう、画面の広さだけで判断する */
+  @media (min-width:700px){ .tab.mon{display:inline-block} }
   .tab:focus-visible,.fchip:focus-visible,.rec-badge:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .tab b{font-weight:400;background:var(--yellow);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:0 7px;font-size:.72rem;margin-left:6px}
   .tab[aria-selected="true"] b{background:var(--pink);color:#fff}
@@ -2142,7 +2143,17 @@ async function load(){
 }
 
 STATE.view="recruit";
-(function(){ var h=(location.hash||"").slice(1); if(h==="want"||h==="est") setView(h); else if(h==="monitor") STATE.pendingMonitor=true; })();
+function applyHash(){
+  var h=(location.hash||"").slice(1);
+  if(h==="want"||h==="est") setView(h);
+  else if(h==="monitor"){
+    // データが来る前なら予約、来ていればその場で開く
+    if(STATE.loadedOnce && document.getElementById("monitor").hidden) openMonitor();
+    else STATE.pendingMonitor=true;
+  }
+}
+applyHash();
+window.addEventListener("hashchange", applyHash);
 
 var qEl=document.getElementById("q"), tmr=null;
 qEl.addEventListener("input",function(){ clearTimeout(tmr); tmr=setTimeout(function(){ STATE.q=qEl.value.trim(); render(); },120); });
