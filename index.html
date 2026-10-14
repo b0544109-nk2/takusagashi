@@ -875,7 +875,10 @@
 // スプレッドシートIDはコードに書かず、URLの ?id=... で渡す（なければデモ表示）
 var CONFIG = {
   sheetId: new URLSearchParams(location.search).get("id") || "",
-  staff: new URLSearchParams(location.search).has("staff"),   // 幹事の確認用：公開前でもボードを見られる
+  // &staff … 幹事みんな用（他人の募集の操作・公開前の閲覧）
+  // &kanpai … nk2だけ。乾杯の合図を出せる。幹事の権限も含む
+  staff: new URLSearchParams(location.search).has("staff") || new URLSearchParams(location.search).has("kanpai"),
+  kanpai: new URLSearchParams(location.search).has("kanpai"),
   answerTab: "回答",        // 登録フォームの回答（遊びたい①〜③＋卓募集①〜③が1人1行）
   infoTab: "シナリオ情報",   // 人数・時間・別名
   settingsTab: "設定",      // 登録フォームのURLなど（項目｜値）
@@ -1098,7 +1101,7 @@ function checkKanpai(evs){
   // 時刻で自動的に出ているときは取り消しようがないので引っ込める
   var row=document.getElementById("kanpaiRow"), btn=document.getElementById("kanpaiBtn");
   if(row && btn){
-    row.hidden = !(CONFIG.staff && STATE.eventPost) || (on && !ev);
+    row.hidden = !(CONFIG.kanpai && STATE.eventPost) || (on && !ev);   // 乾杯は &kanpai のときだけ
     btn.textContent = ev ? "🥂 乾杯の合図を取り消す" : "🥂 乾杯した（全員にスタンプ）";
     btn.classList.toggle("ghost", !!ev);
   }
