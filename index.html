@@ -81,13 +81,16 @@
   .boarding-box{position:absolute;right:4px;top:50%;translate:0 -50%;z-index:2;
     display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
   .boarding-stamp{position:relative;width:158px;height:158px;rotate:-9deg;opacity:0}
-  .stamp-share{pointer-events:auto;display:none;align-items:center;gap:5px;white-space:nowrap;
-    font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:.72rem;text-decoration:none;
+  /* 見出しの下に並ぶリンク。印と同じだけ左に寄せて、見出しと縦ラインをそろえる */
+  .head-links{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:12px 0 0;
+    translate:var(--title-shift) 0}
+  .hlink{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;text-decoration:none;
+    font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:.76rem;
     color:var(--ink);background:var(--yellow);border:2.5px solid var(--ink);border-radius:999px;
-    padding:5px 13px;box-shadow:0 3px 0 var(--ink)}
-  body.stamped .stamp-share{display:inline-flex}
-  .stamp-share:active{translate:0 3px;box-shadow:0 0 0 var(--ink)}
-  .stamp-share:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+    padding:6px 15px;box-shadow:0 3px 0 var(--ink)}
+  .hlink:active{translate:0 3px;box-shadow:0 0 0 var(--ink)}
+  .hlink:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  @media (max-width:420px){ .hlink{font-size:.7rem;padding:5px 12px} }
   .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
   .kanpai-row{margin:16px 0 0;text-align:center;position:relative;z-index:3}
   .boarding-stamp.on{animation:stampDrop .44s cubic-bezier(.17,1.5,.4,1) forwards}
@@ -119,15 +122,13 @@
   }
   header.jolt{animation:headJolt .3s ease-out .2s}
   @media (max-width:720px){
-    .boarding-box{right:2px;gap:4px}
+    .boarding-box{right:2px}
     .boarding-stamp{width:114px;height:114px}
-    .stamp-share{font-size:.66rem;padding:4px 10px}
     header{--title-shift:-30px}
   }
   @media (max-width:420px){
     .boarding-box{right:0}
     .boarding-stamp{width:102px;height:102px}
-    .stamp-share{font-size:.62rem;padding:3px 9px}
   }
   h1 .main{display:inline-block;background:var(--pink);color:#fff;border:4px solid var(--ink);border-radius:18px;
     padding:10px 20px;font-size:clamp(1.34rem,5.5vw,2.3rem);box-shadow:6px 6px 0 var(--ink);rotate:-1.5deg;
@@ -641,8 +642,11 @@
     <h1><span class="main">マダミスボード<small>(仮)</small></span></h1>
     <div class="boarding-box">
       <div class="boarding-stamp" id="boardingStamp" aria-hidden="true" hidden></div>
-      <a class="stamp-share" id="stampShare" href="#" target="_blank" rel="noopener" hidden>🐦️ ポスト</a>
     </div>
+    <p class="head-links">
+      <a class="hlink" id="stampShare" href="#" target="_blank" rel="noopener">🐦️ ポスト</a>
+      <a class="hlink" href="https://photos.google.com/u/0/share/AF1QipNJUAbjIdHEY0av5PlyEP--vwLJ2F1h1r4v7pM63dcSEH1z5VkoNNxIOBzbHZQueA?hl=ja&amp;key=Ml9vWDh5RlRoajJDS1p2Z0s4cG5Mblc5Ym5nUVlB" target="_blank" rel="noopener">📷 アルバム</a>
+    </p>
     <p class="demo" id="demo" hidden></p>
     <p class="kanpai-row" id="kanpaiRow" hidden><button class="btn" type="button" id="kanpaiBtn">🥂 乾杯した（全員にスタンプ）</button></p>
   </header>
@@ -1089,11 +1093,6 @@ function showBoardingStamp(animate){
   el.innerHTML=stampSvg(i); el.hidden=false;
   el.style.setProperty("--ring", STAMP_INK[i]);   // 衝撃の輪もインクと同じ色に
   document.body.classList.add("stamped");
-  var sh=document.getElementById("stampShare");
-  if(sh){
-    sh.href="https://x.com/intent/post?text="+encodeURIComponent("#マダミス好きクルーズ2026 🚢🥂");
-    sh.hidden=false;
-  }
   if(animate){
     void el.offsetWidth; el.classList.add("on");
     var hd=document.querySelector("header");
@@ -1132,6 +1131,12 @@ function checkKanpai(evs){
   if(alreadyStamped()) showBoardingStamp(false);   // もう押してある
   else { showBoardingStamp(true); markStamped(); } // この人にとっての初回
 }
+
+// 見出しの下のリンク（印が押されたかに関係なく、最初から出しておく）
+(function(){
+  var sh=document.getElementById("stampShare");
+  if(sh) sh.href="https://x.com/intent/post?text="+encodeURIComponent("#マダミス好きクルーズ2026 🚢🥂");
+})();
 
 var ME_KEY = "takusagashi.myName";
 function loadMe(){
