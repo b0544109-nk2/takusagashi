@@ -86,15 +86,16 @@
     translate:var(--title-shift) 0}
   /* タブ（押して切りかえる）とは別物。カードの中の「マダミス.jpで見る ↗」と同じ、
      外に出るリンクの見た目にそろえる。地も影も付けない */
-  .hlink{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
-    font-size:.8rem;font-weight:700;color:#1a5fd6;
-    text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px;
-    background:none;border:0;padding:3px 2px}
-  .hlink::after{content:"↗";font-size:.88em;text-decoration:none;opacity:.75}
-  .hlink:active{opacity:.6}
-  .hlink:focus-visible{outline:3px solid var(--cyan);outline-offset:3px;border-radius:6px}
-  .head-links{gap:18px}
-  @media (max-width:420px){ .hlink{font-size:.74rem} .head-links{gap:14px} }
+  /* タブ（黒い太枠＋下に厚み）とは別物に見せる。白地・細い枠・影なし・↗ 付き */
+  .hlink{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;text-decoration:none;
+    font-size:.78rem;font-weight:700;color:#1a5fd6;
+    background:var(--card);border:1.8px solid rgba(26,95,214,.38);border-radius:999px;
+    padding:5px 14px;box-shadow:none}
+  .hlink::after{content:"↗";font-size:.9em;opacity:.7;margin-left:1px}
+  .hlink:active{background:#eef3fd;translate:0 1px}
+  .hlink:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .head-links{gap:10px}
+  @media (max-width:420px){ .hlink{font-size:.72rem;padding:4px 12px} .head-links{gap:8px} }
   .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
   .kanpai-row{margin:16px 0 0;text-align:center;position:relative;z-index:3}
   .boarding-stamp.on{animation:stampDrop .44s cubic-bezier(.17,1.5,.4,1) forwards}
