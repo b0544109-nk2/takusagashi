@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>事前登録｜マダミスボード</title>
+<title>事前登録｜マダミスボード(仮)</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>
@@ -295,7 +295,7 @@
     <h1><span class="main">事前登録</span><span class="sub">りったくしえんっ</span></h1>
     <p class="lead">卓募集（3件まで）と、遊びたいシナリオ（3つまで）を登録するページです。<br>クルーズ当日の立卓支援になればいいなっ</p>
     <p class="notice" id="notice" hidden></p>
-  <p class="row-c" id="backRow" hidden><a class="cta sub" id="backBoard" href="#">📋 マダミスボードに戻る</a></p>
+  <p class="row-c" id="backRow" hidden><a class="cta sub" id="backBoard" href="#">📋 マダミスボード(仮)に戻る</a></p>
   </header>
 
   <div id="payName" hidden></div>
@@ -344,7 +344,7 @@
       <p class="sec-note sg-hint">🔍 シナリオ名は打つと候補が出ます。最近のシナリオなど候補に出てこないものも、そのまま登録できます。</p>
       <div id="recList"></div>
       <button type="button" class="add" id="addRec">＋ 卓募集を追加する</button>
-      <p class="sec-note more-note" id="moreNote" hidden>ここに登録できるのは3件までです。当日4件目以降の卓を立てるときは、マダミスボードの「⚡ その場で卓を立てる」からどうぞ（件数の制限はありません）。成立した卓も、枠はそのまま残ります。</p>
+      <p class="sec-note more-note" id="moreNote" hidden>ここに登録できるのは3件までです。当日4件目以降の卓を立てるときは、マダミスボード(仮)の「⚡ その場で卓を立てる」からどうぞ（件数の制限はありません）。成立した卓も、枠はそのまま残ります。</p>
     </section>
 
     <section class="card" aria-labelledby="hWant">
@@ -1221,7 +1221,7 @@ function showDone(v, bad, msg){
   // ボードのURLは当日まで幹事だけが知っている運用なので、設定タブで「ボード公開｜する」にしたときだけリンクを出す
   var open=/^(する|公開|はい|on|true|yes|○|〇)$/i.test(String(S.settings["ボード公開"]||"").trim()) && CONFIG.sheetId;
   var next=document.getElementById("doneNext");
-  next.innerHTML = open ? '<a class="link" href="./?id='+encodeURIComponent(CONFIG.sheetId)+'">📋 マダミスボードを見る →</a>' : "";
+  next.innerHTML = open ? '<a class="link" href="./?id='+encodeURIComponent(CONFIG.sheetId)+'">📋 マダミスボード(仮)を見る →</a>' : "";
   next.hidden=!open;
   showStep("done");
   if(!msg) window.scrollTo({ top:0, behavior:"smooth" });

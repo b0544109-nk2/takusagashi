@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>マダミスボード</title>
+<title>マダミスボード(仮)</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>
@@ -93,7 +93,9 @@
   .boarding-stamp::before{
     content:"";position:absolute;inset:4%;border-radius:50%;
     border:3.5px solid var(--ring,var(--ink));opacity:0;pointer-events:none}
-  .boarding-stamp.on::before{animation:stampRing .52s ease-out .22s forwards}
+  /* forwards を付けると、広がりきった輪が見えないまま場所を取り続けて横スクロールが出る。
+     終わったら元（透明・等倍）に戻せばよいので付けない */
+  .boarding-stamp.on::before{animation:stampRing .52s ease-out .22s}
   @keyframes stampRing{
     0%{opacity:.5;scale:.78}
     100%{opacity:0;scale:1.6}
@@ -113,8 +115,11 @@
   }
   @media (max-width:420px){ .boarding-stamp{width:110px;height:110px;right:-2px} }
   h1 .main{display:inline-block;background:var(--pink);color:#fff;border:4px solid var(--ink);border-radius:18px;
-    padding:10px 22px;font-size:clamp(1.6rem,6.4vw,2.5rem);box-shadow:6px 6px 0 var(--ink);rotate:-1.5deg;
+    padding:10px 20px;font-size:clamp(1.34rem,5.5vw,2.3rem);box-shadow:6px 6px 0 var(--ink);rotate:-1.5deg;
     text-shadow:2px 2px 0 rgba(0,0,0,.18);text-wrap:balance}
+  /* 「(仮)」は小さく添える（長くなったぶんを吸収して、印とぶつからないように） */
+  h1 .main{white-space:nowrap}                      /* 「(仮)」だけ次の行に落ちないように */
+  h1 .main small{font-size:.56em;letter-spacing:0;margin-left:.06em}
   h1 .sub{display:inline-block;background:var(--yellow);border:3px solid var(--ink);border-radius:12px;
     padding:4px 16px;font-size:1rem;letter-spacing:.2em;box-shadow:4px 4px 0 var(--ink);rotate:1.5deg}
 
@@ -584,6 +589,9 @@
   .want-link span{display:inline;flex:none;text-decoration:none;font-size:1.5rem;line-height:1;font-weight:700}
   .want-link b{font-size:.92rem}
 
+  /* 飾りや傾けた印がわずかにはみ出しても、横に動かないようにする。
+     clip なら hidden と違って .tools の sticky が効いたまま */
+  html,body{overflow-x:clip}
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   @media (max-width:640px){
     html{font-size:17px}   /* スマホは全体を少し大きく（remで指定した文字がまとめて大きくなる） */
@@ -615,7 +623,7 @@
 <div class="wrap">
   <header>
     <div class="kicker">#マダミス好きクルーズ2026</div>
-    <h1><span class="main">マダミスボード</span></h1>
+    <h1><span class="main">マダミスボード<small>(仮)</small></span></h1>
     <div class="boarding-stamp" id="boardingStamp" aria-hidden="true" hidden></div>
     <p class="demo" id="demo" hidden></p>
     <p class="kanpai-row" id="kanpaiRow" hidden><button class="btn" type="button" id="kanpaiBtn">🥂 乾杯した（全員にスタンプ）</button></p>
@@ -623,7 +631,7 @@
 
   <section class="gate" id="gate" hidden>
     <p class="gate-ship" aria-hidden="true">🚢</p>
-    <h2 class="pop">マダミスボードは<br>クルーズ当日に公開します！</h2>
+    <h2 class="pop">マダミスボード(仮)は<br>クルーズ当日に公開します！</h2>
     <p>いまは事前登録を受け付けています。登録した卓募集と遊びたいシナリオは、当日このボードと船のモニターに並びます。</p>
     <a class="cta" id="gateReg" href="#" hidden>✍️ 事前登録ページへ</a>
   </section>
@@ -849,7 +857,7 @@
   </div>
   <div class="m-grid" id="mGrid"></div>
   <div class="m-bottom">
-    <div class="m-qr"><img src="board-qr.png" alt="マダミスボードのQRコード"><span>スマホで<br>マダミスボード</span></div>
+    <div class="m-qr"><img src="board-qr.png" alt="マダミスボード(仮)のQRコード"><span>スマホで<br>マダミスボード(仮)</span></div>
     <div class="m-hint">気になる卓は、名前の人に声をかけよう！</div>
     <div class="m-prog"><i id="mProg"></i></div>
     <div class="m-page" id="mPage"></div>
@@ -1669,7 +1677,7 @@ function monHot(g){
 }
 function showSlide(){
   var grid=document.getElementById("mGrid"), total=MON.slides.length;
-  if(!total){ grid.innerHTML='<div class="m-empty">まだ募集はありません<br>スマホの「マダミスボード」から募集してみよう！</div>'; document.getElementById("mPage").textContent=""; return; }
+  if(!total){ grid.innerHTML='<div class="m-empty">まだ募集はありません<br>スマホの「マダミスボード(仮)」から募集してみよう！</div>'; document.getElementById("mPage").textContent=""; return; }
   MON.idx=(MON.idx%total+total)%total;
   var s=MON.slides[MON.idx];
   grid.innerHTML=s.items.map(s.type==="hot"?monHot:s.type==="est"?monEst:monCard).join("");
