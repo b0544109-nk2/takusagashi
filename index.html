@@ -213,6 +213,8 @@
   .tk.t3 h3,.tk.t1 h3{color:#fff;text-shadow:1.5px 1.5px 0 rgba(0,0,0,.22)}
   .gaiyou{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:8px;background:#fff;border:2px solid var(--ink);
     border-radius:10px;padding:5px 9px;color:var(--ink);text-shadow:none}
+  #qrInfo .gaiyou{margin-top:6px}
+  #qrInfo:empty{display:none}
   .gaiyou b{font-size:.66rem;font-weight:700;background:var(--ink);color:#fff;border-radius:6px;padding:1px 7px;letter-spacing:.04em}
   .gaiyou span{font-size:.76rem;font-weight:700;white-space:nowrap}
   .gaiyou a{font-size:.76rem;font-weight:700;color:#1a5fd6;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
@@ -755,6 +757,7 @@
       <label class="qr-field">シナリオ名<span class="req">*</span>
         <input id="qrTitle" required placeholder="例：立方館" list="qrTitles" autocomplete="off">
         <small class="qr-help">入力すると候補が出ます。候補から選ぶと表記がそろって、遊びたい人とつながります</small>
+        <div id="qrInfo" aria-live="polite"></div>
         <datalist id="qrTitles"></datalist>
       </label>
 
@@ -2123,6 +2126,7 @@ function openQuick(prefillTitle){
   if(!STATE.quick){ return; }
   document.getElementById("qrForm").reset();
   if(typeof prefillTitle==="string") document.getElementById("qrTitle").value=prefillTitle;
+  qrShowInfo();
   QR = { format:"", mode:"date", when4:[] };
   document.querySelectorAll(".qr-chip").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
   document.querySelector('#qrMode .qr-chip[data-v="date"]').setAttribute("aria-pressed","true");
@@ -2169,6 +2173,17 @@ function sendQuickNow(fields){
   return true;
 }
 
+// シナリオ名が「シナリオ情報」にあるものなら、人数と時間をその場で出す
+function qrShowInfo(){
+  var el=document.getElementById("qrInfo"); if(!el) return;
+  var t=document.getElementById("qrTitle").value.trim();
+  el.innerHTML = t ? gaiyou(infoForKey(groupKey(t), t)) : "";
+}
+(function(){
+  var ti=document.getElementById("qrTitle");
+  ["input","change"].forEach(function(e){ ti.addEventListener(e, qrShowInfo); });
+})();
+
 document.getElementById("qrForm").addEventListener("submit", function(ev){
   ev.preventDefault();
   var name=document.getElementById("qrName").value.trim();
@@ -2186,7 +2201,11 @@ document.getElementById("qrForm").addEventListener("submit", function(ev){
   else fields.months=document.getElementById("qrMonths").value.trim(), fields.when4=QR.when4;
 
   var local=Object.assign({ local:true, id:"l"+Date.now().toString(36), ts:Date.now() }, fields);
-  qrSubmitToForm(fields, local);
+  // 送れなかったときに「送信中」のカードだけ出てしまわないよう、結果を見てから進む
+  if(!qrSubmitToForm(fields, local)){
+    err.textContent="いま送信できませんでした。電波のいい場所で、もう一度「立てる」を押してください。";
+    err.hidden=false; return;
+  }
   if(!STATE.me){ STATE.me=name; saveMe(name); }
   STATE.pendingLocal=(STATE.pendingLocal||[]).concat([local]);
   closeQuick();
