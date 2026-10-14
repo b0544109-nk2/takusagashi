@@ -478,8 +478,6 @@
   .est-lead{text-align:center;font-size:.86rem;font-weight:700;color:var(--muted);margin:26px 0 8px;line-height:1.7}
   .est-grid{padding-top:18px}
   .rc.est{position:relative;background:#fff8f9}
-  .est-members p{margin:0 0 7px;font-size:.78rem;font-weight:700}
-  .est-members .chip{font-size:.78rem;padding:3px 9px}
   .est-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:2px dashed var(--line);
     padding-top:9px;font-size:.76rem;font-weight:700;color:var(--muted)}
   .undo{font:inherit;font-size:.72rem;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);
@@ -1531,7 +1529,8 @@ function joinersOf(r){
   return Object.keys(m).map(function(k){ return m[k]; }).filter(function(e){ return norm(e.reporter)!==norm(r.name); })
     .sort(function(a,b){ return (a.ts||0)-(b.ts||0); });
 }
-function joinBlock(r){
+// est=true は成立したあとの卓。「入れて」ではなく「もういる」と読めるよう文言を変える
+function joinBlock(r, est){
   var js=joinersOf(r), mineJoin=js.filter(function(e){ return isMe(e.reporter); })[0];
   var canJoin=STATE.eventPost && !r.local && !isMe(r.name);
   if(!js.length && !canJoin) return "";
@@ -1539,7 +1538,8 @@ function joinBlock(r){
     +(js.length ? '<p>🙋 同卓者</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div>' : '')
     +(canJoin ? (mineJoin
         ? '<button type="button" class="join-btn off" data-undo="'+esc(mineJoin.id)+'" data-undo-what="「'+esc(displayTitle(r))+'」への参加">✋ やっぱりやめる</button>'
-        : '<button type="button" class="join-btn" data-join-rec="'+esc(r.id)+'">🙋 私もここにいます！</button>') : '')
+        : '<button type="button" class="join-btn" data-join-rec="'+esc(r.id)+'"'+(est?' data-join-est="1"':'')+'>'
+          +(est?'🙋 私もこの卓にいます':'🙋 私もここにいます！')+'</button>') : '')
     +'</div>';
 }
 // 卓募集カードの「遊びたい人」の見せ方のA/Bテスト（名前が並ぶと卓のメンバーと誤解されるかもしれないため）
@@ -1674,7 +1674,7 @@ function renderEst(){
       +gaiyou(infoForKey(it.key, r.title))
       +'<div class="when">'+whenChips(r)+'</div>'
       +(r.note?'<p class="rc-note">'+esc(r.note)+'</p>':'')
-      +(function(){ var js=joinersOf(r); return js.length ? '<div class="est-members"><p>🙋 同卓者</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div></div>' : ''; })()
+      +joinBlock(r, true)
       +'<div class="est-foot"><span>🌸 '+esc(estWhen(it))+'</span>'
       +(it.eventId && STATE.eventPost && !it.local && (canManage(it.recruiter) || isMe(it.reporter)) ? '<button type="button" class="undo" data-undo="'+esc(it.eventId)+'" data-undo-what="「'+esc(it.title)+'」の成立">取り消す</button>' : '')+'</div>'
       +'</div></article>';
@@ -2334,7 +2334,11 @@ function recordEvent(ev){
   setTimeout(load, 4000);
   return ev;
 }
-function findRecruit(id){ return (STATE.recruits||[]).filter(function(r){ return r.id===id; })[0]; }
+// 成立した卓からも「私もこの卓にいます」を押せるので、締まったぶんも探す
+function findRecruit(id){
+  var f=function(list){ return (list||[]).filter(function(r){ return r.id===id; })[0]; };
+  return f(STATE.recruits) || f(STATE.closedRecruits);
+}
 
 /* ===== 電波がないときに押した操作は、端末に取っておいて、つながったら自動で送る ===== */
 document.getElementById("kanpaiBtn").addEventListener("click", function(){
@@ -2569,17 +2573,24 @@ document.addEventListener("click", function(e){
     showToast("先にあなたの名前を入れてね（登録したときと同じ名前）");
     return;
   }
-  ask({ title:"🙋 私もここにいます！",
-    lines:["「"+displayTitle(r)+"」（"+r.name+" さんの募集）","",
-      "募集している "+r.name+" さんと、もう話しましたか？",
-      "話がついていれば、同卓者に加わります。"],
-    ok:"話しました", no:"まだです" }, function(){
+  var est=!!t.dataset.joinEst;
+  ask(est
+    ? { title:"🙋 私もこの卓にいます",
+        lines:["「"+displayTitle(r)+"」（"+r.name+" さんの卓）","",
+          "この卓で遊ぶ人として、同卓者に名前を出します。",
+          "押し間違えても、同じ場所から取り消せます。"],
+        ok:"この卓にいます", no:"やめる" }
+    : { title:"🙋 私もここにいます！",
+        lines:["「"+displayTitle(r)+"」（"+r.name+" さんの募集）","",
+          "募集している "+r.name+" さんと、もう話しましたか？",
+          "話がついていれば、同卓者に加わります。"],
+        ok:"話しました", no:"まだです" }, function(){
     var ev=recordEvent({ type:"参加", reporter:STATE.me, recruiter:r.name, title:r.title, note:"" });
     if(ev) showToast("🙋 「"+displayTitle(r)+"」（"+r.name+" さんの卓）に手を挙げました", function(){
       recordEvent({ type:"取り消し", target:ev.id, reporter:STATE.me||"", recruiter:"", title:"", note:"" });
       showToast("取り消しました");
     });
-    var el=document.getElementById(r.id); if(el) flashEl(el);
+    var el=document.getElementById(r.id)||document.getElementById("est-"+r.id); if(el) flashEl(el);
   });
 });
 
