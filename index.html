@@ -84,13 +84,17 @@
   /* 見出しの下に並ぶリンク。印と同じだけ左に寄せて、見出しと縦ラインをそろえる */
   .head-links{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:12px 0 0;
     translate:var(--title-shift) 0}
-  .hlink{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;text-decoration:none;
-    font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:.76rem;
-    color:var(--ink);background:var(--yellow);border:2.5px solid var(--ink);border-radius:999px;
-    padding:6px 15px;box-shadow:0 3px 0 var(--ink)}
-  .hlink:active{translate:0 3px;box-shadow:0 0 0 var(--ink)}
-  .hlink:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
-  @media (max-width:420px){ .hlink{font-size:.7rem;padding:5px 12px} }
+  /* タブ（押して切りかえる）とは別物。カードの中の「マダミス.jpで見る ↗」と同じ、
+     外に出るリンクの見た目にそろえる。地も影も付けない */
+  .hlink{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+    font-size:.8rem;font-weight:700;color:#1a5fd6;
+    text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px;
+    background:none;border:0;padding:3px 2px}
+  .hlink::after{content:"↗";font-size:.88em;text-decoration:none;opacity:.75}
+  .hlink:active{opacity:.6}
+  .hlink:focus-visible{outline:3px solid var(--cyan);outline-offset:3px;border-radius:6px}
+  .head-links{gap:18px}
+  @media (max-width:420px){ .hlink{font-size:.74rem} .head-links{gap:14px} }
   .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
   .kanpai-row{margin:16px 0 0;text-align:center;position:relative;z-index:3}
   .boarding-stamp.on{animation:stampDrop .44s cubic-bezier(.17,1.5,.4,1) forwards}
