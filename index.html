@@ -324,10 +324,11 @@
     padding:6px 13px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
   .fchip[aria-pressed="true"]{background:var(--ink);color:var(--yellow)}
   /* しぼりこみは「自分/日付」「曜日・時間帯」「形式」の3段に分けて並べる */
-  #viewRecruit .filters{display:flex;flex-direction:column;align-items:stretch;gap:7px}
-  #viewRecruit .filters span{margin:0 0 1px}
+  #viewRecruit .filters,#viewWant .filters{display:flex;flex-direction:column;align-items:stretch;gap:7px}
+  #viewRecruit .filters span,#viewWant .filters span{margin:0 0 1px}
   /* 並びかえは絞り込みのすぐ下。ランダムのときだけ「混ぜ直せる」と見せる */
   #viewRecruit .filters.sorts{margin-top:-8px}
+  #viewWant .filters.sorts{margin:4px 0 18px}
   /* 🔀 は選んだときだけ見せるが、場所は常に確保しておく（出し入れで行の高さが変わらないように） */
   .sorts .fchip[data-s="random"]::after{content:" 🔀";opacity:0}
   .sorts .fchip[aria-pressed="true"][data-s="random"]::after{opacity:1}
@@ -336,6 +337,7 @@
   .frow{display:flex;gap:7px;flex-wrap:wrap}
   @media (max-width:720px){
     #viewRecruit .filters{margin:20px 0 16px}
+    #viewWant .filters.sorts{margin:2px 0 14px}
     .frow{flex-wrap:nowrap}
     .frow .fchip{flex:1 1 0;min-width:0;padding:6px 4px;font-size:clamp(.58rem,2.6vw,.8rem);
       line-height:1.35;text-align:center;border-radius:14px;
@@ -699,12 +701,17 @@
       <input id="q" type="search" placeholder="シナリオ名 or 名前でさがす（ほかの人でもOK）" autocomplete="off" aria-label="シナリオ名か名前で検索">
       <button class="clear" id="clear" type="button" hidden>クリア</button>
     </label>
-    <div class="seg" role="group" aria-label="並び替え">
-      <button type="button" data-sort="count" aria-pressed="true">人数順</button>
-      <button type="button" data-sort="name" aria-pressed="false">あいうえお順</button>
-    </div>
     <button class="only" id="only" type="button" aria-pressed="false" hidden>★ 自分のだけ</button>
     <div class="hits" id="hits" aria-live="polite"></div>
+  </div>
+  <div class="filters sorts" role="group" aria-label="並びかえ">
+    <span>ならびかえ</span>
+    <div class="frow">
+      <button class="fchip" type="button" data-sort="count" aria-pressed="true">🙋 遊びたい人</button>
+      <button class="fchip" type="button" data-sort="players" aria-pressed="false" title="もう一度押すと少ない順">👥 プレイ人数</button>
+      <button class="fchip" type="button" data-sort="minutes" aria-pressed="false" title="もう一度押すと短い順">⏱ 時間</button>
+      <button class="fchip" type="button" data-sort="name" aria-pressed="false">🔤 あいうえお</button>
+    </div>
   </div>
 
   <section class="sec multi">
@@ -1283,9 +1290,22 @@ function render(){
   var match=function(g){ if(!q) return true; if(norm(g.title).indexOf(q)>=0) return true; return g.people.some(function(p){return norm(p).indexOf(q)>=0;}); };
   var mineOnly = STATE.onlyMe && STATE.me;
   var gs=STATE.groups.filter(function(g){ return match(g) && (!mineOnly || g.people.some(isMe)); });
-  gs.sort(sort==="count"
-    ? function(a,b){ return b.people.length-a.people.length || a.title.localeCompare(b.title,"ja"); }
-    : function(a,b){ return a.title.localeCompare(b.title,"ja"); });
+  // シナリオ情報が無い作品は、人数順・時間順のときいちばん後ろへ
+  var byName=function(a,b){ return a.title.localeCompare(b.title,"ja"); };
+  var num=function(g,k){ var i=infoFor(g); var v=i&&i[k]; return (typeof v==="number"&&v>0)?v:null; };
+  var cmpNum=function(k){
+    return function(a,b){
+      var x=num(a,k), y=num(b,k);
+      if(x===null&&y===null) return byName(a,b);
+      if(x===null) return 1;
+      if(y===null) return -1;
+      return (STATE.sortDesc ? y-x : x-y) || byName(a,b);
+    };
+  };
+  gs.sort(sort==="players" ? cmpNum("min")
+    : sort==="minutes" ? cmpNum("minutes")
+    : sort==="name" ? byName
+    : function(a,b){ return b.people.length-a.people.length || byName(a,b); });
   var multi=gs.filter(function(g){return g.people.length>=2;}), solo=gs.filter(function(g){return g.people.length===1;});
   var free=STATE.free.filter(function(f){ return (!q || norm(f.name).indexOf(q)>=0 || norm(f.text).indexOf(q)>=0) && (!mineOnly || isMe(f.name)); });
 
@@ -2140,9 +2160,20 @@ document.querySelectorAll(".sorts .fchip[data-s]").forEach(function(b){ b.addEve
 document.querySelectorAll(".sorts .fchip[data-s]").forEach(function(b){
   b.setAttribute("aria-pressed", String(b.dataset.s===STATE.rSort)); });
 
-document.querySelectorAll(".seg button").forEach(function(b){ b.addEventListener("click",function(){
-  STATE.sort=b.dataset.sort;
-  document.querySelectorAll(".seg button").forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
+// 遊びたいっの並びかえ。人数と時間は、同じものをもう一度押すと向きが変わる
+STATE.sortDesc=true;
+function wantSortLabel(){
+  var p=document.querySelector('#viewWant .fchip[data-sort="players"]');
+  var m=document.querySelector('#viewWant .fchip[data-sort="minutes"]');
+  if(p) p.textContent = (STATE.sort==="players" && !STATE.sortDesc) ? "👥 人数 少ない" : "👥 プレイ人数";
+  if(m) m.textContent = (STATE.sort==="minutes" && !STATE.sortDesc) ? "⏱ 時間 短い" : "⏱ 時間";
+}
+document.querySelectorAll('#viewWant .fchip[data-sort]').forEach(function(b){ b.addEventListener("click",function(){
+  var k=b.dataset.sort, again=(STATE.sort===k);
+  if(k==="players"||k==="minutes"){ STATE.sortDesc = again ? !STATE.sortDesc : true; }
+  STATE.sort=k;
+  document.querySelectorAll('#viewWant .fchip[data-sort]').forEach(function(x){ x.setAttribute("aria-pressed", String(x===b)); });
+  wantSortLabel();
   render(); }); });
 
 /* ===== ⚡その場で卓を立てる ===== */
