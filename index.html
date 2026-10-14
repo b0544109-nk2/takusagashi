@@ -80,13 +80,13 @@
   /* 印と投稿ボタンをひとつの箱に入れて、縦に並べる */
   .boarding-box{position:absolute;right:4px;top:50%;translate:0 -50%;z-index:2;
     display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
-  .boarding-stamp{position:relative;width:144px;height:144px;rotate:-9deg;opacity:0}
+  .boarding-stamp{position:relative;width:158px;height:158px;rotate:-9deg;opacity:0}
   .stamp-share{pointer-events:auto;display:none;align-items:center;gap:5px;white-space:nowrap;
     font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:.72rem;text-decoration:none;
-    color:#fff;background:var(--ink);border:2.5px solid var(--ink);border-radius:999px;
-    padding:5px 13px;box-shadow:2px 2px 0 var(--pink)}
+    color:var(--ink);background:var(--yellow);border:2.5px solid var(--ink);border-radius:999px;
+    padding:5px 13px;box-shadow:0 3px 0 var(--ink)}
   body.stamped .stamp-share{display:inline-flex}
-  .stamp-share:active{translate:0 2px;box-shadow:0 0 0 var(--pink)}
+  .stamp-share:active{translate:0 3px;box-shadow:0 0 0 var(--ink)}
   .stamp-share:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .boarding-stamp svg{width:100%;height:100%;display:block;mix-blend-mode:multiply}
   .kanpai-row{margin:16px 0 0;text-align:center;position:relative;z-index:3}
@@ -120,13 +120,13 @@
   header.jolt{animation:headJolt .3s ease-out .2s}
   @media (max-width:720px){
     .boarding-box{right:2px;gap:4px}
-    .boarding-stamp{width:104px;height:104px}
+    .boarding-stamp{width:114px;height:114px}
     .stamp-share{font-size:.66rem;padding:4px 10px}
     header{--title-shift:-30px}
   }
   @media (max-width:420px){
     .boarding-box{right:0}
-    .boarding-stamp{width:92px;height:92px}
+    .boarding-stamp{width:102px;height:102px}
     .stamp-share{font-size:.62rem;padding:3px 9px}
   }
   h1 .main{display:inline-block;background:var(--pink);color:#fff;border:4px solid var(--ink);border-radius:18px;
@@ -641,7 +641,7 @@
     <h1><span class="main">マダミスボード<small>(仮)</small></span></h1>
     <div class="boarding-box">
       <div class="boarding-stamp" id="boardingStamp" aria-hidden="true" hidden></div>
-      <a class="stamp-share" id="stampShare" href="#" target="_blank" rel="noopener" hidden>🚢🥂 ポスト</a>
+      <a class="stamp-share" id="stampShare" href="#" target="_blank" rel="noopener" hidden>🐦️ ポスト</a>
     </div>
     <p class="demo" id="demo" hidden></p>
     <p class="kanpai-row" id="kanpaiRow" hidden><button class="btn" type="button" id="kanpaiBtn">🥂 乾杯した（全員にスタンプ）</button></p>
