@@ -540,6 +540,11 @@
   .pchip:hover{translate:0 -1px}
   .pchip:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .qr-modal.pm{max-width:420px}
+  /* 見出しはアイコンと名前の横並び。アイコンが無い人は頭文字が出る */
+  .qr-modal.pm h2{display:flex;align-items:center;gap:10px}
+  .qr-modal.pm h2 .ava{width:44px;height:44px;font-size:1.4rem}
+  .qr-modal.pm h2 .ava.letter{font-size:1.15rem}
+  .qr-modal.pm h2 span{min-width:0;overflow-wrap:anywhere}
   .pm-done{display:block;width:100%;font:inherit;font-weight:700;font-size:.95rem;color:#fff;background:#e8384f;
     border:3px solid var(--ink);border-radius:14px;padding:11px 14px;box-shadow:3px 3px 0 var(--ink);cursor:pointer;margin:4px 0 16px;text-align:left}
   .pm-done:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
@@ -2459,7 +2464,7 @@ var PM={ name:"", key:"" };
 function openPerson(name, key){
   PM={ name:name, key:key };
   var g=STATE.byKey&&STATE.byKey[key], title=g?g.title:"";
-  document.getElementById("pmHeading").textContent="👤 "+name+" さん";
+  document.getElementById("pmHeading").innerHTML=avatar({name:name})+'<span>'+esc(name)+' さん</span>';
   var others=(STATE.entries||[]).filter(function(e){ return e.name===name && e.key!==key; });
   var list=others.map(function(e){
     if(e.free!=null) return '<span class="my-item free">🎲 おまかせ：'+esc(e.free)+'</span>';
