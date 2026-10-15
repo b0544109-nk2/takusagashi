@@ -536,6 +536,7 @@
   .stepper button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
   .stepper output{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:2.6rem;min-width:2.2ch;text-align:center;font-variant-numeric:tabular-nums}
   .need-hint{text-align:center;margin:4px 0 12px;font-size:.84rem;font-weight:700;color:var(--muted);min-height:1.3em}
+  .gaiyou .who{min-width:0;overflow-wrap:anywhere}
   .pchip{font-family:inherit;cursor:pointer}
   .pchip:hover{translate:0 -1px}
   .pchip:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
@@ -1020,11 +1021,12 @@ var PALETTE = ["#ff6fae","#33c4ff","#ffd23f","#4bd08a","#ff9f1c","#9b7bff","#ff5
 function norm(s){ return String(s||"").normalize("NFKC").toLowerCase().replace(/[\s・:：!！?？\-‐－―ー〜~()（）「」『』【】.、。,]/g,""); }
 var ALIAS = {}, INFO = {};
 function addAlias(c, variants){ ALIAS[norm(c)] = c; (variants||[]).forEach(function(v){ if(v) ALIAS[norm(v)] = c; }); }
-function addInfo(title, players, minutes, temp, url){
+function addInfo(title, players, minutes, temp, url, who){
   var p=String(players||"").normalize("NFKC").match(/(\d+)(?:\D+(\d+))?/), m=parseInt(String(minutes||"").normalize("NFKC"),10);
   var u=/^https:\/\/(www\.)?mdms\.jp\/[^\s"'<>]*$/.test(String(url||"").trim()) ? String(url).trim() : "";
-  if(!p && isNaN(m) && !u) return;
-  INFO[norm(title)] = { min:p?+p[1]:null, max:p?+(p[2]||p[1]):null, minutes:isNaN(m)?null:m, temp:!!temp, url:u };
+  var w=String(who||"").trim();
+  if(!p && isNaN(m) && !u && !w) return;
+  INFO[norm(title)] = { min:p?+p[1]:null, max:p?+(p[2]||p[1]):null, minutes:isNaN(m)?null:m, temp:!!temp, url:u, who:w };
 }
 function infoForKey(key, title){ return INFO[key] || INFO[norm(title||"")] || null; }
 // 人数・時間・マダミス.jpのリンクを「シナリオ概要」としてまとめて出す
@@ -1033,6 +1035,7 @@ function gaiyou(info){
   var items="";
   if(info.min) items+='<span>👥 '+playersLabel(info)+'</span>';
   if(info.minutes) items+='<span>⏱ '+info.minutes+'分</span>';
+  if(info.who) items+='<span class="who">✍️ '+esc(info.who)+'</span>';
   if(info.url) items+='<a href="'+esc(info.url)+'" target="_blank" rel="noopener">📖 マダミス.jpで見る ↗</a>';
   return items ? '<div class="gaiyou"><b>シナリオ概要</b>'+items+'</div>' : '';
 }
@@ -1943,12 +1946,14 @@ function parseAnswers(rows){
 }
 // 「シナリオ情報」タブ：タイトル｜人数｜時間(分)｜別名（／区切り）
 function parseInfo(rows){
-  var h=rows[0]||[], col=colFinder(h), iT=col("タイトル"), iP=col("人数"), iM=col("時間"), iA=col("別名"), iU=col("URL","リンク");
+  var h=rows[0]||[], col=colFinder(h), iT=col("タイトル"), iP=col("人数"), iM=col("時間"), iA=col("別名"), iU=col("URL","リンク"),
+      iW=col("製作者","制作者","作者");
   if(iT<0) return [];
   var headT=(h[iT]||"").trim();
   // 貼り付けたときに見出しの行がもう一度入っていても読み飛ばす
   return rows.slice(1).filter(function(r){ var t=(r[iT]||"").trim(); return t && t!==headT; }).map(function(r){
     return { t:r[iT].trim(), p:iP>=0?r[iP]:"", m:iM>=0?r[iM]:"", u:iU>=0?(r[iU]||"").trim():"",
+             w:iW>=0?(r[iW]||"").trim():"",
              a:iA>=0 ? (r[iA]||"").split(/[／、]/).map(function(s){return s.trim();}).filter(Boolean) : [] };
   });
 }
@@ -2105,7 +2110,7 @@ function applyData(d){
   try{ STATE.quick=JSON.parse(s["その場で卓を立てるフォーム送信先"]||""); }catch(e){ STATE.quick=null; }
   try{ STATE.eventPost=JSON.parse(s["成立報告フォーム送信先"]||""); }catch(e){ STATE.eventPost=null; }
   document.getElementById("openQuick").hidden=!STATE.quick;
-  (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m, false, x.u); });
+  (d.info||[]).forEach(function(x){ addAlias(x.t, x.a); addInfo(x.t, x.p, x.m, false, x.u, x.w); });
   // その場で卓を立てるのシナリオ名に、マスタの候補を出す（表記ゆれを入口で減らす）
   var titles=(d.info&&d.info.length) ? d.info.map(function(x){ return x.t; }) : Object.keys(INFO_SRC);
   if(STATE.dlCount!==titles.length){
