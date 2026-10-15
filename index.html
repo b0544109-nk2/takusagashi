@@ -1261,8 +1261,36 @@ function checkKanpai(evs){
 
 // 見出しの下のリンク（印が押されたかに関係なく、最初から出しておく）
 (function(){
+  var TEXT="#マダミス好きクルーズ2026 🚢🥂";
+  var WEB="https://x.com/intent/post?text="+encodeURIComponent(TEXT);
   var sh=document.getElementById("stampShare");
-  if(sh) sh.href="https://x.com/intent/post?text="+encodeURIComponent("#マダミス好きクルーズ2026 🚢🥂");
+  if(sh) sh.href=WEB;
+
+  var ua=navigator.userAgent;
+  var isIOS=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  if(!isIOS) return;
+
+  // ホーム画面に追加したアプリとして開いているか
+  var standalone=false;
+  try{ standalone = navigator.standalone===true || window.matchMedia("(display-mode: standalone)").matches; }catch(e){}
+
+  // ① 別タブをやめる。アプリ内ブラウザに落ちず、Safari経由でXアプリに渡る
+  if(standalone) document.querySelectorAll(".head-links .hlink").forEach(function(a){
+    a.removeAttribute("target"); a.removeAttribute("rel");
+  });
+
+  // ② ?xapp を付けたときだけ、Xアプリを直接呼ぶ（うまくいくならこちらに寄せる）
+  if(sh && new URLSearchParams(location.search).has("xapp")) sh.addEventListener("click", function(e){
+    e.preventDefault();
+    var gone=false;
+    var watch=function(){ if(document.hidden) gone=true; };
+    document.addEventListener("visibilitychange", watch);
+    setTimeout(function(){
+      document.removeEventListener("visibilitychange", watch);
+      if(!gone) location.href=WEB;   // Xアプリが入っていなかった
+    }, 1500);
+    location.href="twitter://post?message="+encodeURIComponent(TEXT);
+  });
 })();
 
 var ME_KEY = "takusagashi.myName";
