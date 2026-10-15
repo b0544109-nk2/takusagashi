@@ -22,7 +22,7 @@ MATH-GAME
 
 探偵キャンプ
 主野 光恒(モヌシー)
-
+緑
 すやてら
 Anagumagames
 The Reverie
@@ -63,7 +63,7 @@ Light and Geek／万屋楽団
 スタジオアーツ　【STUDIO ARTS】
 そがべ
 
-
+あそびばくろうさぎ合同会社
 2Uプロジェクト
 WorLd Holic
 
@@ -107,7 +107,7 @@ Rihito Sakurai／Giggle Akiguchi
 じゃんきち
 五月二日
 
-
+タンブルウィード レッドラム
 すやてら
 
 NAGAKUTSU CREATOR
@@ -164,7 +164,7 @@ NAGAKUTSU CREATOR
 しゃみずい
 ごんてい
 マダミスHOUSE
-
+鯖井凌
 イバラユーギ
 千尾ぴす汰
 
@@ -189,18 +189,18 @@ NAGAKUTSU CREATOR
 白岩ぱんだ
 江島志穂／かとうゆうか
 綾部ヒサト
-
+最東対地
 セント
 ぺよん潤
 アラン校長
-
+WorLd Holic
 
 NAGAKUTSU CREATOR
 週末倶楽部
 
-
+白岩ぱんだ
 すじガキ
-
+ドニパン
 イバラユーギ
 SWANDIVE(psyka)
 七夕ドグラ
@@ -297,11 +297,11 @@ Hideki Morikawa／Giggle Akiguchi
 かんとく／MATH-GAME／Studio OZON
 
 久保よしや
-
+斐然
 アラン校長
 
 大野のお
-
+ラピラボ
 ぽんす
 ラピラボ
 ボドゲーン同好会
@@ -393,7 +393,7 @@ WorLd Holic
 幸田幸
 
 
-
+御湯波ライト
 
 酒井りゅうのすけ
 酒井りゅうのすけ
@@ -416,7 +416,7 @@ Giggle Akiguchi
 イキザマエンジン／ぺよん潤
 秋野てくと
 すな
-
+夏目美緒
 
 とんとん
 まるい魚有
@@ -436,7 +436,7 @@ sin
 える（elkurin）
 大桶純一
 
-
+大原玲雄
 
 yasu
 
@@ -548,7 +548,7 @@ Yoka Games
 
 UniteLink／神沢澪/Mio／射田真/Ida
 
-
+とんとん × クインズワルツ
 坊一
 黒猫創意工坊
 週末倶楽部
@@ -580,7 +580,7 @@ min
 
 
 NAGAKUTSU梅田店
-
+数羽
 幸田幸
 グループSNE／数羽
 える（elkurin）
@@ -617,7 +617,7 @@ SGL
 studio MAZEMAKE
 
 そがべ
-
+小田ヨシキ（週末倶楽部）
 幸田幸
 ポン酢
 赤池せとか
@@ -704,7 +704,7 @@ MIYABI AKITA
 カイξ
 
 あひるのソワレ
-
+ぶるーそにあ
 ポン酢
 るこん／now
 
@@ -713,14 +713,14 @@ MIYABI AKITA
 
 すやてら
 yasu
-
+劉律舟
 久畑バク
 𝑳𝑼𝑽𝐜𝐡𝐮𝐦
 NAGAKUTSU梅田店
 
 いとはき
 杜塚
-
+タンブルウィード レッドラム
 SWANDIVE(psyka)
 ぶるーそにあ
 レベルクローバー🍀
@@ -744,28 +744,28 @@ MATH-GAME
 渡成櫂
 WILL.Y
 手咲
+Junya
 
-
-
-
-
-
-
+御湯波ライト・まめぽよ
+夏目美緒
+STUDIO ARTS
+newmerous
+ゆりあ
 1－1
 NAGAKUTSU梅田店
 2Uプロジェクト
 御湯波ライト
+とんとん
+とんとん
 
-
-
-
+金の亡者（金儲け研究所）
 ぺんむむ
-
+すな
 夏目美緒
 祝井ゆん
-
+伯川ろい
 MATH-GAME
-
+滝崎はじめ
 マッスルむむ／ペンギン
 える（elkurin）
 
@@ -774,17 +774,21 @@ MATH-GAME
 ダバ ＆ まだら牛（共同制作）
 ダバ ＆ まだら牛（共同制作）
 ダバ ＆ まだら牛（共同制作）
-
-
-
-
+白岩ぱんだ
+花花世界
+花花世界
+幸田幸
 青猫箓
 夜のくろうさぎ
-
-
-
-
+タンブルウィード レッドラム
+タロサカ
+山口
+タコ教授
 リン
 コノハナストーリー
-
-
+パーティ太郎
+金の亡者（金儲け研究所）
+2Uプロジェクト
+2Uプロジェクト
+ねこまみれ。
+JUNYA YAMAMOTO
