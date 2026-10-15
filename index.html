@@ -358,6 +358,14 @@
   .rc-who{min-width:0}
   .rc-who small{display:block;font-size:.7rem;font-weight:700;opacity:.85}
   .rc-who b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1.05rem;overflow-wrap:anywhere}
+  /* 名前を押すとその人のメニューが開く。色は帯の色をそのまま継ぐ */
+  .who-btn{font:inherit;color:inherit;background:transparent;border:0;padding:0;margin:0;cursor:pointer;
+    display:flex;align-items:center;gap:5px;min-width:0;text-align:left}
+  .who-btn b{font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-weight:400;font-size:1.05rem;overflow-wrap:anywhere;
+    text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;text-decoration-thickness:2px}
+  .who-btn i{font-style:normal;font-size:1rem;opacity:.7;flex:none}
+  .who-btn:active{translate:0 1px}
+  .who-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px;border-radius:6px}
   .rc-need{margin-left:auto;flex:none;text-align:center;background:#fff;color:var(--ink);border:2.5px solid var(--ink);border-radius:12px;padding:4px 10px;
     font-family:"Mochiy Pop One","Kosugi Maru",sans-serif;font-size:1.3rem;line-height:1.05}
   .rc-need small{display:block;font-family:"Kosugi Maru",sans-serif;font-size:.62rem;font-weight:700}
@@ -1256,6 +1264,22 @@ function colorChip(name){
   var bg=PALETTE[hash(name)%PALETTE.length];
   return '<span class="chip" style="background:'+bg+';color:'+textOn(bg)+'">'+esc(name)+'</span>';
 }
+// 卓募集・成立のカードから押されたとき、登録のときの表記に寄せる（即時卓募集は手で打ち直すため）
+function canonName(name){
+  var hit=(STATE.entries||[]).filter(function(e){ return norm(e.name)===norm(name); })[0];
+  return hit ? hit.name : name;
+}
+// 卓募集・成立カードの名前（帯の中）。シナリオを渡さないので「決まった」は出ない
+function whoBtn(name){
+  return '<button type="button" class="who-btn" data-person="'+esc(canonName(name))+'" aria-label="'+esc(name)+' さんのメニュー">'
+    +'<b>'+esc(name)+'</b><i aria-hidden="true">›</i></button>';
+}
+// 同卓者の名前チップも押せる
+function nameChip(name){
+  var bg=PALETTE[hash(name)%PALETTE.length];
+  return '<button type="button" class="chip pchip'+(isMe(name)?' self':'')+'" style="background:'+bg+';color:'+textOn(bg)+'"'
+    +' data-person="'+esc(canonName(name))+'" aria-label="'+esc(name)+' さんのメニュー">'+esc(name)+'</button>';
+}
 // 遊びたいカードの名前は押せる：その人の他のシナリオを見る／このシナリオが決まった
 function personChip(name, q, g){
   var bg=PALETTE[hash(name)%PALETTE.length], hit=q && norm(name).indexOf(q)>=0;
@@ -1535,7 +1559,7 @@ function joinBlock(r, est){
   var canJoin=STATE.eventPost && !r.local && !isMe(r.name);
   if(!js.length && !canJoin) return "";
   return '<div class="joiners">'
-    +(js.length ? '<p>🙋 同卓者</p><div class="chips">'+js.map(function(e){ return chip(e.reporter,""); }).join("")+'</div>' : '')
+    +(js.length ? '<p>🙋 同卓者</p><div class="chips">'+js.map(function(e){ return nameChip(e.reporter); }).join("")+'</div>' : '')
     +(canJoin ? (mineJoin
         ? '<button type="button" class="join-btn off" data-undo="'+esc(mineJoin.id)+'" data-undo-what="「'+esc(displayTitle(r))+'」への参加">✋ やっぱりやめる</button>'
         : '<button type="button" class="join-btn" data-join-rec="'+esc(r.id)+'"'+(est?' data-join-est="1"':'')+'>'
@@ -1586,7 +1610,7 @@ function renderRecruits(){
     var wg=STATE.byKey&&STATE.byKey[r.key], info=wg?infoFor(wg):infoForKey(r.key, r.title);
     return '<article class="rc'+(mine?' mine':'')+(r.local?' local':'')+'" id="'+r.id+'">'
       +'<div class="rc-top" style="background:'+bg+';color:'+fg+'">'+avatar(r)
-      +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集してる人')+'</small><b>'+esc(r.name)+'</b></div>'
+      +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集してる人')+'</small>'+whoBtn(r.name)+'</div>'
       +(r.need?'<div class="rc-need">'+r.need+'<small>人募集</small></div>':'')+'</div>'
       +'<div class="rc-body"><h3>'+esc(displayTitle(r))+'</h3>'
       +gaiyou(info)
@@ -1669,7 +1693,7 @@ function renderEst(){
     return '<article class="rc est'+(mine?' mine':'')+(it.local?' local':'')+'" id="'+esc(it.id)+'" aria-label="成立：'+esc(it.title)+'">'
       +rosette()
       +'<div class="rc-top" style="background:'+bg+';color:'+textOn(bg)+'">'+avatar(r)
-      +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集した人')+'</small><b>'+esc(it.recruiter)+'</b></div></div>'
+      +'<div class="rc-who"><small>'+(mine?'★ あなたの募集':'募集した人')+'</small>'+whoBtn(it.recruiter)+'</div></div>'
       +'<div class="rc-body"><h3>'+esc(it.title)+'</h3>'
       +gaiyou(infoForKey(it.key, r.title))
       +'<div class="when">'+whenChips(r)+'</div>'
