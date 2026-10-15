@@ -1279,8 +1279,9 @@ function checkKanpai(evs){
     a.removeAttribute("target"); a.removeAttribute("rel");
   });
 
-  // ② ?xapp を付けたときだけ、Xアプリを直接呼ぶ（うまくいくならこちらに寄せる）
-  if(sh && new URLSearchParams(location.search).has("xapp")) sh.addEventListener("click", function(e){
+  // ② Xアプリを直接呼ぶ。アプリ内ブラウザに落ちても確実にアプリへ渡るのはこの方法だけだった。
+  //    ?web を付けると、これまでどおりのウェブリンクで開く（確認用）
+  if(sh && !new URLSearchParams(location.search).has("web")) sh.addEventListener("click", function(e){
     e.preventDefault();
     var gone=false;
     var watch=function(){ if(document.hidden) gone=true; };
