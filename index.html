@@ -574,11 +574,17 @@
 
   /* 当日まで公開しないとき */
   .booting #boardMain,.gated #boardMain,.gated #status{display:none}
-  .gate{margin:34px auto 0;max-width:560px;background:#fff;border:3.5px solid var(--ink);border-radius:22px;box-shadow:7px 7px 0 var(--pink);
+  .gate{margin:34px auto 0;max-width:720px;background:#fff;border:3.5px solid var(--ink);border-radius:22px;box-shadow:7px 7px 0 var(--pink);
     padding:22px 22px 26px;text-align:center}
-  .gate h2{margin:12px 0 10px;font-size:1.3rem;line-height:1.5}
+  .gate h2{margin:12px 0 10px;font-size:clamp(.95rem,4.4vw,1.3rem);line-height:1.5}
   .gate p{font-size:.9rem;font-weight:700;color:var(--muted);line-height:1.75;margin:0 0 18px}
   .gate .gate-ship{margin:0;font-size:3.2rem;line-height:1;animation:bob 6s ease-in-out infinite}
+  /* みんなの名前。押すと元の大きさで開く */
+  .gate-pic{display:block;margin:18px 0 0;text-decoration:none;color:var(--muted)}
+  .gate-pic img{display:block;width:100%;height:auto;border:3px solid var(--ink);border-radius:14px;
+    box-shadow:4px 4px 0 var(--ink);background:#101522}
+  .gate-pic:active img{translate:0 2px;box-shadow:2px 2px 0 var(--ink)}
+  .gate-pic:focus-visible{outline:3px solid var(--cyan);outline-offset:3px;border-radius:14px}
 
 
   /* ===== デザインC：押せるもの＝色つき＋下に厚み（押すと沈む）／押せないもの＝白地に細い枠・影なし ===== */
@@ -685,8 +691,10 @@
 
   <section class="gate" id="gate" hidden>
     <p class="gate-ship" aria-hidden="true">🚢</p>
-    <h2 class="pop">マダミスボード(仮)は<br>クルーズ当日に公開します！</h2>
-    <p>いまは事前登録を受け付けています。登録した卓募集と遊びたいシナリオは、当日このボードと船のモニターに並びます。</p>
+    <h2 class="pop">本当にありがとうございました！<br>また遊びましょ〜！！</h2>
+    <a class="gate-pic" href="minna.png" target="_blank" rel="noopener">
+      <img src="minna.jpg" alt="#マダミス好きクルーズ2026 に参加したみなさんの名前" loading="lazy" decoding="async">
+    </a>
     <a class="cta" id="gateReg" href="#" hidden>✍️ 事前登録ページへ</a>
   </section>
 
@@ -810,7 +818,7 @@
   </div>
 
   <p class="status" id="status"></p>
-  <footer class="site-foot">このサイトは、マダミスクルーズに向けて nk2 が作成したものです。<br>登録していただいた情報は、クルーズ終了後に削除します。</footer>
+  <footer class="site-foot">このサイトは、マダミスクルーズに向けて nk2 が作成したものです。<br>登録していただいた情報は、クルーズ終了後、順次削除します。</footer>
 </div>
 
 <div class="qr-overlay" id="qrOverlay" hidden>
@@ -1301,19 +1309,30 @@ function checkKanpai(evs){
   });
 })();
 
-// ボードを閉じる日時のお知らせ
+// ボードの終了時刻。これを過ぎたら、設定タブを触らなくても終了の画面に切り替わる
+var CLOSE_AT=new Date("2026-10-16T12:01:00+09:00");
+function boardOver(){ return Date.now()>=CLOSE_AT.getTime(); }
+// 見出しの下の帯。終了の前と後で中身が変わる
 (function(){
-  var CLOSE_AT=new Date("2026-10-16T12:00:00+09:00");
   var el=document.getElementById("closing"); if(!el) return;
+  var was=null;
   function draw(){
-    if(Date.now()>=CLOSE_AT.getTime()){ el.hidden=true; return; }
-    var n=new Date();
-    var today = n.getFullYear()===CLOSE_AT.getFullYear() && n.getMonth()===CLOSE_AT.getMonth() && n.getDate()===CLOSE_AT.getDate();
-    el.innerHTML='<span>⏰ ボードは <b>'+(today?"今日":"明日")+' 10/16(金) 12:00</b> で閉じます</span>';
-    el.hidden=false;
+    var over=boardOver();
+    if(over!==was){
+      el.innerHTML = over
+        ? '<span>マダミスボードは終了しました👏 何かあれば nk2 まで🤠</span>'
+        : (function(){
+            var n=new Date();
+            var today = n.getFullYear()===CLOSE_AT.getFullYear() && n.getMonth()===CLOSE_AT.getMonth() && n.getDate()===CLOSE_AT.getDate();
+            return '<span>⏰ ボードは <b>'+(today?"今日":"明日")+' 10/16(金) 12:00</b> で閉じます</span>';
+          })();
+      el.hidden=false;
+      was=over;
+      if(over && STATE.lastData) applyData(STATE.lastData);   // その場で終了の画面へ
+    }
   }
   draw();
-  setInterval(draw, 60000);        // 日付が変わったら「今日」に、時刻を過ぎたら消す
+  setInterval(draw, 20000);
 })();
 
 var ME_KEY = "takusagashi.myName";
@@ -2227,12 +2246,16 @@ function setRegLinks(s){
     var a=document.getElementById(p[0]); a.href=reg; a.removeAttribute("target");
     document.getElementById(p[1]).hidden=true;
   });
+  // 終了後のお礼の画面なので、事前登録への案内は出さない
   var g=document.getElementById("gateReg");
-  if(reg){ g.href=reg; g.hidden=false; }
-  else if(/^https:\/\/(docs\.google\.com\/forms|forms\.gle)\//.test(s["登録フォーム"]||"")){ g.href=s["登録フォーム"]; g.target="_blank"; g.rel="noopener"; g.hidden=false; }
+  if(g) g.hidden=true;
 }
 // 設定タブの「ボード公開」が「しない」の間は、当日公開のお知らせだけを出す（URLに &staff を付けた幹事は見られる）
-function boardClosed(s){ return /^(しない|まだ|非公開|off|false|no|×|✕)$/i.test(String(s["ボード公開"]||"").trim()); }
+function boardClosed(s){
+  if(new URLSearchParams(location.search).has("gate")) return true;   // 確認用
+  if(boardOver()) return true;                                        // 終了時刻を過ぎた
+  return /^(しない|まだ|非公開|off|false|no|×|✕)$/i.test(String(s["ボード公開"]||"").trim());
+}
 function applyData(d){
   STATE.lastData=d;
   var s=d.settings||{};
