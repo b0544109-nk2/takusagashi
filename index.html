@@ -1316,7 +1316,7 @@ function boardOver(){ return Date.now()>=CLOSE_AT.getTime(); }
 (function(){
   var el=document.getElementById("closing"); if(!el) return;
   var was=null;
-  function draw(){
+  function draw(first){
     var over=boardOver();
     if(over!==was){
       el.innerHTML = over
@@ -1328,11 +1328,13 @@ function boardOver(){ return Date.now()>=CLOSE_AT.getTime(); }
           })();
       el.hidden=false;
       was=over;
-      if(over && STATE.lastData) applyData(STATE.lastData);   // その場で終了の画面へ
+      // 読み込みずみのページで時刻が来たときだけ、その場で終了の画面に切り替える。
+      // この処理は STATE を作る前に動くので、最初の1回では触らない
+      if(!first && over && window.STATE && STATE.lastData) applyData(STATE.lastData);
     }
   }
-  draw();
-  setInterval(draw, 20000);
+  draw(true);
+  setInterval(function(){ draw(false); }, 20000);
 })();
 
 var ME_KEY = "takusagashi.myName";
