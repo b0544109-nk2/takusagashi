@@ -97,8 +97,8 @@
   .head-links{gap:10px}
   @media (max-width:420px){ .hlink{font-size:.72rem;padding:4px 12px} .head-links{gap:8px} }
   /* ボードを閉じる日時のお知らせ。時刻を過ぎたら出なくなる */
-  .closing{display:flex;justify-content:center;margin:12px 0 0;translate:var(--title-shift) 0}
-  .closing span{display:inline-block;padding:7px 16px;font-size:.8rem;font-weight:700;line-height:1.6;
+  .closing{display:flex;justify-content:center;margin:12px 0 0}
+  .closing span{display:inline-block;max-width:100%;padding:7px 16px;font-size:.8rem;font-weight:700;line-height:1.6;
     color:var(--ink);background:#fff;border:2.5px dashed var(--ink);border-radius:14px;box-shadow:2px 2px 0 var(--ink)}
   .closing b{white-space:nowrap}
   @media (max-width:420px){ .closing span{font-size:.73rem;padding:6px 12px} }
@@ -1320,7 +1320,7 @@ function boardOver(){ return Date.now()>=CLOSE_AT.getTime(); }
     var over=boardOver();
     if(over!==was){
       el.innerHTML = over
-        ? '<span>マダミスボードは終了しました👏 何かあれば nk2 まで🤠</span>'
+        ? '<span>マダミスボードは終了しました👏 <b>何かあれば nk2 まで🤠</b></span>'
         : (function(){
             var n=new Date();
             var today = n.getFullYear()===CLOSE_AT.getFullYear() && n.getMonth()===CLOSE_AT.getMonth() && n.getDate()===CLOSE_AT.getDate();
@@ -2267,7 +2267,7 @@ function applyData(d){
   document.body.classList.toggle("gated", gated);
   document.getElementById("gate").hidden=!gated;
   STATE.staffNote = closed && CONFIG.staff ? "👀 幹事用の表示です。一般の人には、まだ「当日公開します」の画面が出ています（設定タブの「ボード公開」を「する」にすると公開）。" : "";
-  if(gated){ STATE.pendingMonitor=false; STATE.loadedOnce=true; return; }
+  if(gated){ STATE.pendingMonitor=false; STATE.loadedOnce=true; showBoardingStamp(false); return; }
   STATE.icons=d.icons||{};
   STATE.nameToXid={};
   // 同じ名前で別のXのIDの人がいたら、その名前からはアイコンを引かない（取り違え防止。頭文字が出る）
